@@ -31,7 +31,7 @@ Roda **gratuitamente** no Google Workspace da escola, com Google Apps Script e G
 | `Equipes.gs` | Equipes mensais e placar |
 | `Relatorios.gs` / `ProfRelatorios.html` | Relatórios, ficha do aluno e exportação |
 | `Professor.html` / `ProfTemas.html` / `ProfProgresso.html` / `ProfAvaliacoes.html` / `ProfEquipes.html` | Painel do professor e abas de Temas, Progresso, Avaliações e Equipes |
-| `Aluno.html` | Tela da criança |
+| `Aluno.html` / `AlunoCorpo.html` | Tela da criança (o modelo `Aluno` só inclui arquivos; todo o código fica em `AlunoCorpo`) |
 | `Fala.html` | Voz em inglês e reconhecimento de voz do Chrome |
 | `Teste.html` / `TesteConteudo.html` | Teste de voz e microfone (`?teste=1`) |
 | `Estilo.html` | Estilos compartilhados |
