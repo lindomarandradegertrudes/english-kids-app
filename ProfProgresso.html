@@ -1,0 +1,151 @@
+<!-- Progresso -->
+<section id="aba-progresso" class="pilha" hidden>
+  <style>
+    .mapa td.cel { text-align: center; font-weight: 700; font-size: .85rem; cursor: pointer; min-width: 74px; }
+    .mapa td.cel:hover { outline: 2px solid var(--primaria); outline-offset: -2px; }
+    .mapa th.tema-col { min-width: 74px; text-align: center; font-size: .72rem; line-height: 1.2; }
+    .n0 { background: #f8f9fa; color: #adb5bd; }
+    .n1 { background: #ffe3e3; color: #c92a2a; }
+    .n2 { background: #fff3bf; color: #a05a00; }
+    .n3 { background: #d3f9d8; color: #2b8a3e; }
+    .n4 { background: #b2f2bb; color: #1b5e20; }
+    .legenda { display: flex; gap: 8px; flex-wrap: wrap; font-size: .8rem; }
+    .legenda span { padding: 2px 8px; border-radius: 6px; }
+    .dificil { display: grid; grid-template-columns: 42px 1fr 120px 48px; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--borda); }
+    .dificil .fg { font-size: 1.6rem; text-align: center; }
+    .dificil .barra { margin: 0; height: 10px; }
+    .resumo-turma { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+    .resumo-turma .num { font-size: 1.6rem; font-weight: 700; }
+  </style>
+
+  <div class="linha">
+    <select id="pg-turma"></select>
+    <button class="btn" id="pg-atualizar">↻ Atualizar</button>
+    <span class="espaco"></span>
+    <span class="suave pequeno">Domínio = quanto o aluno acerta as palavras do tema nos jogos (0 a 100%).</span>
+  </div>
+
+  <div class="resumo-turma" id="pg-resumo"></div>
+
+  <div class="cartao">
+    <div class="linha" style="margin-bottom:10px">
+      <h3 style="margin:0">Domínio por tema</h3><span class="espaco"></span>
+      <div class="legenda"><span class="n0">não jogou</span><span class="n1">0–39%</span><span class="n2">40–69%</span><span class="n3">70–89%</span><span class="n4">90–100%</span></div>
+    </div>
+    <p class="suave pequeno" style="margin-top:0">Clique numa célula para ver as palavras e as estrelas do aluno naquele tema.</p>
+    <div class="tabela-rolagem"><table class="mapa" id="pg-tabela"></table></div>
+  </div>
+
+  <div class="cartao">
+    <div class="linha"><h3 style="margin:0">Palavras com mais dificuldade</h3><span class="espaco"></span><select id="pg-tema-dificil"></select></div>
+    <p class="suave pequeno">Domínio médio de cada palavra entre os alunos que já jogaram o tema. As primeiras da lista são boas para retomar em aula.</p>
+    <div id="pg-dificeis"></div>
+  </div>
+
+  <dialog id="modal-detalhe" style="width:min(640px, calc(100vw - 32px))">
+    <div class="linha" style="margin-bottom:10px"><h2 style="margin:0" id="det-titulo"></h2><span class="espaco"></span>
+      <button class="btn" type="button" data-fechar>Fechar</button></div>
+    <div id="det-conteudo" style="max-height:70vh;overflow-y:auto"></div>
+  </dialog>
+</section>
+
+<script>
+  let progressoTurma = null;
+
+  function nivelCor(v) { return v == null ? 'n0' : v >= 90 ? 'n4' : v >= 70 ? 'n3' : v >= 40 ? 'n2' : 'n1'; }
+  function tempoTexto(seg) {
+    seg = Number(seg) || 0;
+    if (seg < 60) return seg + ' s';
+    const min = Math.round(seg / 60);
+    return min < 60 ? min + ' min' : Math.floor(min / 60) + ' h ' + (min % 60) + ' min';
+  }
+
+  async function carregarProgresso() {
+    const turma = $('pg-turma').value;
+    if (!turma) return;
+    $('pg-tabela').innerHTML = '<tr><td class="carregando">Carregando…</td></tr>';
+    progressoTurma = await chamar('profProgressoTurma', turma);
+    renderProgresso();
+  }
+
+  function renderProgresso() {
+    const d = progressoTurma;
+    const temas = d.temas.filter((t) => t.status === 'liberado' || d.jogadoresPorTema[t.id]);
+    const alunos = d.alunos.slice().sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+    const jogaram = alunos.filter((a) => a.jogadas > 0);
+    const medias = jogaram.map((a) => {
+      const v = temas.map((t) => (a.porTema[t.id] ? a.porTema[t.id].dominio : null)).filter((x) => x != null);
+      return v.length ? v.reduce((s, x) => s + x, 0) / v.length : 0;
+    });
+    $('pg-resumo').innerHTML = `
+      <div class="cartao"><div class="suave pequeno">Alunos que já jogaram</div><div class="num">${jogaram.length}<span class="suave" style="font-size:1rem"> / ${alunos.length}</span></div></div>
+      <div class="cartao"><div class="suave pequeno">Partidas</div><div class="num">${alunos.reduce((s, a) => s + a.jogadas, 0)}</div></div>
+      <div class="cartao"><div class="suave pequeno">Tempo total jogando</div><div class="num" style="font-size:1.3rem">${tempoTexto(alunos.reduce((s, a) => s + a.segundos, 0))}</div></div>
+      <div class="cartao"><div class="suave pequeno">Domínio médio (quem jogou)</div><div class="num">${medias.length ? Math.round(medias.reduce((s, x) => s + x, 0) / medias.length) + '%' : '—'}</div></div>`;
+
+    $('pg-tabela').innerHTML = alunos.length ? `
+      <thead><tr><th></th><th>Aluno</th><th>Nível</th><th>⭐</th><th>Partidas</th><th>Tempo</th><th>Última vez</th>
+        ${temas.map((t) => `<th class="tema-col" title="${esc(t.titulo_pt)}">${esc(t.titulo)}${t.status === 'liberado' ? '' : '<br><span class="suave">(oculto)</span>'}</th>`).join('')}</tr></thead>
+      <tbody>${alunos.map((a) => `<tr>
+        <td class="avatar">${esc(a.avatar)}</td>
+        <td>${esc(a.nome)}</td>
+        <td>${a.nivel ? `<span class="selo ${esc(a.nivel)}" title="Média nas avaliações: ${a.media}%">${esc(a.nivel)}</span>` : '<span class="suave pequeno">—</span>'}</td>
+        <td><strong>${a.totalEstrelas}</strong></td>
+        <td>${a.jogadas}</td>
+        <td class="suave pequeno">${a.segundos ? tempoTexto(a.segundos) : ''}</td>
+        <td class="suave pequeno">${esc(a.ultimo)}</td>
+        ${temas.map((t) => {
+          const p = a.porTema[t.id];
+          return `<td class="cel ${nivelCor(p ? p.dominio : null)}" data-email="${esc(a.email)}" data-tema="${esc(t.id)}"
+            title="${p ? p.jogadas + ' partidas · ' + p.estrelas + ' estrelas' : 'ainda não jogou'}">${p ? p.dominio + '%' : '—'}</td>`;
+        }).join('')}
+      </tr>`).join('')}</tbody>`
+      : '<tr><td class="vazio">Nenhum aluno cadastrado nesta turma.</td></tr>';
+
+    const anterior = $('pg-tema-dificil').value;
+    const comDados = temas.filter((t) => d.dificeis[t.id]);
+    $('pg-tema-dificil').innerHTML = comDados.map((t) => `<option value="${esc(t.id)}">${esc(t.titulo)} (${d.jogadoresPorTema[t.id]} alunos)</option>`).join('');
+    if (comDados.some((t) => t.id === anterior)) $('pg-tema-dificil').value = anterior;
+    renderDificeis();
+  }
+
+  function renderDificeis() {
+    const lista = progressoTurma && progressoTurma.dificeis[$('pg-tema-dificil').value];
+    $('pg-dificeis').innerHTML = lista ? lista.map((w) => `
+      <div class="dificil">
+        <span class="fg">${esc(w.figura) || '🔤'}</span>
+        <span><strong>${esc(w.en)}</strong> <span class="suave pequeno">${esc(w.pt)}${w.alunos ? ' · ' + w.alunos + ' alunos' : ''}</span></span>
+        ${w.media == null ? '<span class="suave pequeno">ainda não sorteada</span><span></span>' : `
+        <div class="barra"><i style="width:${w.media}%;background:${w.media < 40 ? 'var(--perigo)' : w.media < 70 ? '#f08c00' : 'var(--ok)'}"></i></div>
+        <span class="suave">${w.media}%</span>`}
+      </div>`).join('') : '<p class="vazio">Ainda ninguém desta turma jogou os temas.</p>';
+  }
+
+  async function abrirDetalhe(email, temaId) {
+    const a = progressoTurma.alunos.find((x) => x.email === email);
+    const d = await chamar('profProgressoAlunoTema', email, temaId);
+    $('det-titulo').textContent = `${a.avatar} ${a.nome} · ${d.tema.titulo}`;
+    $('det-conteudo').innerHTML = `
+      <p>${d.jogos.map((j) => `${esc(j.nome)}: ${'⭐'.repeat(Number(d.estrelas[j.id] || 0)) || '<span class="suave">não jogou</span>'}`).join(' &nbsp;·&nbsp; ')}</p>
+      ${d.palavras.slice().sort((x, y) => x.pontos - y.pontos).map((w) => `
+        <div class="dificil">
+          <span class="fg">${esc(w.figura) || '🔤'}</span>
+          <span><strong>${esc(w.en)}</strong> <span class="suave pequeno">${esc(w.pt)}</span></span>
+          <div class="barra"><i style="width:${w.pontos}%;background:${w.pontos < 40 ? 'var(--perigo)' : w.pontos < 70 ? '#f08c00' : 'var(--ok)'}"></i></div>
+          <span class="suave">${w.pontos}%</span>
+        </div>`).join('')}
+      <p class="suave pequeno">Cada acerto de primeira soma pontos (Listen & Click e Match it! +25, Spell it! +30, Memory +10); cada erro desconta. 100% = palavra dominada.</p>`;
+    $('modal-detalhe').showModal();
+  }
+
+  function configurarProgresso() {
+    $('pg-turma').innerHTML = '<option value="">Escolha a turma…</option>' + opcoesTurma(false);
+    $('pg-turma').addEventListener('change', carregarProgresso);
+    $('pg-atualizar').addEventListener('click', (ev) => comBotao(ev.target, carregarProgresso));
+    $('pg-tema-dificil').addEventListener('change', renderDificeis);
+    $('pg-tabela').addEventListener('click', (ev) => {
+      const c = ev.target.closest('td.cel');
+      if (c) abrirDetalhe(c.dataset.email, c.dataset.tema);
+    });
+  }
+</script>

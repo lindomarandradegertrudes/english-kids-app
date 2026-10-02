@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <?!= incluir('Estilo'); ?>
+  <?!= incluir('Fala'); ?>
+  <style>
+    .selo { display: inline-block; font-size: .78rem; font-weight: 600; padding: 2px 9px; border-radius: 99px; background: var(--borda); white-space: nowrap; }
+    .selo.liberado { background: #d3f9d8; color: #2b8a3e; }
+    .selo.oculto { background: #f1f3f5; color: #495057; }
+    .grade-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 640px) { .grade-2 { grid-template-columns: 1fr; } }
+    .avatar { font-size: 1.5rem; line-height: 1; }
+    .avatares { display: flex; flex-wrap: wrap; gap: 6px; }
+    .avatares button { font-size: 1.6rem; border: 2px solid var(--borda); background: #fff; border-radius: 10px; padding: 4px 6px; cursor: pointer; }
+    .avatares button.ativa { border-color: var(--primaria); background: var(--primaria-clara); }
+  </style>
+</head>
+<body>
+  <header class="topo">
+    <div class="marca">🎈 English Kids App <span>Painel do professor</span></div>
+    <div class="suave pequeno"><?= email ?></div>
+  </header>
+
+  <nav class="abas">
+    <button data-aba="turmas" class="ativa">Turmas</button>
+    <button data-aba="alunos">Alunos</button>
+    <button data-aba="temas">Temas</button>
+    <button data-aba="progresso">Progresso</button>
+    <button data-aba="avaliacoes">Avaliações</button>
+    <button data-aba="equipes">Equipes</button>
+    <button data-aba="relatorios">Relatórios</button>
+    <button data-aba="teste">Teste do Chromebook</button>
+    <button data-aba="config">Configurações</button>
+  </nav>
+
+  <main>
+    <div id="carregando" class="carregando">Carregando…</div>
+
+    <!-- Turmas -->
+    <section id="aba-turmas" class="pilha" hidden>
+      <div class="cartao">
+        <h3>Link para os alunos</h3>
+        <p class="suave pequeno">Envie este link às turmas (Google Sala de Aula, por exemplo). No primeiro acesso, a criança escreve o nome, escolhe a turma e um bichinho; o e-mail escolar é registrado sozinho.</p>
+        <div class="link-box"><code id="link"></code><button class="btn mini" id="copiar-link">Copiar</button></div>
+        <p id="aviso-cadastro" class="pequeno" style="color:var(--perigo)" hidden>O cadastro de novos alunos está fechado (veja Configurações).</p>
+      </div>
+      <div class="linha"><h2 style="margin:0">Turmas</h2><span class="espaco"></span><span class="suave" id="total-alunos"></span>
+        <button class="btn" id="editar-turmas">Editar turmas</button></div>
+      <div id="series" class="pilha"></div>
+    </section>
+
+    <!-- Alunos -->
+    <section id="aba-alunos" class="pilha" hidden>
+      <div class="linha">
+        <select id="filtro-turma"></select>
+        <input id="busca" type="search" placeholder="Buscar por nome ou e-mail" style="flex:1;min-width:200px">
+        <button class="btn primario" id="novo-aluno">+ Adicionar aluno</button>
+      </div>
+      <div class="cartao">
+        <p class="suave pequeno" id="contagem" style="margin-top:0"></p>
+        <div class="tabela-rolagem">
+          <table>
+            <thead><tr><th></th><th>Nome</th><th>E-mail</th><th>Turma</th><th>Nível</th><th>Média</th><th></th></tr></thead>
+            <tbody id="lista-alunos"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <?!= incluir('ProfTemas'); ?>
+    <?!= incluir('ProfProgresso'); ?>
+    <?!= incluir('ProfAvaliacoes'); ?>
+    <?!= incluir('ProfEquipes'); ?>
+    <?!= incluir('ProfRelatorios'); ?>
+
+    <!-- Teste do Chromebook -->
+    <section id="aba-teste" class="pilha" hidden>
+      <div class="cartao">
+        <h3>Teste num Chromebook dos alunos</h3>
+        <p class="suave pequeno">Abra este link num Chromebook da escola, de preferência <strong>com a conta de um aluno</strong>. Assim o teste mostra o que as crianças vão encontrar, inclusive bloqueios da administração da rede.</p>
+        <div class="link-box"><code id="link-teste"></code><button class="btn mini" id="copiar-teste">Copiar</button></div>
+      </div>
+      <?!= incluir('TesteConteudo'); ?>
+    </section>
+
+    <!-- Configurações -->
+    <section id="aba-config" class="pilha" hidden>
+      <form id="form-config" class="cartao">
+        <h2>Configurações</h2>
+        <div class="campo">
+          <label for="cfg-dominio">Domínio dos e-mails da escola</label>
+          <input id="cfg-dominio" placeholder="ex.: edu.joinville.sc.gov.br">
+          <p class="suave pequeno">Somente contas terminadas em @domínio poderão se cadastrar. Deixe vazio para aceitar qualquer conta.</p>
+        </div>
+        <div class="campo">
+          <label for="cfg-professores">Professores com acesso ao painel</label>
+          <textarea id="cfg-professores" rows="2" placeholder="email1@escola, email2@escola"></textarea>
+        </div>
+        <div class="campo">
+          <label for="cfg-cadastro">Cadastro de novos alunos</label>
+          <select id="cfg-cadastro"><option value="SIM">Aberto</option><option value="NÃO">Fechado</option></select>
+        </div>
+        <div class="campo">
+          <label for="cfg-voz">Velocidade da voz em inglês: <span id="cfg-voz-valor"></span></label>
+          <div class="linha">
+            <input id="cfg-voz" type="range" min="0.5" max="1.2" step="0.05" style="flex:1">
+            <button class="btn mini" type="button" id="cfg-voz-ouvir">🔊 Ouvir</button>
+          </div>
+          <p class="suave pequeno">Mais devagar ajuda os alunos do 3º ano. Nos jogos, o botão 🐢 sempre repete ainda mais devagar.</p>
+        </div>
+        <div class="campo">
+          <label>Faixas de nível (média % mínima nas avaliações)</label>
+          <div class="linha">
+            <span class="suave pequeno">Iniciante: abaixo de Básico</span>
+            <span class="pequeno">Básico</span><input id="cfg-b" type="number" min="1" max="100" style="width:80px">
+            <span class="pequeno">Intermediário</span><input id="cfg-i" type="number" min="1" max="100" style="width:80px">
+            <span class="pequeno">Avançado</span><input id="cfg-a" type="number" min="1" max="100" style="width:80px">
+          </div>
+          <p class="suave pequeno">O nível aparece só para você. As crianças veem apenas as estrelas.</p>
+        </div>
+        <div class="rodape-modal"><button class="btn primario" type="submit">Salvar</button></div>
+      </form>
+
+      <form id="form-api" class="cartao">
+        <h2>Geração de temas com IA</h2>
+        <p class="suave pequeno">Opcional. Com uma chave da API da Anthropic (console.anthropic.com), o botão "Gerar com IA" monta as palavras, emojis e frases de um tema novo a partir do conteúdo. O custo é cobrado pela Anthropic, por uso. A chave fica guardada no script, não na planilha. Sem chave, você pode pedir o tema no chat e usar "Colar JSON".</p>
+        <p>Situação: <strong id="api-status"></strong></p>
+        <div class="campo"><label for="api-chave">Nova chave</label><input id="api-chave" type="password" autocomplete="off" placeholder="sk-ant-…"></div>
+        <div class="rodape-modal">
+          <button class="btn perigo" type="button" id="api-remover">Remover chave</button>
+          <button class="btn primario" type="submit">Salvar chave</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <div id="impressao"></div>
+
+  <dialog id="modal-aluno">
+    <form id="form-aluno" method="dialog">
+      <h2 id="modal-titulo">Aluno</h2>
+      <input type="hidden" id="al-original">
+      <div class="campo"><label for="al-nome">Nome completo</label><input id="al-nome" required></div>
+      <div class="campo"><label for="al-email">E-mail escolar</label><input id="al-email" type="email" required></div>
+      <div class="campo"><label for="al-turma">Turma</label><select id="al-turma" required></select></div>
+      <div class="campo"><label>Bichinho</label><div class="avatares" id="al-avatares"></div></div>
+      <div class="rodape-modal">
+        <button class="btn" type="button" data-fechar>Cancelar</button>
+        <button class="btn primario" type="submit">Salvar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="modal-turmas">
+    <form id="form-turmas" method="dialog">
+      <h2>Editar turmas</h2>
+      <p class="suave pequeno">Escreva o final do nome das turmas de cada série, separados por vírgula (ex.: <code>A, B, C</code> vira 3ºA, 3ºB e 3ºC). Turmas que já têm alunos não podem sair.</p>
+      <div id="turmas-campos"></div>
+      <div class="rodape-modal">
+        <button class="btn" type="button" data-fechar>Cancelar</button>
+        <button class="btn primario" type="submit">Salvar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="modal-json">
+    <form id="form-json" method="dialog">
+      <h2 id="json-titulo">Colar JSON</h2>
+      <p class="suave pequeno" id="json-ajuda"></p>
+      <textarea id="json-texto" rows="12" style="font-family:monospace;font-size:.8rem"></textarea>
+      <div class="rodape-modal">
+        <button class="btn" type="button" data-fechar>Cancelar</button>
+        <button class="btn primario" type="submit">Importar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    const estado = { resumo: null, alunos: [], temas: [] };
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    function chamar(fn, ...args) {
+      return new Promise((ok, falha) => {
+        google.script.run
+          .withSuccessHandler(ok)
+          .withFailureHandler((e) => { avisar(e.message, true); falha(e); })[fn](...args);
+      });
+    }
+
+    let temporizador;
+    function avisar(texto, erro) {
+      let el = document.querySelector('.aviso');
+      if (!el) { el = document.createElement('div'); document.body.appendChild(el); }
+      el.className = 'aviso' + (erro ? ' erro' : '');
+      el.textContent = texto;
+      clearTimeout(temporizador);
+      temporizador = setTimeout(() => el.remove(), erro ? 7000 : 3000);
+    }
+
+    async function comBotao(botao, fn) {
+      botao.disabled = true;
+      try { return await fn(); } catch (e) { /* aviso já exibido */ } finally { botao.disabled = false; }
+    }
+
+    document.querySelectorAll('[data-fechar]').forEach((b) => b.addEventListener('click', () => b.closest('dialog').close()));
+
+    // ---------- Navegação ----------
+    function abrirAba(nome) {
+      document.querySelectorAll('.abas button[data-aba]').forEach((b) => b.classList.toggle('ativa', b.dataset.aba === nome));
+      document.querySelectorAll('main > section').forEach((s) => (s.hidden = s.id !== 'aba-' + nome));
+    }
+    document.querySelectorAll('.abas button[data-aba]').forEach((b) => b.addEventListener('click', () => abrirAba(b.dataset.aba)));
+
+    function opcoesSerie(incluirTodas) {
+      return (incluirTodas ? '<option value="">Todas as séries</option>' : '') +
+        estado.resumo.series.map((s) => `<option value="${esc(s)}">${esc(s)} ano</option>`).join('');
+    }
+
+    function opcoesTurma(incluirTodas) {
+      const r = estado.resumo;
+      return (incluirTodas ? '<option value="">Todas as turmas</option>' : '') +
+        r.series.map((s) => `<optgroup label="${esc(s)} ano">${r.turmas.filter((t) => t.serie === s)
+          .map((t) => `<option value="${esc(t.turma)}">${esc(t.turma)}</option>`).join('')}</optgroup>`).join('');
+    }
+
+    function copiar(texto) {
+      navigator.clipboard.writeText(texto).then(() => avisar('Link copiado.'));
+    }
+
+    // ---------- Turmas ----------
+    function renderTurmas() {
+      const r = estado.resumo;
+      $('link').textContent = r.link || 'Publique o sistema para gerar o link.';
+      $('link-teste').textContent = r.link ? r.link + '?teste=1' : 'Publique o sistema para gerar o link.';
+      $('aviso-cadastro').hidden = r.config.cadastro_aberto !== 'NÃO';
+      $('total-alunos').textContent = r.totalAlunos + ' alunos cadastrados';
+      $('series').innerHTML = r.series.map((serie) => {
+        const turmas = r.turmas.filter((t) => t.serie === serie);
+        return `<div><h3>${esc(serie)} ano</h3><div class="grade">${turmas.length ? turmas.map((t) => `
+          <div class="cartao turma" data-turma="${esc(t.turma)}">
+            <div class="suave pequeno">Turma</div>
+            <div class="linha"><strong style="font-size:1.1rem">${esc(t.turma)}</strong><span class="espaco"></span>
+              <span class="num">${t.total}</span><span class="suave">/ ${r.maxPorTurma}</span></div>
+            <div class="barra"><i style="width:${Math.min(100, (t.total / r.maxPorTurma) * 100)}%"></i></div>
+          </div>`).join('') : '<p class="suave pequeno">Nenhuma turma desta série.</p>'}</div></div>`;
+      }).join('');
+      document.querySelectorAll('.turma').forEach((c) => c.addEventListener('click', () => {
+        $('filtro-turma').value = c.dataset.turma;
+        renderAlunos();
+        abrirAba('alunos');
+      }));
+    }
+    $('copiar-link').addEventListener('click', () => copiar($('link').textContent));
+    $('copiar-teste').addEventListener('click', () => copiar($('link-teste').textContent));
+
+    $('editar-turmas').addEventListener('click', () => {
+      const r = estado.resumo;
+      $('turmas-campos').innerHTML = r.series.map((s) => `
+        <div class="campo"><label for="tf-${esc(s)}">${esc(s)} ano</label>
+          <input id="tf-${esc(s)}" data-serie="${esc(s)}" value="${esc(r.turmas.filter((t) => t.serie === s).map((t) => t.turma.slice(s.length)).join(', '))}"></div>`).join('');
+      $('modal-turmas').showModal();
+    });
+    $('form-turmas').addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      const lista = [];
+      document.querySelectorAll('#turmas-campos input').forEach((i) => {
+        i.value.split(',').map((x) => x.trim()).filter(Boolean).forEach((fim) => lista.push({ serie: i.dataset.serie, turma: i.dataset.serie + fim }));
+      });
+      comBotao(ev.submitter, async () => {
+        estado.resumo = await chamar('profSalvarTurmas', lista);
+        $('modal-turmas').close();
+        $('filtro-turma').innerHTML = opcoesTurma(true);
+        $('al-turma').innerHTML = opcoesTurma(false);
+        $('pg-turma').innerHTML = '<option value="">Escolha a turma…</option>' + opcoesTurma(false);
+        renderTurmas();
+        renderAlunos();
+        avisar('Turmas salvas.');
+      });
+    });
+
+    // ---------- Alunos ----------
+    function renderAlunos() {
+      const turma = $('filtro-turma').value;
+      const termo = $('busca').value.trim().toLowerCase();
+      const lista = estado.alunos
+        .filter((a) => !turma || a.turma === turma)
+        .filter((a) => !termo || a.nome.toLowerCase().includes(termo) || a.email.includes(termo))
+        .sort((a, b) => a.turma.localeCompare(b.turma) || a.nome.localeCompare(b.nome, 'pt-BR'));
+      $('contagem').textContent = lista.length + (lista.length === 1 ? ' aluno' : ' alunos');
+      $('lista-alunos').innerHTML = lista.length ? lista.map((a) => `
+        <tr>
+          <td class="avatar">${esc(a.avatar)}</td>
+          <td>${esc(a.nome)}</td>
+          <td class="suave">${esc(a.email)}</td>
+          <td>${esc(a.turma)}</td>
+          <td>${a.nivel ? `<span class="selo ${esc(a.nivel)}">${esc(a.nivel)}</span>` : '<span class="suave pequeno">sem avaliação</span>'}</td>
+          <td class="suave">${a.media != null ? a.media + '% <span class="pequeno">(' + a.avaliacoes + ')</span>' : ''}</td>
+          <td class="acoes">
+            <button class="btn mini" data-editar="${esc(a.email)}">Editar</button>
+            <button class="btn mini perigo" data-excluir="${esc(a.email)}">Excluir</button>
+          </td>
+        </tr>`).join('') : '<tr><td colspan="7" class="vazio">Nenhum aluno encontrado.</td></tr>';
+    }
+    $('filtro-turma').addEventListener('change', renderAlunos);
+    $('busca').addEventListener('input', renderAlunos);
+
+    $('lista-alunos').addEventListener('click', async (ev) => {
+      const editar = ev.target.dataset.editar;
+      const excluir = ev.target.dataset.excluir;
+      if (editar) abrirModalAluno(estado.alunos.find((a) => a.email === editar));
+      if (excluir) {
+        const aluno = estado.alunos.find((a) => a.email === excluir);
+        if (!confirm(`Excluir o cadastro de ${aluno.nome} (${aluno.turma})?`)) return;
+        await comBotao(ev.target, async () => {
+          estado.alunos = await chamar('profExcluirAluno', excluir);
+          await atualizarResumo();
+          avisar('Cadastro excluído.');
+        });
+      }
+    });
+
+    let avatarEscolhido = '';
+    function renderAvatares() {
+      $('al-avatares').innerHTML = estado.resumo.avatares.map((a) =>
+        `<button type="button" class="${a === avatarEscolhido ? 'ativa' : ''}" data-avatar="${esc(a)}">${esc(a)}</button>`).join('');
+    }
+    $('al-avatares').addEventListener('click', (ev) => {
+      const b = ev.target.closest('[data-avatar]');
+      if (!b) return;
+      avatarEscolhido = b.dataset.avatar;
+      renderAvatares();
+    });
+
+    function abrirModalAluno(aluno) {
+      $('modal-titulo').textContent = aluno ? 'Editar aluno' : 'Adicionar aluno';
+      $('al-original').value = aluno ? aluno.email : '';
+      $('al-nome').value = aluno ? aluno.nome : '';
+      $('al-email').value = aluno ? aluno.email : '';
+      $('al-turma').value = aluno ? aluno.turma : ($('filtro-turma').value || (estado.resumo.turmas[0] || {}).turma || '');
+      avatarEscolhido = aluno ? aluno.avatar : estado.resumo.avatares[0];
+      renderAvatares();
+      $('modal-aluno').showModal();
+    }
+    $('novo-aluno').addEventListener('click', () => abrirModalAluno(null));
+
+    $('form-aluno').addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      comBotao(ev.submitter, async () => {
+        estado.alunos = await chamar('profSalvarAluno', {
+          emailOriginal: $('al-original').value,
+          nome: $('al-nome').value,
+          email: $('al-email').value,
+          turma: $('al-turma').value,
+          avatar: avatarEscolhido,
+        });
+        $('modal-aluno').close();
+        await atualizarResumo();
+        avisar('Aluno salvo.');
+      });
+    });
+
+    // ---------- JSON (usado pelos Temas) ----------
+    let aoImportarJson = null;
+    function abrirJson(titulo, ajuda, fn) {
+      $('json-titulo').textContent = titulo;
+      $('json-ajuda').textContent = ajuda;
+      $('json-texto').value = '';
+      aoImportarJson = fn;
+      $('modal-json').showModal();
+    }
+    $('form-json').addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      if (aoImportarJson) comBotao(ev.submitter, () => aoImportarJson($('json-texto').value.trim()));
+    });
+
+    // ---------- Configurações ----------
+    function renderConfig() {
+      const c = estado.resumo.config;
+      $('cfg-dominio').value = c.dominio;
+      $('cfg-professores').value = c.professores;
+      $('cfg-cadastro').value = c.cadastro_aberto === 'NÃO' ? 'NÃO' : 'SIM';
+      $('cfg-voz').value = c.velocidade_voz;
+      $('cfg-b').value = c.faixa_basico;
+      $('cfg-i').value = c.faixa_intermediario;
+      $('cfg-a').value = c.faixa_avancado;
+      $('cfg-voz-valor').textContent = Number(c.velocidade_voz).toLocaleString('pt-BR');
+      Fala.velocidade = Number(c.velocidade_voz);
+      $('api-status').textContent = estado.resumo.temChaveApi ? 'chave configurada ✅' : 'sem chave (use a opção de colar JSON)';
+    }
+    $('cfg-voz').addEventListener('input', () => {
+      $('cfg-voz-valor').textContent = Number($('cfg-voz').value).toLocaleString('pt-BR');
+      Fala.velocidade = Number($('cfg-voz').value);
+    });
+    $('cfg-voz-ouvir').addEventListener('click', async () => { await Fala.iniciar(); Fala.falar('My favorite color is blue.'); });
+
+    $('form-config').addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      comBotao(ev.submitter, async () => {
+        estado.resumo = await chamar('profSalvarConfig', {
+          dominio: $('cfg-dominio').value,
+          professores: $('cfg-professores').value,
+          cadastro_aberto: $('cfg-cadastro').value,
+          velocidade_voz: $('cfg-voz').value,
+          faixa_basico: $('cfg-b').value,
+          faixa_intermediario: $('cfg-i').value,
+          faixa_avancado: $('cfg-a').value,
+        });
+        estado.alunos = await chamar('profListarAlunos');
+        renderTudo();
+        avisar('Configurações salvas.');
+      });
+    });
+
+    async function salvarChave(botao, chave) {
+      await comBotao(botao, async () => {
+        estado.resumo.temChaveApi = await chamar('profSalvarChaveApi', chave);
+        $('api-chave').value = '';
+        renderConfig();
+        avisar(estado.resumo.temChaveApi ? 'Chave salva.' : 'Chave removida.');
+      });
+    }
+    $('form-api').addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      if (!$('api-chave').value.trim()) { avisar('Cole a chave antes de salvar.', true); return; }
+      salvarChave(ev.submitter, $('api-chave').value);
+    });
+    $('api-remover').addEventListener('click', (ev) => {
+      if (confirm('Remover a chave da API?')) salvarChave(ev.target, '');
+    });
+
+    // ---------- Inicialização ----------
+    async function atualizarResumo() {
+      estado.resumo = await chamar('profResumo');
+      renderTurmas();
+      renderAlunos();
+    }
+
+    function renderTudo() {
+      renderTurmas();
+      renderAlunos();
+      renderConfig();
+      renderTemas();
+      renderAvaliacoes();
+    }
+
+    (async function iniciar() {
+      try {
+        const [resumo, alunos, temas, avaliacoes] = await Promise.all([
+          chamar('profResumo'), chamar('profListarAlunos'), chamar('profListarTemas'), chamar('profListarAvaliacoes'),
+        ]);
+        Object.assign(estado, { resumo, alunos, temas, avaliacoes });
+        $('filtro-turma').innerHTML = opcoesTurma(true);
+        $('al-turma').innerHTML = opcoesTurma(false);
+        configurarTemas();
+        configurarProgresso();
+        configurarAvaliacoes();
+        configurarEquipes();
+        configurarRelatorios();
+        renderTudo();
+        Fala.iniciar();
+        $('carregando').hidden = true;
+        abrirAba('turmas');
+      } catch (e) {
+        $('carregando').textContent = 'Erro ao carregar: ' + e.message;
+      }
+    })();
+  </script>
+</body>
+</html>

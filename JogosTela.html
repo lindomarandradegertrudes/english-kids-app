@@ -1,0 +1,990 @@
+<style>
+  /* ---------- Jogos ---------- */
+  .jogo-topo { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .jogo-topo h1 { margin: 0; flex: 1; font-size: 1.6rem; }
+  .pontinhos { display: flex; gap: 6px; flex-wrap: wrap; }
+  .pontinhos i { width: 14px; height: 14px; border-radius: 50%; background: #dee2e6; display: block; }
+  .pontinhos i.feito { background: #51cf66; }
+  .pontinhos i.meio { background: #fcc419; }
+  .pontinhos i.agora { outline: 3px solid #e8590c; outline-offset: 2px; }
+  .jogo-instrucao { font-weight: 800; color: #6c7086; margin: 0 0 14px; font-size: 1.05rem; }
+  .botao-som { border: 0; background: #e8590c; color: #fff; border-radius: 50%; width: 76px; height: 76px; font-size: 2.1rem; cursor: pointer; box-shadow: 0 5px 0 #a33a05; }
+  .botao-som:active { transform: translateY(3px); box-shadow: 0 2px 0 #a33a05; }
+  .botao-som.pequeno { width: 54px; height: 54px; font-size: 1.4rem; background: #fff; color: var(--tinta); box-shadow: 0 4px 0 #dee2e6; border: 2px solid #dee2e6; }
+  .centro { display: flex; justify-content: center; align-items: center; gap: 14px; margin: 6px 0 18px; }
+
+  .opcoes { display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 560px; margin: 0 auto; }
+  .opcao-fig {
+    background: #fff; border: 4px solid #ffe8cc; border-radius: 22px; min-height: 130px; cursor: pointer;
+    font-size: 4rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 0 #ffe8cc; padding: 8px;
+  }
+  .opcao-fig.texto { font-size: 1.5rem; font-weight: 900; color: #5f3dc4; }
+  .opcao-fig:hover { border-color: #ffc078; }
+  .opcao-fig.certa { border-color: #2f9e44; background: #ebfbee; animation: pulo .5s; }
+  .opcao-fig.errada { border-color: #e03131; background: #fff5f5; opacity: .45; animation: treme .4s; cursor: default; }
+  @keyframes treme { 20%, 60% { transform: translateX(-8px); } 40%, 80% { transform: translateX(8px); } }
+
+  .memoria { display: grid; gap: 10px; grid-template-columns: repeat(4, minmax(0, 1fr)); max-width: 640px; margin: 0 auto; }
+  .carta { perspective: 600px; height: 116px; cursor: pointer; border: 0; background: none; padding: 0; }
+  .carta .dentro { position: relative; width: 100%; height: 100%; transition: transform .35s; transform-style: preserve-3d; }
+  .carta.virada .dentro, .carta.achada .dentro { transform: rotateY(180deg); }
+  .carta .face { position: absolute; inset: 0; border-radius: 16px; display: flex; align-items: center; justify-content: center; backface-visibility: hidden; padding: 6px; text-align: center; }
+  .carta .costas { background: linear-gradient(135deg, #ff922b, #e8590c); color: #fff; font-size: 2.2rem; box-shadow: 0 4px 0 #a33a05; }
+  .carta .frente { background: #fff; border: 3px solid #ffe8cc; transform: rotateY(180deg); font-size: 2.8rem; }
+  .carta .frente.palavra-txt { font-size: 1.2rem; font-weight: 900; word-break: break-word; }
+  .carta .frente.pt-txt { font-size: 1rem; font-weight: 900; color: #5f3dc4; }
+  .carta.achada .frente { border-color: #2f9e44; background: #ebfbee; }
+
+  .alvos { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); margin-bottom: 22px; }
+  .alvo {
+    background: #fff; border: 4px dashed #ffc078; border-radius: 20px; min-height: 150px; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 6px; padding: 8px; cursor: pointer;
+  }
+  .alvo .fig { font-size: 3.6rem; }
+  .alvo .fig.texto { font-size: 1.2rem; font-weight: 900; color: #5f3dc4; text-align: center; }
+  .alvo.sobre { background: #fff0e6; border-color: #e8590c; }
+  .alvo.feito { border-style: solid; border-color: #2f9e44; background: #ebfbee; cursor: default; }
+  .alvo.errado { animation: treme .4s; border-color: #e03131; }
+  .alvo .colocada { font-weight: 900; font-size: 1.2rem; color: #2b8a3e; }
+  .fichas { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; min-height: 64px; }
+  .ficha {
+    border: 3px solid #4dabf7; background: #e7f5ff; color: #1864ab; border-radius: 14px; padding: 12px 18px; font-size: 1.25rem;
+    font-weight: 900; cursor: grab; touch-action: none; user-select: none; box-shadow: 0 4px 0 #a5d8ff;
+  }
+  .ficha.escolhida { background: #1c7ed6; color: #fff; border-color: #1864ab; }
+  .ficha.voando { position: fixed; z-index: 50; pointer-events: none; transform: rotate(-4deg) scale(1.08); box-shadow: 0 10px 25px rgba(0,0,0,.25); }
+  .ficha.fantasma { opacity: .3; }
+
+  .montar-fig { font-size: 5rem; text-align: center; line-height: 1.1; }
+  .montar-fig.texto { font-size: 1.6rem; font-weight: 900; color: #5f3dc4; }
+  .casas { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 16px 0 22px; }
+  .casa { width: 52px; height: 62px; border-bottom: 5px solid #adb5bd; font-size: 2.1rem; font-weight: 900; display: flex; align-items: center; justify-content: center; text-transform: uppercase; }
+  .casa.cheia { border-color: #2f9e44; color: #2b8a3e; animation: pulo .35s; }
+  .casa.fixa { border-color: transparent; color: #6c7086; width: 22px; }
+  .casa.espaco { border-color: transparent; width: 26px; }
+  .casa.proxima { border-color: #e8590c; }
+  .letras { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; max-width: 640px; margin: 0 auto; }
+  .letra {
+    width: 62px; height: 62px; border-radius: 16px; border: 3px solid #b197fc; background: #f3f0ff; color: #5f3dc4; font-size: 2rem;
+    font-weight: 900; cursor: pointer; box-shadow: 0 4px 0 #d0bfff;
+  }
+  .letra.errada { animation: treme .4s; background: #fff5f5; border-color: #e03131; color: #c92a2a; }
+  .letra.dica { animation: brilho 1s infinite; }
+  @keyframes brilho { 50% { background: #fff3bf; border-color: #fab005; } }
+  .letra:disabled { visibility: hidden; }
+
+  .resultado { text-align: center; background: #fff; border-radius: 26px; padding: 30px 20px; box-shadow: 0 5px 0 #ffe8cc; max-width: 560px; margin: 10px auto; }
+  .estrelas-grandes { font-size: 4.2rem; letter-spacing: 6px; }
+  .estrelas-grandes span { display: inline-block; opacity: .2; filter: grayscale(1); }
+  .estrelas-grandes span.ganha { opacity: 1; filter: none; animation: estrela .6s both; }
+  .estrelas-grandes span.ganha:nth-child(2) { animation-delay: .25s; }
+  .estrelas-grandes span.ganha:nth-child(3) { animation-delay: .5s; }
+  @keyframes estrela { 0% { transform: scale(0) rotate(-90deg); } 70% { transform: scale(1.3) rotate(10deg); } 100% { transform: scale(1); } }
+  .resultado .frase-final { font-size: 2rem; font-weight: 900; margin: 6px 0; }
+  .resultado .botoes { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 18px; }
+  .salvando { font-weight: 700; color: #6c7086; font-size: .95rem; margin-top: 10px; }
+
+  .festa { position: fixed; inset: 0; pointer-events: none; z-index: 60; overflow: hidden; }
+  .festa span { position: absolute; top: -40px; font-size: 2rem; animation: cair 1.6s ease-in forwards; }
+  @keyframes cair { to { transform: translateY(110vh) rotate(540deg); } }
+
+
+  /* ---------- Etapa 5 ---------- */
+  .caca-lista { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-bottom: 14px; }
+  .caca-lista > span { background: #fff; border: 3px solid #ffe8cc; border-radius: 14px; padding: 4px 12px; font-weight: 900; font-size: 1.1rem; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+  .caca-lista > span .fg { font-size: 1.6rem; }
+  .caca-lista > span.achada { border-color: #2f9e44; background: #ebfbee; text-decoration: line-through; color: #2b8a3e; }
+  .caca { display: grid; gap: 4px; margin: 0 auto; max-width: 560px; touch-action: none; user-select: none; }
+  .caca button { aspect-ratio: 1; border: 2px solid #e9ecef; background: #fff; border-radius: 10px; font-size: 1.4rem; font-weight: 900; color: var(--tinta); cursor: pointer; padding: 0; }
+  .caca button.inicio { background: #fff3bf; border-color: #fab005; }
+  .caca button.achada { background: #b2f2bb; border-color: #2f9e44; color: #1b5e20; }
+  .caca button.errada { background: #ffe3e3; border-color: #e03131; }
+
+  .paleta { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin: 4px 0 18px; }
+  .tinta { width: 58px; height: 58px; border-radius: 50%; border: 4px solid #fff; box-shadow: 0 0 0 3px #dee2e6; cursor: pointer; }
+  .tinta.escolhida { box-shadow: 0 0 0 5px #1c7ed6; transform: scale(1.12); }
+  .quadros { display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 560px; margin: 0 auto; }
+  .quadro { min-height: 130px; border-radius: 22px; border: 4px dashed #ced4da; background: #fff; font-size: 3.6rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .3s; }
+  .quadro.texto { font-size: 1.4rem; font-weight: 900; color: #5f3dc4; }
+  .quadro.pintado { border-style: solid; border-color: #2f9e44; cursor: default; }
+  .quadro.errado { animation: treme .4s; border-color: #e03131; }
+  .comando { text-align: center; font-size: 1.5rem; font-weight: 900; margin: 0 0 10px; min-height: 2rem; }
+
+  .frase-pt { text-align: center; font-weight: 800; color: #6c7086; font-size: 1.15rem; }
+  .frase-montada { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; min-height: 64px; margin: 14px auto 20px; padding: 10px; border-bottom: 4px solid #adb5bd; max-width: 640px; }
+  .frase-montada span { background: #d3f9d8; color: #2b8a3e; border-radius: 12px; padding: 8px 14px; font-size: 1.3rem; font-weight: 900; animation: pulo .35s; }
+  .blocos { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; max-width: 640px; margin: 0 auto; }
+  .bloco { border: 3px solid #4dabf7; background: #e7f5ff; color: #1864ab; border-radius: 14px; padding: 10px 16px; font-size: 1.25rem; font-weight: 900; cursor: pointer; box-shadow: 0 4px 0 #a5d8ff; }
+  .bloco.errada { animation: treme .4s; background: #fff5f5; border-color: #e03131; color: #c92a2a; }
+  .bloco.dica { animation: brilho 1s infinite; }
+  .bloco:disabled { visibility: hidden; }
+
+  .teclado { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 6px; max-width: 620px; margin: 0 auto; }
+  .tecla { aspect-ratio: 1; border-radius: 12px; border: 3px solid #ffd43b; background: #fff9db; color: #a05a00; font-size: 1.5rem; font-weight: 900; cursor: pointer; box-shadow: 0 3px 0 #ffe066; padding: 0; }
+  .tecla.errada { animation: treme .4s; background: #fff5f5; border-color: #e03131; color: #c92a2a; }
+  .tecla.dica { animation: brilho 1s infinite; }
+  .abelha-dica { text-align: center; min-height: 4.6rem; font-size: 4rem; }
+
+  .repetir-cartao { text-align: center; background: #fff; border-radius: 26px; padding: 22px; max-width: 560px; margin: 0 auto; box-shadow: 0 5px 0 #ffe8cc; }
+  .repetir-cartao .fg { font-size: 5rem; line-height: 1.1; }
+  .repetir-cartao .fg.texto { font-size: 1.8rem; font-weight: 900; color: #5f3dc4; }
+  .repetir-cartao .en { font-size: 2.1rem; font-weight: 900; margin: 8px 0; }
+  .repetir-cartao .vez { font-weight: 900; color: #e8590c; font-size: 1.2rem; margin: 10px 0 14px; }
+  @media (max-width: 520px) { .teclado { grid-template-columns: repeat(7, minmax(0, 1fr)); } .caca button { font-size: 1.05rem; } }
+  @media (max-width: 520px) {
+    .memoria { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .casa { width: 40px; height: 52px; font-size: 1.7rem; }
+    .letra { width: 52px; height: 52px; font-size: 1.6rem; }
+  }
+</style>
+
+<script>
+  /** Sons curtos gerados pelo navegador (sem arquivos de áudio). */
+  const Som = {
+    ctx: null,
+    tocar(notas) {
+      try {
+        this.ctx = this.ctx || new (window.AudioContext || window.webkitAudioContext)();
+        let t = this.ctx.currentTime;
+        notas.forEach(([freq, dur, tipo]) => {
+          const o = this.ctx.createOscillator(), g = this.ctx.createGain();
+          o.type = tipo || 'sine';
+          o.frequency.value = freq;
+          g.gain.setValueAtTime(0.18, t);
+          g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+          o.connect(g).connect(this.ctx.destination);
+          o.start(t);
+          o.stop(t + dur);
+          t += dur * 0.8;
+        });
+      } catch (e) { /* sem áudio: o jogo continua */ }
+    },
+    acerto() { this.tocar([[660, 0.12], [990, 0.2]]); },
+    erro() { this.tocar([[200, 0.25, 'triangle']]); },
+    vitoria() { this.tocar([[523, 0.14], [659, 0.14], [784, 0.14], [1047, 0.35]]); },
+  };
+
+  const Jogos = (function () {
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const espera = (ms) => new Promise((ok) => setTimeout(ok, ms));
+    const embaralhar = (lista) => {
+      const a = lista.slice();
+      for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+      return a;
+    };
+
+    const DADOS = {
+      ouvir: { icone: '👂', nome: 'Listen & Click', pt: 'Ouça e toque na figura' },
+      memoria: { icone: '🃏', nome: 'Memory', pt: 'Jogo da memória' },
+      arrastar: { icone: '🧩', nome: 'Match it!', pt: 'Ligue a palavra à figura' },
+      montar: { icone: '🔤', nome: 'Spell it!', pt: 'Monte a palavra' },
+      cacar: { icone: '🔍', nome: 'Find it!', pt: 'Caça-palavras' },
+      colorir: { icone: '🎨', nome: 'Color it!', pt: 'Pinte do jeito que a voz pedir' },
+      frases: { icone: '🧱', nome: 'Build it!', pt: 'Monte a frase' },
+      abelha: { icone: '🐝', nome: 'Spelling Bee', pt: 'Ouça e soletre' },
+      repetir: { icone: '🗣️', nome: 'Repeat after me', pt: 'Ouça e repita' },
+      falar: { icone: '🎤', nome: 'Speak!', pt: 'Fale e o Chrome confere (abre outra aba)' },
+    };
+
+    /** Palavras que dá para soletrar: só letras (espaço, hífen e apóstrofo ficam fixos), até 12 letras. */
+    function soletravel(p) {
+      const letras = p.en.replace(/[\s'’-]/g, '');
+      return /^[a-z]+$/i.test(letras) && letras.length >= 2 && letras.length <= 12;
+    }
+
+    /** Quais jogos o tema permite. */
+    function disponiveis(tema) {
+      const n = tema.palavras.length;
+      return {
+        ouvir: n >= 4,
+        memoria: n >= 3,
+        arrastar: n >= 3,
+        montar: tema.palavras.filter(soletravel).length >= 3,
+        cacar: tema.palavras.filter((p) => cacavel(p, 10)).length >= 4,
+        colorir: tema.palavras.filter((p) => p.figura).length >= 4 && !ehTemaDeCores(tema),
+        frases: frasesBoas(tema).length >= 3,
+        abelha: tema.palavras.filter(soletravel).length >= 3,
+        repetir: n >= 3,
+        // Letras soltas (alfabeto) o reconhecimento de voz não entende bem.
+        falar: tema.palavras.filter((p) => p.en.replace(/[^a-z]/gi, '').length >= 2).length >= 3,
+      };
+    }
+
+    /** Sorteia n palavras dando mais chance às que a criança domina menos. */
+    function escolher(palavras, dominio, n) {
+      const pool = palavras.map((p) => ({ p, peso: 1 + (100 - Math.min(100, dominio[p.en] || 0)) / 25 }));
+      const escolhidas = [];
+      while (escolhidas.length < n && pool.length) {
+        const total = pool.reduce((s, x) => s + x.peso, 0);
+        let r = Math.random() * total, i = 0;
+        while (r > pool[i].peso && i < pool.length - 1) { r -= pool[i].peso; i++; }
+        escolhidas.push(pool.splice(i, 1)[0].p);
+      }
+      return escolhidas;
+    }
+
+    function figura(p, classe) {
+      return p.figura
+        ? `<div class="${classe}">${esc(p.figura)}</div>`
+        : `<div class="${classe} texto">${esc(p.pt)}</div>`;
+    }
+
+    function festa(emojis) {
+      const div = document.createElement('div');
+      div.className = 'festa';
+      for (let i = 0; i < 26; i++) {
+        const s = document.createElement('span');
+        s.textContent = emojis[i % emojis.length];
+        s.style.left = Math.random() * 100 + 'vw';
+        s.style.animationDelay = Math.random() * 0.6 + 's';
+        div.appendChild(s);
+      }
+      document.body.appendChild(div);
+      setTimeout(() => div.remove(), 2600);
+    }
+
+    function estrelasPorPercentual(pct) { return pct >= 90 ? 3 : pct >= 70 ? 2 : 1; }
+
+    // ------------------------------------------------------------
+    // Partida: estado comum a todos os jogos
+    // ------------------------------------------------------------
+    let partida = null;
+
+    function novaPartida(jogo, tema, dominio, el, aoTerminar) {
+      partida = {
+        id: 'j' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+        jogo, tema, dominio, el, aoTerminar, inicio: Date.now(), palavras: {}, ativa: true,
+      };
+      return partida;
+    }
+
+    function registro(en) {
+      partida.palavras[en] = partida.palavras[en] || { a: 0, e: 0, c: 0 };
+      return partida.palavras[en];
+    }
+
+    function cabecalho(titulo, instrucao, total) {
+      return `<div class="jogo-topo">
+          <button class="botao-grande claro" data-sair aria-label="Sair do jogo">⬅</button>
+          <h1>${esc(DADOS[partida.jogo].icone)} ${esc(titulo)}</h1>
+          <div class="pontinhos" id="pontinhos">${Array.from({ length: total }, () => '<i></i>').join('')}</div>
+        </div>
+        <p class="jogo-instrucao">${esc(instrucao)}</p>`;
+    }
+
+    /** Pinta o ponto i (verde = de primeira, amarelo = com erro) e destaca o próximo. */
+    function marcarPonto(i, classe) {
+      const p = partida.el.querySelectorAll('#pontinhos i');
+      if (p[i]) p[i].className = classe;
+      p.forEach((x, k) => x.classList.toggle('agora', k === i + 1));
+    }
+
+    function ligarSair() {
+      partida.el.querySelector('[data-sair]').addEventListener('click', () => {
+        if (!confirm('Sair do jogo? Esta partida não será salva.')) return;
+        partida.ativa = false;
+        if (Fala.disponivel()) speechSynthesis.cancel();
+        partida.aoTerminar(null);
+      });
+    }
+
+    /** Fim da partida: mostra as estrelas e entrega o resultado para ser salvo. */
+    function terminar(acertos, total, estrelas) {
+      if (!partida.ativa) return;
+      partida.ativa = false;
+      const resultado = {
+        id: partida.id, tema_id: partida.tema.id, jogo: partida.jogo, palavras: partida.palavras,
+        acertos, total, estrelas, segundos: Math.round((Date.now() - partida.inicio) / 1000),
+      };
+      const frase = partida.jogo === 'repetir' ? 'Great practice!' : estrelas === 3 ? 'Excellent!' : estrelas === 2 ? 'Great job!' : 'Good try!';
+      partida.el.innerHTML = `
+        <div class="resultado">
+          <div class="estrelas-grandes">${[1, 2, 3].map((n) => `<span class="${n <= estrelas ? 'ganha' : ''}">⭐</span>`).join('')}</div>
+          <div class="frase-final">${frase}</div>
+          <p style="font-weight:700">${partida.jogo === 'repetir' ? 'Você repetiu ' + total + ' palavras e frases. 🗣️'
+            : acertos + ' de ' + total + ' ' + ({ memoria: 'pares encontrados', cacar: 'palavras encontradas', frases: 'frases certas de primeira' }[partida.jogo] || 'certas de primeira')}</p>
+          <div class="salvando" id="salvando">💾 Salvando…</div>
+          <div class="botoes">
+            <button class="botao-grande" data-de-novo>🔁 Jogar de novo</button>
+            <button class="botao-grande claro" data-outro>🎮 Outro jogo</button>
+          </div>
+        </div>`;
+      Som.vitoria();
+      if (estrelas >= 2) festa(estrelas === 3 ? ['⭐', '🎉', '✨', '🌟'] : ['⭐', '✨']);
+      Fala.falar(frase);
+      const { jogo, tema, dominio, el, aoTerminar } = partida;
+      el.querySelector('[data-de-novo]').addEventListener('click', () => iniciar(jogo, tema, dominio, el, aoTerminar));
+      el.querySelector('[data-outro]').addEventListener('click', () => aoTerminar(null));
+      aoTerminar(resultado, (situacao) => {
+        const s = el.querySelector('#salvando');
+        if (s) s.textContent = situacao === 'ok' ? '✅ Salvo!' : '⏳ Sem conexão agora: vou salvar sozinho mais tarde.';
+      });
+    }
+
+    // ------------------------------------------------------------
+    // 1. Listen & Click: ouve a palavra e toca na figura certa
+    // ------------------------------------------------------------
+    async function jogoOuvir() {
+      const { tema, el } = partida;
+      const rodadas = escolher(tema.palavras, partida.dominio, Math.min(8, tema.palavras.length));
+      el.innerHTML = cabecalho('Listen & Click', 'Ouça a palavra e toque na figura certa.', rodadas.length) + `
+        <div class="centro"><button class="botao-som" id="ouvir-de-novo" aria-label="Ouvir de novo">🔊</button>
+          <button class="botao-som pequeno" id="ouvir-devagar" aria-label="Ouvir devagar">🐢</button></div>
+        <div class="opcoes" id="opcoes"></div>`;
+      ligarSair();
+      let atual = null;
+      el.querySelector('#ouvir-de-novo').addEventListener('click', () => atual && Fala.falar(atual.en));
+      el.querySelector('#ouvir-devagar').addEventListener('click', () => atual && Fala.falar(atual.en, true));
+      let acertos = 0;
+
+      for (let i = 0; i < rodadas.length; i++) {
+        if (!partida.ativa) return;
+        atual = rodadas[i];
+        el.querySelectorAll('#pontinhos i').forEach((x, k) => x.classList.toggle('agora', k === i));
+        const outras = embaralhar(tema.palavras.filter((p) => p !== atual)).slice(0, 3);
+        const opcoes = embaralhar([atual, ...outras]);
+        const r = registro(atual.en);
+        await new Promise((proxima) => {
+          const caixa = el.querySelector('#opcoes');
+          caixa.innerHTML = opcoes.map((p, k) =>
+            `<button class="opcao-fig ${p.figura ? '' : 'texto'}" data-k="${k}">${esc(p.figura || p.pt)}</button>`).join('');
+          let errosRodada = 0;
+          caixa.onclick = async (ev) => {
+            const b = ev.target.closest('[data-k]');
+            if (!b || b.classList.contains('errada') || caixa.dataset.travado) return;
+            if (opcoes[Number(b.dataset.k)] === atual) {
+              caixa.dataset.travado = '1';
+              b.classList.add('certa');
+              Som.acerto();
+              if (!errosRodada) { r.a = 1; acertos++; }
+              r.c = 1;
+              marcarPonto(i, errosRodada ? 'meio' : 'feito');
+              await Fala.falar(atual.en);
+              await espera(400);
+              delete caixa.dataset.travado;
+              proxima();
+            } else {
+              errosRodada++;
+              r.e = Math.min(5, r.e + 1);
+              b.classList.add('errada');
+              Som.erro();
+              await espera(350);
+              Fala.falar(atual.en);
+            }
+          };
+          espera(350).then(() => partida.ativa && Fala.falar(atual.en));
+        });
+      }
+      terminar(acertos, rodadas.length, estrelasPorPercentual((acertos / rodadas.length) * 100));
+    }
+
+    // ------------------------------------------------------------
+    // 2. Memory: pares de figura e palavra em inglês
+    // ------------------------------------------------------------
+    function jogoMemoria() {
+      const { tema, el } = partida;
+      const pares = escolher(tema.palavras, partida.dominio, Math.min(6, tema.palavras.length));
+      const cartas = embaralhar(pares.flatMap((p, i) => [{ par: i, tipo: 'fig' }, { par: i, tipo: 'en' }]));
+      el.innerHTML = cabecalho('Memory', 'Vire duas cartas e encontre a figura e a palavra que combinam.', pares.length) + `
+        <div class="memoria" id="memoria">${cartas.map((c, k) => {
+          const p = pares[c.par];
+          const frente = c.tipo === 'en'
+            ? `<div class="face frente palavra-txt">${esc(p.en)}</div>`
+            : p.figura ? `<div class="face frente">${esc(p.figura)}</div>` : `<div class="face frente pt-txt">${esc(p.pt)}</div>`;
+          return `<button class="carta" data-k="${k}" aria-label="Carta ${k + 1}"><div class="dentro"><div class="face costas">❓</div>${frente}</div></button>`;
+        }).join('')}</div>`;
+      ligarSair();
+
+      let abertas = [], jogadas = 0, achados = 0, travado = false;
+      el.querySelector('#memoria').addEventListener('click', async (ev) => {
+        const b = ev.target.closest('[data-k]');
+        if (!b || travado || b.classList.contains('virada') || b.classList.contains('achada')) return;
+        const carta = cartas[Number(b.dataset.k)];
+        b.classList.add('virada');
+        if (carta.tipo === 'en') Fala.falar(pares[carta.par].en);
+        abertas.push({ b, carta });
+        if (abertas.length < 2) return;
+        jogadas++;
+        const [x, y] = abertas;
+        abertas = [];
+        if (x.carta.par === y.carta.par) {
+          x.b.classList.add('achada');
+          y.b.classList.add('achada');
+          Som.acerto();
+          const p = pares[x.carta.par];
+          const r = registro(p.en);
+          r.a = 1; r.c = 1;
+          marcarPonto(achados, 'feito');
+          achados++;
+          await espera(300);
+          await Fala.falar(p.en);
+          if (achados === pares.length) {
+            await espera(400);
+            const n = pares.length;
+            terminar(n, n, jogadas <= n + 3 ? 3 : jogadas <= n * 2 + 1 ? 2 : 1);
+          }
+        } else {
+          travado = true;
+          await espera(1100);
+          x.b.classList.remove('virada');
+          y.b.classList.remove('virada');
+          travado = false;
+        }
+      });
+    }
+
+    // ------------------------------------------------------------
+    // 3. Match it!: arrastar (ou tocar) a palavra até a figura
+    // ------------------------------------------------------------
+    async function jogoArrastar() {
+      const { tema, el } = partida;
+      const escolhidas = escolher(tema.palavras, partida.dominio, Math.min(8, tema.palavras.length));
+      const grupos = escolhidas.length > 5 ? [escolhidas.slice(0, Math.ceil(escolhidas.length / 2)), escolhidas.slice(Math.ceil(escolhidas.length / 2))] : [escolhidas];
+      el.innerHTML = cabecalho('Match it!', 'Toque numa palavra para ouvir. Depois arraste (ou toque) até a figura certa.', escolhidas.length) + `
+        <div class="alvos" id="alvos"></div><div class="fichas" id="fichas"></div>`;
+      ligarSair();
+      let acertos = 0, feitos = 0;
+
+      for (const grupo of grupos) {
+        if (!partida.ativa) return;
+        await new Promise((proximo) => {
+          const alvos = el.querySelector('#alvos'), fichas = el.querySelector('#fichas');
+          const ordemAlvos = embaralhar(grupo), ordemFichas = embaralhar(grupo);
+          alvos.innerHTML = ordemAlvos.map((p) => `<div class="alvo" data-en="${esc(p.en)}">${figura(p, 'fig')}<div class="colocada"></div></div>`).join('');
+          fichas.innerHTML = ordemFichas.map((p) => `<div class="ficha" data-en="${esc(p.en)}" role="button" tabindex="0">${esc(p.en)}</div>`).join('');
+          let escolhida = null, restantes = grupo.length;
+
+          function selecionar(f) {
+            fichas.querySelectorAll('.ficha').forEach((x) => x.classList.toggle('escolhida', x === f));
+            escolhida = f;
+            if (f) Fala.falar(f.dataset.en);
+          }
+
+          async function soltar(f, alvo) {
+            if (!alvo || alvo.classList.contains('feito')) return;
+            const en = f.dataset.en, r = registro(en);
+            if (alvo.dataset.en === en) {
+              alvo.classList.add('feito');
+              alvo.querySelector('.colocada').textContent = en;
+              f.remove();
+              escolhida = null;
+              Som.acerto();
+              if (!r.e) { r.a = 1; acertos++; }
+              r.c = 1;
+              marcarPonto(feitos, r.e ? 'meio' : 'feito');
+              feitos++;
+              restantes--;
+              await Fala.falar(en);
+              if (!restantes) { await espera(400); proximo(); }
+            } else {
+              r.e = Math.min(5, r.e + 1);
+              alvo.classList.remove('errado');
+              void alvo.offsetWidth;
+              alvo.classList.add('errado');
+              Som.erro();
+            }
+          }
+
+          // Arrastar com o dedo ou o mouse; um toque sem arrastar só escolhe a ficha.
+          fichas.onpointerdown = (ev) => {
+            const f = ev.target.closest('.ficha');
+            if (!f) return;
+            ev.preventDefault();
+            const x0 = ev.clientX, y0 = ev.clientY;
+            let voando = null, sobre = null;
+            const mover = (e) => {
+              if (!voando && Math.hypot(e.clientX - x0, e.clientY - y0) < 8) return;
+              if (!voando) {
+                voando = f.cloneNode(true);
+                voando.classList.add('voando');
+                document.body.appendChild(voando);
+                f.classList.add('fantasma');
+              }
+              voando.style.left = e.clientX - voando.offsetWidth / 2 + 'px';
+              voando.style.top = e.clientY - voando.offsetHeight / 2 + 'px';
+              const alvo = document.elementFromPoint(e.clientX, e.clientY)?.closest('.alvo:not(.feito)');
+              if (sobre !== alvo) { sobre?.classList.remove('sobre'); alvo?.classList.add('sobre'); sobre = alvo; }
+            };
+            const largar = (e) => {
+              document.removeEventListener('pointermove', mover);
+              document.removeEventListener('pointerup', largar);
+              document.removeEventListener('pointercancel', largar);
+              sobre?.classList.remove('sobre');
+              if (voando) {
+                voando.remove();
+                f.classList.remove('fantasma');
+                if (e.type === 'pointerup' && sobre) soltar(f, sobre);
+              } else {
+                selecionar(f);
+              }
+            };
+            document.addEventListener('pointermove', mover);
+            document.addEventListener('pointerup', largar);
+            document.addEventListener('pointercancel', largar);
+          };
+          fichas.onkeydown = (ev) => {
+            const f = ev.target.closest('.ficha');
+            if (f && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); selecionar(f); }
+          };
+          alvos.onclick = (ev) => {
+            const alvo = ev.target.closest('.alvo');
+            if (!alvo) return;
+            if (escolhida) soltar(escolhida, alvo);
+            else if (!alvo.classList.contains('feito')) Fala.falar('Choose a word first!');
+          };
+        });
+      }
+      terminar(acertos, escolhidas.length, estrelasPorPercentual((acertos / escolhidas.length) * 100));
+    }
+
+    // ------------------------------------------------------------
+    // 4. Spell it!: montar a palavra com as letras
+    // ------------------------------------------------------------
+    async function jogoMontar() {
+      const { tema, el } = partida;
+      const rodadas = escolher(tema.palavras.filter(soletravel), partida.dominio, Math.min(6, tema.palavras.filter(soletravel).length));
+      el.innerHTML = cabecalho('Spell it!', 'Ouça e toque nas letras na ordem certa para escrever a palavra.', rodadas.length) + `
+        <div id="montar"></div>`;
+      ligarSair();
+      let acertos = 0;
+
+      for (let i = 0; i < rodadas.length; i++) {
+        if (!partida.ativa) return;
+        const p = rodadas[i];
+        el.querySelectorAll('#pontinhos i').forEach((x, k) => x.classList.toggle('agora', k === i));
+        const r = registro(p.en);
+        const chars = [...p.en];
+        const letras = embaralhar(chars.map((c, k) => ({ c, k })).filter((x) => /[a-z]/i.test(x.c)));
+        await new Promise((proxima) => {
+          const caixa = el.querySelector('#montar');
+          caixa.innerHTML = `
+            ${figura(p, 'montar-fig')}
+            <div class="centro" style="margin-top:10px"><button class="botao-som pequeno" data-ouvir aria-label="Ouvir">🔊</button>
+              <button class="botao-som pequeno" data-devagar aria-label="Ouvir devagar">🐢</button></div>
+            <div class="casas">${chars.map((c, k) => /[a-z]/i.test(c)
+              ? `<div class="casa" data-k="${k}"></div>`
+              : c === ' ' ? '<div class="casa espaco"></div>' : `<div class="casa fixa">${esc(c)}</div>`).join('')}</div>
+            <div class="letras">${letras.map((x, j) => `<button class="letra" data-j="${j}">${esc(x.c.toUpperCase())}</button>`).join('')}</div>`;
+          const casas = [...caixa.querySelectorAll('.casa[data-k]')];
+          let pos = 0, erros = 0;
+          const marcarProxima = () => casas.forEach((c, k) => c.classList.toggle('proxima', k === pos));
+          marcarProxima();
+          caixa.querySelector('[data-ouvir]').onclick = () => Fala.falar(p.en);
+          caixa.querySelector('[data-devagar]').onclick = () => Fala.falar(p.en, true);
+          caixa.querySelector('.letras').onclick = async (ev) => {
+            const b = ev.target.closest('.letra');
+            if (!b || b.disabled) return;
+            const certa = chars[Number(casas[pos].dataset.k)];
+            if (letras[Number(b.dataset.j)].c.toLowerCase() === certa.toLowerCase()) {
+              casas[pos].textContent = certa;
+              casas[pos].classList.add('cheia');
+              b.disabled = true;
+              caixa.querySelectorAll('.letra.dica').forEach((x) => x.classList.remove('dica'));
+              pos++;
+              marcarProxima();
+              if (pos === casas.length) {
+                Som.acerto();
+                if (!erros) { r.a = 1; acertos++; }
+                r.c = 1;
+                marcarPonto(i, erros ? 'meio' : 'feito');
+                await Fala.falar(p.en);
+                await espera(500);
+                proxima();
+              }
+            } else {
+              erros++;
+              r.e = Math.min(5, r.e + 1);
+              b.classList.remove('errada');
+              void b.offsetWidth;
+              b.classList.add('errada');
+              Som.erro();
+              // Depois de 3 erros, a letra certa pisca para ajudar.
+              if (erros >= 3) {
+                const dica = [...caixa.querySelectorAll('.letra:not(:disabled)')]
+                  .find((x) => letras[Number(x.dataset.j)].c.toLowerCase() === certa.toLowerCase());
+                if (dica) dica.classList.add('dica');
+              }
+            }
+          };
+          espera(300).then(() => partida.ativa && Fala.falar(p.en));
+        });
+      }
+      terminar(acertos, rodadas.length, estrelasPorPercentual((acertos / rodadas.length) * 100));
+    }
+
+
+    // ------------------------------------------------------------
+    // 5. Find it!: caça-palavras (horizontal e vertical)
+    // ------------------------------------------------------------
+    const letrasDe = (en) => en.replace(/[\s'’-]/g, '').toUpperCase();
+    function cacavel(p, max) { const l = letrasDe(p.en); return /^[A-Z]+$/.test(l) && l.length >= 3 && l.length <= max; }
+
+    function montarGrade(palavras, n) {
+      for (let tentativa = 0; tentativa < 60; tentativa++) {
+        const g = Array.from({ length: n }, () => Array(n).fill(''));
+        const colocadas = [];
+        for (const p of palavras) {
+          const w = letrasDe(p.en);
+          let ok = false;
+          for (let t = 0; t < 150 && !ok; t++) {
+            const vertical = Math.random() < 0.5;
+            const r = Math.floor(Math.random() * (vertical ? n - w.length + 1 : n));
+            const c = Math.floor(Math.random() * (vertical ? n : n - w.length + 1));
+            const cabe = [...w].every((ch, k) => { const x = g[vertical ? r + k : r][vertical ? c : c + k]; return x === '' || x === ch; });
+            if (!cabe) continue;
+            const celulas = [...w].map((ch, k) => { const rr = vertical ? r + k : r, cc = vertical ? c : c + k; g[rr][cc] = ch; return rr * n + cc; });
+            colocadas.push({ p, w, celulas });
+            ok = true;
+          }
+          if (!ok) break;
+        }
+        if (colocadas.length === palavras.length) {
+          const abc = 'ABCDEFGHIJKLMNOPRSTUVWY';
+          return { letras: g.flat().map((x) => x || abc[Math.floor(Math.random() * abc.length)]), colocadas };
+        }
+      }
+      return null;
+    }
+
+    function jogoCacar() {
+      const { tema, el } = partida;
+      const n = tema.palavras.filter((p) => cacavel(p, 8)).length >= 4 ? 8 : 10;
+      const candidatas = tema.palavras.filter((p) => cacavel(p, n));
+      const escolhidas = escolher(candidatas, partida.dominio, Math.min(n === 8 ? 5 : 6, candidatas.length));
+      const grade = montarGrade(escolhidas, n) || montarGrade(escolhidas.slice(0, 4), n);
+      el.innerHTML = cabecalho('Find it!', 'Ache as palavras: toque na primeira letra e depois na última.', grade.colocadas.length) + `
+        <div class="caca-lista" id="caca-lista">${grade.colocadas.map((x, i) => `<span data-i="${i}" title="Ouvir"><span class="fg">${esc(x.p.figura || '🔤')}</span>${esc(x.p.en)}</span>`).join('')}</div>
+        <div class="caca" id="caca" style="grid-template-columns:repeat(${n}, minmax(0, 1fr))">${grade.letras.map((l, k) => `<button data-k="${k}">${l}</button>`).join('')}</div>`;
+      ligarSair();
+      let inicio = null, erros = 0, achadas = 0;
+      const botoes = [...el.querySelectorAll('#caca button')];
+      el.querySelector('#caca-lista').addEventListener('click', (ev) => {
+        const s = ev.target.closest('[data-i]');
+        if (s) Fala.falar(grade.colocadas[Number(s.dataset.i)].p.en);
+      });
+      el.querySelector('#caca').addEventListener('click', async (ev) => {
+        const b = ev.target.closest('[data-k]');
+        if (!b) return;
+        const k = Number(b.dataset.k);
+        if (inicio === null) { inicio = k; b.classList.add('inicio'); return; }
+        botoes[inicio].classList.remove('inicio');
+        const a = inicio;
+        inicio = null;
+        if (a === k) return;
+        const [r1, c1, r2, c2] = [Math.floor(a / n), a % n, Math.floor(k / n), k % n];
+        const linha = [];
+        if (r1 === r2) for (let c = Math.min(c1, c2); c <= Math.max(c1, c2); c++) linha.push(r1 * n + c);
+        else if (c1 === c2) for (let r = Math.min(r1, r2); r <= Math.max(r1, r2); r++) linha.push(r * n + c1);
+        const achou = grade.colocadas.find((x) => !x.feita && linha.length === x.celulas.length && x.celulas.every((c, i) => c === linha[i]));
+        if (achou) {
+          achou.feita = true;
+          achou.celulas.forEach((c) => botoes[c].classList.add('achada'));
+          el.querySelector(`#caca-lista [data-i="${grade.colocadas.indexOf(achou)}"]`).classList.add('achada');
+          const r = registro(achou.p.en);
+          r.a = 1; r.c = 1;
+          marcarPonto(achadas, 'feito');
+          achadas++;
+          Som.acerto();
+          await Fala.falar(achou.p.en);
+          if (achadas === grade.colocadas.length) {
+            await espera(400);
+            terminar(achadas, achadas, erros <= 1 ? 3 : erros <= 4 ? 2 : 1);
+          }
+        } else {
+          erros++;
+          const marcar = linha.length ? linha : [a, k];
+          marcar.forEach((c) => botoes[c].classList.add('errada'));
+          Som.erro();
+          setTimeout(() => marcar.forEach((c) => botoes[c].classList.remove('errada')), 500);
+        }
+      });
+    }
+
+    // ------------------------------------------------------------
+    // 6. Color it!: "Color the cat blue."
+    // ------------------------------------------------------------
+    const CORES = [
+      { en: 'red', hex: '#e03131' }, { en: 'blue', hex: '#1c7ed6' }, { en: 'yellow', hex: '#fcc419' }, { en: 'green', hex: '#2f9e44' },
+      { en: 'orange', hex: '#f76707' }, { en: 'purple', hex: '#7048e8' }, { en: 'pink', hex: '#f783ac' }, { en: 'brown', hex: '#8d5524' },
+      { en: 'black', hex: '#343a40' }, { en: 'white', hex: '#ffffff' }, { en: 'gray', hex: '#adb5bd' },
+    ];
+    const ehTemaDeCores = (tema) => tema.palavras.filter((p) => CORES.some((c) => c.en === p.en.toLowerCase())).length >= tema.palavras.length / 2;
+
+    async function jogoColorir() {
+      const { tema, el } = partida;
+      const comFigura = tema.palavras.filter((p) => p.figura);
+      const rodadas = Math.min(6, Math.max(4, comFigura.length));
+      el.innerHTML = cabecalho('Color it!', 'Ouça o comando, escolha a cor e toque na figura.', rodadas) + `
+        <div class="centro"><button class="botao-som" data-ouvir aria-label="Ouvir de novo">🔊</button>
+          <button class="botao-som pequeno" data-devagar aria-label="Ouvir devagar">🐢</button>
+          <button class="botao-som pequeno" data-ver aria-label="Ver o comando escrito">👀</button></div>
+        <div class="comando" id="comando"></div>
+        <div class="paleta" id="paleta">${CORES.map((c) => `<button class="tinta" data-cor="${c.en}" style="background:${c.hex}" aria-label="cor"></button>`).join('')}</div>
+        <div class="quadros" id="quadros"></div>`;
+      ligarSair();
+      let cor = null, frase = '', mostrarTexto = false, acertos = 0;
+      const falar = (lento) => Fala.falar(frase, lento);
+      el.querySelector('[data-ouvir]').onclick = () => falar(false);
+      el.querySelector('[data-devagar]').onclick = () => falar(true);
+      el.querySelector('[data-ver]').onclick = () => { mostrarTexto = !mostrarTexto; el.querySelector('#comando').textContent = mostrarTexto ? frase : ''; };
+      el.querySelector('#paleta').onclick = (ev) => {
+        const b = ev.target.closest('[data-cor]');
+        if (!b) return;
+        cor = b.dataset.cor;
+        el.querySelectorAll('.tinta').forEach((x) => x.classList.toggle('escolhida', x === b));
+      };
+
+      for (let i = 0; i < rodadas; i++) {
+        if (!partida.ativa) return;
+        el.querySelectorAll('#pontinhos i').forEach((x, k) => x.classList.toggle('agora', k === i));
+        const quatro = escolher(comFigura, partida.dominio, 4);
+        const alvo = quatro[Math.floor(Math.random() * quatro.length)];
+        const corAlvo = CORES[Math.floor(Math.random() * CORES.length)];
+        frase = `Color the ${alvo.en} ${corAlvo.en}.`;
+        el.querySelector('#comando').textContent = mostrarTexto ? frase : '';
+        const r = registro(alvo.en);
+        let erros = 0;
+        await new Promise((proxima) => {
+          const caixa = el.querySelector('#quadros');
+          caixa.innerHTML = quatro.map((p, k) => `<button class="quadro" data-k="${k}">${esc(p.figura)}</button>`).join('');
+          caixa.onclick = async (ev) => {
+            const b = ev.target.closest('[data-k]');
+            if (!b || caixa.dataset.travado) return;
+            if (!cor) { Fala.falar('Choose a color first!'); return; }
+            const p = quatro[Number(b.dataset.k)];
+            b.style.background = CORES.find((c) => c.en === cor).hex;
+            if (p === alvo && cor === corAlvo.en) {
+              caixa.dataset.travado = '1';
+              b.classList.add('pintado');
+              Som.acerto();
+              if (!erros) { r.a = 1; acertos++; }
+              r.c = 1;
+              marcarPonto(i, erros ? 'meio' : 'feito');
+              await Fala.falar(`Yes! The ${alvo.en} is ${corAlvo.en}.`);
+              await espera(300);
+              delete caixa.dataset.travado;
+              proxima();
+            } else {
+              erros++;
+              r.e = Math.min(5, r.e + 1);
+              b.classList.remove('errado');
+              void b.offsetWidth;
+              b.classList.add('errado');
+              Som.erro();
+              await espera(600);
+              b.style.background = '';
+              falar(false);
+            }
+          };
+          espera(350).then(() => partida.ativa && falar(false));
+        });
+      }
+      terminar(acertos, rodadas, estrelasPorPercentual((acertos / rodadas) * 100));
+    }
+
+    // ------------------------------------------------------------
+    // 7. Build it!: montar a frase
+    // ------------------------------------------------------------
+    const pedacos = (en) => en.trim().split(/\s+/);
+    const frasesBoas = (tema) => (tema.frases || []).filter((f) => { const n = pedacos(f.en).length; return n >= 2 && n <= 9; });
+
+    async function jogoFrases() {
+      const { tema, el } = partida;
+      const rodadas = embaralhar(frasesBoas(tema)).slice(0, 5);
+      el.innerHTML = cabecalho('Build it!', 'Ouça e toque nos blocos na ordem certa para montar a frase.', rodadas.length) + `<div id="frases-jogo"></div>`;
+      ligarSair();
+      let acertos = 0;
+      for (let i = 0; i < rodadas.length; i++) {
+        if (!partida.ativa) return;
+        el.querySelectorAll('#pontinhos i').forEach((x, k) => x.classList.toggle('agora', k === i));
+        const f = rodadas[i], partes = pedacos(f.en);
+        const blocos = embaralhar(partes.map((t, k) => ({ t, k })));
+        await new Promise((proxima) => {
+          const caixa = el.querySelector('#frases-jogo');
+          caixa.innerHTML = `
+            <div class="centro"><button class="botao-som pequeno" data-ouvir aria-label="Ouvir">🔊</button>
+              <button class="botao-som pequeno" data-devagar aria-label="Ouvir devagar">🐢</button></div>
+            <div class="frase-pt">🇧🇷 ${esc(f.pt)}</div>
+            <div class="frase-montada" id="montada"></div>
+            <div class="blocos">${blocos.map((b, j) => `<button class="bloco" data-j="${j}">${esc(b.t)}</button>`).join('')}</div>`;
+          let pos = 0, erros = 0;
+          caixa.querySelector('[data-ouvir]').onclick = () => Fala.falar(f.en);
+          caixa.querySelector('[data-devagar]').onclick = () => Fala.falar(f.en, true);
+          caixa.querySelector('.blocos').onclick = async (ev) => {
+            const b = ev.target.closest('.bloco');
+            if (!b || b.disabled) return;
+            if (blocos[Number(b.dataset.j)].t === partes[pos]) {
+              b.disabled = true;
+              caixa.querySelector('#montada').insertAdjacentHTML('beforeend', `<span>${esc(partes[pos])}</span>`);
+              caixa.querySelectorAll('.bloco.dica').forEach((x) => x.classList.remove('dica'));
+              pos++;
+              if (pos === partes.length) {
+                Som.acerto();
+                if (!erros) acertos++;
+                // Credita as palavras do tema que aparecem na frase.
+                tema.palavras.forEach((p) => {
+                  if (!new RegExp('\\b' + p.en.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i').test(f.en)) return;
+                  const r = registro(p.en);
+                  if (!erros) r.a = 1;
+                  r.c = 1;
+                });
+                marcarPonto(i, erros ? 'meio' : 'feito');
+                await Fala.falar(f.en);
+                await espera(500);
+                proxima();
+              }
+            } else {
+              erros++;
+              b.classList.remove('errada');
+              void b.offsetWidth;
+              b.classList.add('errada');
+              Som.erro();
+              if (erros >= 3) {
+                const dica = [...caixa.querySelectorAll('.bloco:not(:disabled)')].find((x) => blocos[Number(x.dataset.j)].t === partes[pos]);
+                if (dica) dica.classList.add('dica');
+              }
+            }
+          };
+          espera(300).then(() => partida.ativa && Fala.falar(f.en));
+        });
+      }
+      terminar(acertos, rodadas.length, estrelasPorPercentual((acertos / rodadas.length) * 100));
+    }
+
+    // ------------------------------------------------------------
+    // 8. Spelling Bee: ouvir e soletrar com o teclado (sem ver a palavra)
+    // ------------------------------------------------------------
+    async function jogoAbelha() {
+      const { tema, el } = partida;
+      const lista = tema.palavras.filter(soletravel);
+      const rodadas = escolher(lista, partida.dominio, Math.min(6, lista.length));
+      el.innerHTML = cabecalho('Spelling Bee', 'Ouça a palavra e escreva com as letras (pode usar o teclado do Chromebook).', rodadas.length) + `<div id="abelha"></div>`;
+      ligarSair();
+      const eu = partida;
+      let acertos = 0, teclaFisica = null;
+      for (let i = 0; i < rodadas.length; i++) {
+        if (!partida.ativa) break;
+        el.querySelectorAll('#pontinhos i').forEach((x, k) => x.classList.toggle('agora', k === i));
+        const p = rodadas[i], r = registro(p.en), chars = [...p.en];
+        await new Promise((proxima) => {
+          const caixa = el.querySelector('#abelha');
+          caixa.innerHTML = `
+            <div class="centro"><button class="botao-som" data-ouvir aria-label="Ouvir">🔊</button>
+              <button class="botao-som pequeno" data-devagar aria-label="Ouvir devagar">🐢</button>
+              <button class="botao-som pequeno" data-dica aria-label="Dica">💡</button></div>
+            <div class="abelha-dica" id="dica-fig"></div>
+            <div class="casas">${chars.map((c, k) => /[a-z]/i.test(c) ? `<div class="casa" data-k="${k}"></div>`
+              : c === ' ' ? '<div class="casa espaco"></div>' : `<div class="casa fixa">${esc(c)}</div>`).join('')}</div>
+            <div class="teclado">${'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map((l) => `<button class="tecla" data-l="${l}">${l}</button>`).join('')}</div>`;
+          const casas = [...caixa.querySelectorAll('.casa[data-k]')];
+          let pos = 0, erros = 0, terminou = false;
+          const marcar = () => casas.forEach((c, k) => c.classList.toggle('proxima', k === pos));
+          marcar();
+          caixa.querySelector('[data-ouvir]').onclick = () => Fala.falar(p.en);
+          caixa.querySelector('[data-devagar]').onclick = () => Fala.falar(p.en, true);
+          caixa.querySelector('[data-dica]').onclick = () => { caixa.querySelector('#dica-fig').innerHTML = esc(p.figura || p.pt); };
+          const apertar = async (letra) => {
+            if (terminou) return;
+            const certa = chars[Number(casas[pos].dataset.k)];
+            const tecla = caixa.querySelector(`.tecla[data-l="${letra}"]`);
+            if (letra === certa.toUpperCase()) {
+              casas[pos].textContent = certa;
+              casas[pos].classList.add('cheia');
+              caixa.querySelectorAll('.tecla.dica').forEach((x) => x.classList.remove('dica'));
+              Fala.falar(letra);
+              pos++;
+              marcar();
+              if (pos === casas.length) {
+                terminou = true;
+                document.removeEventListener('keydown', teclaFisica);
+                Som.acerto();
+                if (!erros) { r.a = 1; acertos++; }
+                r.c = 1;
+                marcarPonto(i, erros ? 'meio' : 'feito');
+                caixa.querySelector('#dica-fig').innerHTML = esc(p.figura || p.pt);
+                await espera(500);
+                await Fala.falar(p.en);
+                await espera(500);
+                proxima();
+              }
+            } else if (tecla) {
+              erros++;
+              r.e = Math.min(5, r.e + 1);
+              tecla.classList.remove('errada');
+              void tecla.offsetWidth;
+              tecla.classList.add('errada');
+              Som.erro();
+              if (erros >= 3) caixa.querySelector(`.tecla[data-l="${certa.toUpperCase()}"]`).classList.add('dica');
+            }
+          };
+          caixa.querySelector('.teclado').onclick = (ev) => { const b = ev.target.closest('[data-l]'); if (b) apertar(b.dataset.l); };
+          teclaFisica = (ev) => {
+            if (!eu.ativa || partida !== eu) { document.removeEventListener('keydown', teclaFisica); return; }
+            if (/^[a-z]$/i.test(ev.key)) { ev.preventDefault(); apertar(ev.key.toUpperCase()); }
+          };
+          document.addEventListener('keydown', teclaFisica);
+          espera(300).then(() => partida.ativa && Fala.falar(p.en));
+        });
+      }
+      if (teclaFisica) document.removeEventListener('keydown', teclaFisica);
+      if (partida.ativa) terminar(acertos, rodadas.length, estrelasPorPercentual((acertos / rodadas.length) * 100));
+    }
+
+    // ------------------------------------------------------------
+    // 9. Repeat after me: ouvir e repetir em voz alta (prática, sem nota)
+    // ------------------------------------------------------------
+    async function jogoRepetir() {
+      const { tema, el } = partida;
+      const itens = escolher(tema.palavras, partida.dominio, Math.min(5, tema.palavras.length)).map((p) => ({ en: p.en, p }))
+        .concat(embaralhar(frasesBoas(tema)).slice(0, 3).map((f) => ({ en: f.en, f })));
+      el.innerHTML = cabecalho('Repeat after me', 'Ouça e repita em voz alta. Depois toque em 👍.', itens.length) + `<div id="repetir"></div>`;
+      ligarSair();
+      for (let i = 0; i < itens.length; i++) {
+        if (!partida.ativa) return;
+        el.querySelectorAll('#pontinhos i').forEach((x, k) => x.classList.toggle('agora', k === i));
+        const it = itens[i];
+        await new Promise((proxima) => {
+          const caixa = el.querySelector('#repetir');
+          caixa.innerHTML = `<div class="repetir-cartao">
+              ${it.p ? figura(it.p, 'fg') : '<div class="fg">💬</div>'}
+              <div class="en">${esc(it.en)}</div>
+              ${it.f ? `<div class="frase-pt">${esc(it.f.pt)}</div>` : ''}
+              <div class="vez" id="vez">🔊 Ouça…</div>
+              <div class="centro"><button class="botao-som pequeno" data-ouvir aria-label="Ouvir">🔊</button>
+                <button class="botao-som pequeno" data-devagar aria-label="Ouvir devagar">🐢</button>
+                <button class="botao-grande" data-falei>👍 Falei!</button></div>
+            </div>`;
+          const tocar = async (lento) => {
+            caixa.querySelector('#vez').textContent = '🔊 Ouça…';
+            await Fala.falar(it.en, lento);
+            const v = caixa.querySelector('#vez');
+            if (v) v.textContent = '🗣️ Agora é a sua vez! Fale em voz alta.';
+          };
+          caixa.querySelector('[data-ouvir]').onclick = () => tocar(false);
+          caixa.querySelector('[data-devagar]').onclick = () => tocar(true);
+          caixa.querySelector('[data-falei]').onclick = () => { Som.acerto(); marcarPonto(i, 'feito'); proxima(); };
+          espera(300).then(() => partida.ativa && tocar(false));
+        });
+      }
+      // Sem como conferir a pronúncia: vale 1 estrela de participação e não mexe no domínio.
+      terminar(itens.length, itens.length, 1);
+    }
+
+    const MOTORES = {
+      ouvir: jogoOuvir, memoria: jogoMemoria, arrastar: jogoArrastar, montar: jogoMontar,
+      cacar: jogoCacar, colorir: jogoColorir, frases: jogoFrases, abelha: jogoAbelha, repetir: jogoRepetir,
+    };
+
+    /**
+     * Começa um jogo dentro do elemento el.
+     * aoTerminar(resultado, avisarSalvamento): resultado = null quando a criança sai ou escolhe outro jogo.
+     */
+    function iniciar(jogo, tema, dominio, el, aoTerminar) {
+      novaPartida(jogo, tema, dominio || {}, el, aoTerminar);
+      window.scrollTo(0, 0);
+      Fala.iniciar().then(() => MOTORES[jogo]());
+    }
+
+    return { DADOS, disponiveis, iniciar, escolher };
+  })();
+</script>

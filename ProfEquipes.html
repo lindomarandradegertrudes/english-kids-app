@@ -1,0 +1,306 @@
+<!-- Equipes -->
+<section id="aba-equipes" hidden>
+  <style>
+    .equipes-grade { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+    .equipe-card h3 { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .equipe-card.excedida { border-color: var(--perigo); }
+    .membro { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; padding: 6px 0; border-top: 1px solid var(--borda); font-size: .9rem; }
+    .membro .nome { flex: 1 1 calc(100% - 34px); min-width: 0; font-weight: 600; }
+    .membro select { width: auto; padding: 3px 6px; font-size: .8rem; margin-left: auto; }
+    .composicao { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 6px; }
+    .info-equipes { background: var(--primaria-clara); border-radius: 8px; padding: 10px 12px; }
+    .placar-grande { background: linear-gradient(160deg, #fff4e6, #fff9db); border-radius: 18px; padding: 22px; }
+    .placar-grande h2 { font-size: 1.8rem; text-align: center; }
+    .linha-placar { display: grid; grid-template-columns: 56px 64px 1fr auto; gap: 14px; align-items: center; background: #fff; border-radius: 14px;
+      padding: 10px 16px; margin-top: 10px; box-shadow: 0 3px 0 #ffd8a8; font-size: 1.3rem; }
+    .linha-placar .pos { font-size: 1.8rem; font-weight: 800; text-align: center; }
+    .linha-placar .em { font-size: 2.6rem; text-align: center; }
+    .linha-placar .nm { font-weight: 800; }
+    .linha-placar .bichos { font-size: 1.3rem; letter-spacing: 2px; }
+    .linha-placar .pts { font-size: 1.8rem; font-weight: 800; white-space: nowrap; }
+    .placar-grande .barra { height: 10px; margin-top: 4px; }
+  </style>
+
+  <!-- Visão geral -->
+  <div id="eq-geral" class="pilha">
+    <div class="linha">
+      <h2 style="margin:0">Equipes do mês</h2>
+      <input id="eq-mes" type="month" style="width:auto">
+      <span class="espaco"></span>
+      <span class="suave pequeno">As crianças veem a equipe mais recente da turma e o placar do mês.</span>
+    </div>
+    <div class="cartao tabela-rolagem">
+      <table>
+        <thead><tr><th>Turma</th><th>Alunos</th><th>Avaliados</th><th>Situação no mês</th><th></th></tr></thead>
+        <tbody id="eq-tabela"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Turma -->
+  <div id="eq-turma" class="pilha" hidden>
+    <div class="linha">
+      <button class="btn" id="eq-voltar">← Voltar</button>
+      <h2 style="margin:0" id="eq-titulo"></h2>
+      <span class="espaco"></span>
+      <button class="btn" id="eq-ver-placar">🏆 Placar</button>
+      <button class="btn" id="eq-imprimir">Imprimir equipes</button>
+    </div>
+    <div class="info-equipes pequeno" id="eq-info"></div>
+    <div class="linha">
+      <button class="btn" id="eq-sugerir">✨ Gerar sugestão</button>
+      <button class="btn" id="eq-manter">Manter equipes atuais neste mês</button>
+      <span class="espaco"></span>
+      <span class="suave pequeno" id="eq-estado"></span>
+      <button class="btn primario" id="eq-aplicar">Aplicar equipes</button>
+    </div>
+    <div id="eq-equipes" class="equipes-grade"></div>
+    <div class="cartao" id="eq-fora-box">
+      <h3>Fora das equipes</h3>
+      <p class="suave pequeno" style="margin-top:0">Use "Mover para…" para encaixar estes alunos (por exemplo, quem se cadastrou depois).</p>
+      <div id="eq-fora"></div>
+    </div>
+  </div>
+
+  <!-- Placar (para projetar) -->
+  <div id="eq-placar" class="pilha" hidden>
+    <div class="linha">
+      <button class="btn" id="eq-placar-voltar">← Voltar</button>
+      <span class="espaco"></span>
+      <button class="btn" id="eq-placar-atualizar">↻ Atualizar</button>
+      <button class="btn" id="eq-tela-cheia">⛶ Tela cheia</button>
+    </div>
+    <div class="placar-grande" id="eq-placar-conteudo"></div>
+    <p class="suave pequeno">Pontos = média de estrelas por membro neste mês (cada membro soma a melhor nota de cada jogo em cada tema).
+      Assim equipes menores não ficam em desvantagem. Passe o mouse nos pontos para ver o total. Os níveis não aparecem aqui.</p>
+  </div>
+</section>
+
+<script>
+  const eq = { turma: null, rascunho: [], alterado: false };
+  const ABREV_N = { 'Iniciante': 'Ini', 'Básico': 'Bás', 'Intermediário': 'Int', 'Avançado': 'Av' };
+
+  function mesHojeEq() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+  }
+  function telaEquipes(qual) {
+    ['eq-geral', 'eq-turma', 'eq-placar'].forEach((id) => ($(id).hidden = id !== qual));
+    window.scrollTo(0, 0);
+  }
+  function nomeEq(i) { const n = eq.turma.nomes[i % eq.turma.nomes.length]; return `${n.emoji} ${n.nome}`; }
+
+  // ---------- Visão geral ----------
+  async function carregarResumoEquipes() {
+    $('eq-tabela').innerHTML = '<tr><td colspan="5" class="carregando">Carregando…</td></tr>';
+    const resumo = await chamar('profEquipesResumo', $('eq-mes').value || mesHojeEq());
+    $('eq-tabela').innerHTML = resumo.map((t) => {
+      const situacao = t.definido
+        ? `<span class="selo aberto">Definidas</span> <span class="suave pequeno">${esc(t.aplicado_em)}</span>`
+        : t.ultimoMes ? `<span class="selo rascunho">Pendente</span> <span class="suave pequeno">em vigor: equipes de ${esc(t.ultimoMes)}</span>`
+        : '<span class="selo encerrado">Sem equipes</span>';
+      return `<tr><td><strong>${esc(t.turma)}</strong></td><td>${t.alunos}</td>
+        <td>${t.avaliados}${t.alunos > t.avaliados ? ` <span class="suave pequeno">(${t.alunos - t.avaliados} sem avaliação)</span>` : ''}</td>
+        <td>${situacao}</td>
+        <td class="acoes"><button class="btn mini" data-abrir-turma="${esc(t.turma)}">Abrir</button>
+          <button class="btn mini" data-placar-turma="${esc(t.turma)}">🏆 Placar</button></td></tr>`;
+    }).join('');
+  }
+
+  // ---------- Turma ----------
+  async function abrirTurmaEquipes(turma) {
+    eq.turma = await chamar('profEquipesTurma', turma, $('eq-mes').value || mesHojeEq());
+    carregarRascunhoEq();
+    telaEquipes('eq-turma');
+  }
+  function carregarRascunhoEq() {
+    eq.rascunho = eq.turma.equipes.map((g) => g.membros.slice());
+    eq.alterado = false;
+    renderTurmaEquipes();
+  }
+  function alunoEq(email) { return eq.turma.alunos.find((a) => a.email === email); }
+  function mediaEq(emails) {
+    const m = emails.map(alunoEq).filter((a) => a && a.media != null).map((a) => a.media);
+    return m.length ? Math.round((m.reduce((s, x) => s + x, 0) / m.length) * 10) / 10 : null;
+  }
+
+  function renderTurmaEquipes() {
+    const t = eq.turma;
+    eq.rascunho = eq.rascunho.filter((g) => g.length);
+    $('eq-titulo').textContent = `Equipes – ${t.turma} · ${t.mes}`;
+    $('eq-info').innerHTML = t.definidoNoMes
+      ? `Equipes <strong>definidas para ${esc(t.mes)}</strong>. Você pode gerar outra sugestão ou ajustar e aplicar de novo.`
+      : t.mesVigente ? `Ainda não há decisão para ${esc(t.mes)}. Em vigor: <strong>equipes de ${esc(t.mesVigente)}</strong>. Mantenha ou gere novas.`
+      : 'Esta turma ainda não tem equipes. Clique em <strong>Gerar sugestão</strong>. Quem ainda não fez avaliação também entra (nas equipes menores).';
+    $('eq-manter').hidden = !t.mesVigente || t.definidoNoMes;
+    $('eq-estado').textContent = eq.alterado ? 'Rascunho não aplicado' : '';
+
+    const opcoes = (atual) => `<select data-mover><option value="">Mover para…</option>${eq.rascunho.map((_, i) =>
+      i === atual ? '' : `<option value="${i}">${nomeEq(i)}</option>`).join('')}<option value="novo">Nova equipe</option>${atual === -1 ? '' : '<option value="fora">Fora das equipes</option>'}</select>`;
+    const linhaAluno = (email, g) => {
+      const a = alunoEq(email);
+      if (!a) return '';
+      return `<div class="membro" data-email="${esc(email)}"><span>${esc(a.avatar)}</span>
+        <span class="nome" title="${esc(a.nome)}">${esc(a.nome)}</span>
+        ${a.nivel ? `<span class="selo ${esc(a.nivel)}">${ABREV_N[a.nivel] || esc(a.nivel)}</span>` : '<span class="selo">sem avaliação</span>'}
+        <span class="suave pequeno">${a.media != null ? a.media + '%' : ''}</span>${opcoes(g)}</div>`;
+    };
+    $('eq-equipes').innerHTML = eq.rascunho.length ? eq.rascunho.map((g, i) => {
+      const comp = {};
+      g.forEach((e) => { const a = alunoEq(e); const n = a && a.nivel ? a.nivel : 'sem avaliação'; comp[n] = (comp[n] || 0) + 1; });
+      const media = mediaEq(g);
+      return `<div class="cartao equipe-card ${g.length > t.maxEquipe ? 'excedida' : ''}">
+        <h3>${nomeEq(i)} <span class="suave pequeno">${g.length}/${t.maxEquipe}</span><span class="espaco"></span>
+          <span class="pequeno">${media != null ? 'média ' + media + '%' : ''}</span></h3>
+        <div class="composicao">${Object.keys(comp).map((n) => `<span class="selo ${esc(n)}">${comp[n]} ${ABREV_N[n] || esc(n)}</span>`).join('')}</div>
+        ${g.map((e) => linhaAluno(e, i)).join('')}</div>`;
+    }).join('') : '<div class="cartao vazio">Nenhuma equipe ainda.</div>';
+
+    const dentro = new Set(eq.rascunho.flat());
+    const fora = t.alunos.filter((a) => !dentro.has(a.email)).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+    $('eq-fora-box').hidden = !fora.length;
+    $('eq-fora').innerHTML = fora.map((a) => linhaAluno(a.email, -1)).join('');
+  }
+
+  function moverAlunoEq(ev) {
+    if (!ev.target.matches('select[data-mover]') || !ev.target.value) return;
+    const email = ev.target.closest('[data-email]').dataset.email, destino = ev.target.value;
+    eq.rascunho = eq.rascunho.map((g) => g.filter((e) => e !== email));
+    if (destino === 'novo') eq.rascunho.push([email]);
+    else if (destino !== 'fora') eq.rascunho[Number(destino)].push(email);
+    eq.alterado = true;
+    renderTurmaEquipes();
+  }
+
+  /**
+   * Sugestão: serpentina pela média (com pequena variação para gerar sugestões diferentes),
+   * depois trocas entre alunos do MESMO nível enquanto aproximarem as médias das equipes.
+   * Quem ainda não tem avaliação entra por último, sempre na equipe menor.
+   */
+  function sugerirEquipes(alunos, max) {
+    if (!alunos.length) { avisar('Nenhum aluno nesta turma.', true); return []; }
+    const n = Math.ceil(alunos.length / max);
+    const avaliados = alunos.filter((a) => a.media != null)
+      .map((a) => ({ ...a, chave: a.media + (Math.random() - 0.5) * 6 })).sort((a, b) => b.chave - a.chave);
+    const semNota = alunos.filter((a) => a.media == null).sort(() => Math.random() - 0.5);
+    const ordem = [...Array(n).keys()].sort(() => Math.random() - 0.5);
+    const equipes = Array.from({ length: n }, () => []);
+    avaliados.forEach((a, i) => {
+      const volta = Math.floor(i / n), pos = i % n;
+      equipes[ordem[volta % 2 === 0 ? pos : n - 1 - pos]].push(a);
+    });
+    const media = (g) => { const v = g.filter((a) => a.media != null); return v.length ? v.reduce((s, a) => s + a.media, 0) / v.length : 0; };
+    const dispersao = () => {
+      const ms = equipes.filter((g) => g.some((a) => a.media != null)).map(media);
+      if (!ms.length) return 0;
+      const m = ms.reduce((s, x) => s + x, 0) / ms.length;
+      return ms.reduce((s, x) => s + (x - m) ** 2, 0);
+    };
+    for (let iter = 0; iter < 300; iter++) {
+      let melhor = null, atual = dispersao();
+      for (let g1 = 0; g1 < n; g1++) for (let g2 = g1 + 1; g2 < n; g2++) {
+        for (let i = 0; i < equipes[g1].length; i++) for (let j = 0; j < equipes[g2].length; j++) {
+          const a = equipes[g1][i], b = equipes[g2][j];
+          if (a.nivel !== b.nivel || a.media === b.media) continue;
+          equipes[g1][i] = b; equipes[g2][j] = a;
+          const d = dispersao();
+          equipes[g1][i] = a; equipes[g2][j] = b;
+          if (d < atual - 1e-9) { atual = d; melhor = [g1, i, g2, j]; }
+        }
+      }
+      if (!melhor) break;
+      const [g1, i, g2, j] = melhor;
+      [equipes[g1][i], equipes[g2][j]] = [equipes[g2][j], equipes[g1][i]];
+    }
+    semNota.forEach((a) => {
+      const menor = equipes.reduce((m, g, k) => (g.length < equipes[m].length ? k : m), 0);
+      equipes[menor].push(a);
+    });
+    return equipes.map((g) => g.sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR')).map((a) => a.email));
+  }
+
+  function imprimirEquipes() {
+    const equipes = eq.rascunho.filter((g) => g.length);
+    if (!equipes.length) { avisar('Não há equipes para imprimir.', true); return; }
+    $('impressao').innerHTML = `<h2>Equipes – ${esc(eq.turma.turma)} – ${esc(eq.turma.mes)}</h2>
+      <div style="columns:2;column-gap:32px">${equipes.map((g, i) => `
+        <div class="q"><strong style="font-size:15pt">${nomeEq(i)}</strong><ol style="margin:4px 0 0 20px">${g.map((e) => {
+          const a = alunoEq(e);
+          return `<li>${esc(a ? a.avatar + ' ' + a.nome : e)}</li>`;
+        }).join('')}</ol></div>`).join('')}</div>`;
+    document.body.classList.add('imprimindo');
+    setTimeout(() => { window.print(); document.body.classList.remove('imprimindo'); }, 80);
+  }
+
+  // ---------- Placar ----------
+  let turmaPlacar = '';
+  async function abrirPlacar(turma) {
+    turmaPlacar = turma;
+    const p = await chamar('profPlacar', turma);
+    const nomesMes = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+    const max = Math.max(1, ...p.equipes.map((e) => e.pontos));
+    const medalha = ['🥇', '🥈', '🥉'];
+    $('eq-placar-conteudo').innerHTML = `<h2>🏆 Team scoreboard – ${esc(p.turma)} · ${nomesMes[Number(p.mes.slice(5)) - 1]}</h2>` +
+      (p.equipes.length ? p.equipes.map((e, i) => `
+        <div class="linha-placar">
+          <span class="pos">${medalha[i] || i + 1 + 'º'}</span>
+          <span class="em">${esc(e.emoji)}</span>
+          <span><div class="nm">${esc(e.nome)}</div><div class="bichos">${e.membros.map((m) => esc(m.avatar)).join('')}</div>
+            <div class="barra"><i style="width:${(e.pontos / max) * 100}%"></i></div></span>
+          <span class="pts" title="${e.estrelas} estrelas no total">⭐ ${Number(e.pontos).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}</span>
+        </div>`).join('') : '<p class="vazio">Esta turma ainda não tem equipes.</p>');
+    telaEquipes('eq-placar');
+  }
+
+  function configurarEquipes() {
+    $('eq-mes').value = mesHojeEq();
+    $('eq-mes').addEventListener('change', carregarResumoEquipes);
+    document.querySelector('.abas button[data-aba="equipes"]').addEventListener('click', () => { if (!$('eq-geral').hidden) carregarResumoEquipes(); });
+    $('eq-tabela').addEventListener('click', (ev) => {
+      const b = ev.target.closest('button');
+      if (!b) return;
+      if (b.dataset.abrirTurma) comBotao(b, () => abrirTurmaEquipes(b.dataset.abrirTurma));
+      if (b.dataset.placarTurma) comBotao(b, () => abrirPlacar(b.dataset.placarTurma));
+    });
+    $('eq-voltar').addEventListener('click', () => {
+      if (eq.alterado && !confirm('Sair sem aplicar? As mudanças deste rascunho serão perdidas.')) return;
+      telaEquipes('eq-geral');
+      carregarResumoEquipes();
+    });
+    $('eq-sugerir').addEventListener('click', () => {
+      if (eq.alterado && !confirm('Descartar o rascunho atual e gerar outra sugestão?')) return;
+      eq.rascunho = sugerirEquipes(eq.turma.alunos, eq.turma.maxEquipe);
+      eq.alterado = true;
+      renderTurmaEquipes();
+    });
+    $('eq-manter').addEventListener('click', (ev) => {
+      if (!confirm(`Manter as equipes de ${eq.turma.mesVigente} também em ${eq.turma.mes}?`)) return;
+      comBotao(ev.target, async () => {
+        eq.turma = await chamar('profSalvarEquipes', eq.turma.turma, eq.turma.mes, eq.turma.equipes.map((g) => g.membros));
+        carregarRascunhoEq();
+        avisar('Equipes mantidas para este mês.');
+      });
+    });
+    $('eq-aplicar').addEventListener('click', (ev) => {
+      const equipes = eq.rascunho.filter((g) => g.length);
+      if (!equipes.length) { avisar('Não há equipes para aplicar. Clique em "Gerar sugestão".', true); return; }
+      const grande = equipes.findIndex((g) => g.length > eq.turma.maxEquipe);
+      if (grande !== -1) { avisar(`A equipe ${nomeEq(grande)} passou do limite de ${eq.turma.maxEquipe} alunos.`, true); return; }
+      comBotao(ev.target, async () => {
+        eq.turma = await chamar('profSalvarEquipes', eq.turma.turma, eq.turma.mes, equipes);
+        carregarRascunhoEq();
+        avisar('Equipes aplicadas. As crianças já veem a nova equipe.');
+      });
+    });
+    $('eq-imprimir').addEventListener('click', imprimirEquipes);
+    $('eq-equipes').addEventListener('change', moverAlunoEq);
+    $('eq-fora').addEventListener('change', moverAlunoEq);
+    $('eq-ver-placar').addEventListener('click', (ev) => comBotao(ev.target, () => abrirPlacar(eq.turma.turma)));
+    $('eq-placar-voltar').addEventListener('click', () => { telaEquipes('eq-geral'); carregarResumoEquipes(); });
+    $('eq-placar-atualizar').addEventListener('click', (ev) => comBotao(ev.target, () => abrirPlacar(turmaPlacar)));
+    $('eq-tela-cheia').addEventListener('click', () => {
+      const el = $('eq-placar-conteudo');
+      if (el.requestFullscreen) el.requestFullscreen().catch(() => avisar('A tela cheia não é permitida aqui. Use F11 no navegador.', true));
+    });
+  }
+</script>

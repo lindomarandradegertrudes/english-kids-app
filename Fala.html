@@ -1,0 +1,122 @@
+<script>
+  /**
+   * Voz (fala em inglês) e escuta (reconhecimento de voz) do próprio Chrome.
+   * Nada é gravado: o áudio do microfone é tratado pelo Chrome e só o texto reconhecido chega à página.
+   */
+  const Fala = {
+    voz: null,
+    velocidade: 0.85,
+    pronta: null,
+
+    disponivel() { return 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window; },
+
+    /** Escolhe a melhor voz em inglês. As vozes do Chrome carregam depois da página, por isso a espera. */
+    iniciar() {
+      if (this.pronta) return this.pronta;
+      this.pronta = new Promise((ok) => {
+        if (!this.disponivel()) { ok(null); return; }
+        const escolher = () => {
+          const vozes = speechSynthesis.getVoices();
+          const ingles = vozes.filter((v) => /^en[-_]/i.test(v.lang));
+          this.voz = ingles.find((v) => /Google US English/i.test(v.name))
+            || ingles.find((v) => /^en[-_]US/i.test(v.lang) && v.localService)
+            || ingles.find((v) => /^en[-_]US/i.test(v.lang))
+            || ingles.find((v) => /^en[-_]GB/i.test(v.lang))
+            || ingles[0] || null;
+          return vozes.length > 0;
+        };
+        if (escolher()) { ok(this.voz); return; }
+        speechSynthesis.addEventListener('voiceschanged', () => { escolher(); ok(this.voz); }, { once: true });
+        setTimeout(() => { escolher(); ok(this.voz); }, 2500);
+      });
+      return this.pronta;
+    },
+
+    vozesIngles() {
+      return this.disponivel() ? speechSynthesis.getVoices().filter((v) => /^en[-_]/i.test(v.lang)) : [];
+    },
+
+    /** Fala o texto em inglês. lento = para repetir devagar. Resolve quando termina (ou falha). */
+    falar(texto, lento) {
+      return new Promise((ok) => {
+        if (!this.disponivel() || !texto) { ok(false); return; }
+        speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(String(texto));
+        u.lang = this.voz ? this.voz.lang : 'en-US';
+        if (this.voz) u.voice = this.voz;
+        u.rate = lento ? Math.max(0.5, this.velocidade - 0.25) : this.velocidade;
+        // Alguns navegadores nunca disparam onend; o limite evita que o jogo fique esperando para sempre.
+        let comecou = false, fim = false;
+        const terminar = (v) => { if (!fim) { fim = true; clearTimeout(limite); ok(v); } };
+        const limite = setTimeout(() => terminar(comecou), 2500 + String(texto).length * 150 / u.rate);
+        u.onstart = () => (comecou = true);
+        u.onend = () => terminar(true);
+        u.onerror = () => terminar(false);
+        speechSynthesis.speak(u);
+      });
+    },
+  };
+
+  const Escuta = {
+    Reconhecedor: window.SpeechRecognition || window.webkitSpeechRecognition || null,
+
+    suportada() { return !!this.Reconhecedor; },
+
+    /**
+     * Ouve uma fala curta em inglês e devolve as transcrições possíveis (em minúsculas).
+     * Em caso de erro, rejeita com { codigo, mensagem } em português.
+     */
+    ouvir(opcoes) {
+      opcoes = opcoes || {};
+      return new Promise((ok, falha) => {
+        if (!this.suportada()) { falha({ codigo: 'sem-suporte', mensagem: Escuta.mensagem('sem-suporte') }); return; }
+        const r = new this.Reconhecedor();
+        r.lang = opcoes.lang || 'en-US';
+        r.interimResults = false;
+        r.maxAlternatives = 5;
+        r.continuous = false;
+        let terminou = false;
+        const limite = setTimeout(() => { try { r.stop(); } catch (e) { /* já parou */ } }, opcoes.segundos ? opcoes.segundos * 1000 : 6000);
+        r.onresult = (ev) => {
+          terminou = true;
+          clearTimeout(limite);
+          const res = ev.results[0];
+          const lista = [];
+          for (let i = 0; i < res.length; i++) lista.push(String(res[i].transcript).toLowerCase().trim());
+          ok(lista);
+        };
+        r.onerror = (ev) => {
+          if (terminou) return;
+          terminou = true;
+          clearTimeout(limite);
+          falha({ codigo: ev.error, mensagem: Escuta.mensagem(ev.error) });
+        };
+        r.onend = () => {
+          clearTimeout(limite);
+          if (!terminou) { terminou = true; falha({ codigo: 'no-speech', mensagem: Escuta.mensagem('no-speech') }); }
+        };
+        if (opcoes.aoComecar) r.onstart = opcoes.aoComecar;
+        try { r.start(); } catch (e) { falha({ codigo: 'start', mensagem: e.message }); }
+      });
+    },
+
+    mensagem(codigo) {
+      return {
+        'sem-suporte': 'Este navegador não tem reconhecimento de voz.',
+        'not-allowed': 'O microfone foi bloqueado (pelo navegador, pela página ou pela administração dos Chromebooks).',
+        'service-not-allowed': 'O reconhecimento de voz está bloqueado neste navegador ou nesta página.',
+        'no-speech': 'Não ouvi nada. Fale mais perto do microfone.',
+        'audio-capture': 'Nenhum microfone encontrado.',
+        'network': 'O reconhecimento de voz precisa de internet e não conseguiu se conectar.',
+        'aborted': 'A escuta foi interrompida.',
+        'language-not-supported': 'O idioma inglês não está disponível para reconhecimento.',
+      }[codigo] || 'Erro no reconhecimento de voz (' + codigo + ').';
+    },
+  };
+
+  /** Normaliza para comparar o que a criança falou com a palavra esperada. */
+  function normalizarFala(s) {
+    return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+</script>

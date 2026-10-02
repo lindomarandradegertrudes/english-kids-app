@@ -1,0 +1,328 @@
+<!-- Temas -->
+<section id="aba-temas" hidden>
+  <style>
+    .figuras-mini { font-size: 1.3rem; letter-spacing: 2px; white-space: nowrap; }
+    .tabela-palavras td { padding: 6px 4px; }
+    .tabela-palavras input { padding: 7px 9px; }
+    .tabela-palavras input.figura { width: 64px; text-align: center; font-size: 1.4rem; padding: 3px; }
+    .tabela-palavras .num-linha { color: var(--suave); font-size: .8rem; width: 26px; }
+    .dica-emoji { background: var(--primaria-clara); border-radius: 8px; padding: 8px 12px; }
+  </style>
+
+  <!-- Lista -->
+  <div id="t-lista" class="pilha">
+    <div class="linha">
+      <select id="t-filtro-serie"></select>
+      <span class="espaco"></span>
+      <button class="btn" id="t-restaurar" title="Cria de novo os temas padrão que você apagou">Restaurar temas padrão</button>
+      <button class="btn" id="t-importar">Colar JSON</button>
+      <button class="btn primario" id="t-novo">+ Novo tema</button>
+    </div>
+    <p class="suave pequeno" style="margin:0">Cada tema é uma lista de palavras (com figura e tradução) e frases. Os jogos e as avaliações do tema são montados a partir dela.
+      Só os temas <span class="selo liberado">Liberado</span> aparecem para os alunos da série, que podem jogar quando quiserem.</p>
+    <div class="cartao tabela-rolagem">
+      <table>
+        <thead><tr><th></th><th>Tema</th><th>Série</th><th>Mês</th><th>Conteúdo</th><th>Status</th><th></th></tr></thead>
+        <tbody id="t-tabela"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Editor -->
+  <div id="t-editor" class="pilha" hidden>
+    <div class="linha">
+      <button class="btn" id="te-voltar">← Voltar</button>
+      <h2 style="margin:0" id="te-titulo-tela">Tema</h2>
+      <span class="espaco"></span>
+      <button class="btn primario" id="te-salvar">Salvar</button>
+    </div>
+    <div class="cartao">
+      <div class="grade-2">
+        <div class="campo"><label for="te-titulo">Título em inglês</label><input id="te-titulo" placeholder="ex.: Food and drinks"></div>
+        <div class="campo"><label for="te-titulo-pt">Título em português</label><input id="te-titulo-pt" placeholder="ex.: Alimentos e bebidas"></div>
+      </div>
+      <div class="grade-2" style="margin-top:14px">
+        <div class="grade-2">
+          <div class="campo"><label for="te-serie">Série</label><select id="te-serie"></select></div>
+          <div class="campo"><label for="te-trimestre">Trimestre</label>
+            <select id="te-trimestre"><option value="1">1º</option><option value="2">2º</option><option value="3">3º</option></select></div>
+        </div>
+        <div class="campo"><label for="te-mes">Mês em que começa</label><select id="te-mes"></select></div>
+      </div>
+      <div class="campo" style="margin-top:14px">
+        <label for="te-conteudo">Conteúdo trabalhado <span class="suave pequeno">(usado pela IA)</span></label>
+        <textarea id="te-conteudo" rows="2" placeholder="ex.: Alimentos e bebidas; I like / I don't like; Do you like…?"></textarea>
+      </div>
+      <div class="linha" style="margin-top:12px">
+        <button class="btn" id="te-gerar">✨ Gerar com IA</button>
+        <input id="te-qtd" type="number" min="4" max="30" value="12" style="width:70px" title="Quantidade de palavras">
+        <span class="suave pequeno">palavras</span>
+        <button class="btn" id="te-colar">Colar JSON</button>
+        <span class="suave pequeno" id="te-ia-status"></span>
+      </div>
+    </div>
+
+    <div class="cartao">
+      <div class="linha"><h3 style="margin:0">Palavras <span class="suave" id="te-n-palavras"></span></h3><span class="espaco"></span>
+        <button class="btn" id="te-ouvir-todas">🔊 Ouvir todas</button>
+        <button class="btn" id="te-add-palavra">+ Palavra</button></div>
+      <p class="dica-emoji pequeno">💡 <strong>Figura</strong> é um emoji que mostra a palavra. Para escolher um emoji: no Windows, tecla <kbd>Windows</kbd> + <kbd>.</kbd>; no Chromebook, <kbd>🔍</kbd> + <kbd>Shift</kbd> + <kbd>Espaço</kbd>.
+        Use números para 11 em diante (ex.: <code>15</code>). Se nenhum emoji servir, deixe vazio: o jogo mostra a palavra em português. Duas palavras não podem usar a mesma figura.</p>
+      <div class="tabela-rolagem">
+        <table class="tabela-palavras">
+          <thead><tr><th></th><th>Figura</th><th>Inglês</th><th>Português</th><th></th></tr></thead>
+          <tbody id="te-palavras"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="cartao">
+      <div class="linha"><h3 style="margin:0">Frases <span class="suave" id="te-n-frases"></span></h3><span class="espaco"></span>
+        <button class="btn" id="te-add-frase">+ Frase</button></div>
+      <p class="suave pequeno">Frases curtas usadas nos jogos de ouvir e montar frases (até 8 palavras funciona melhor).</p>
+      <div class="tabela-rolagem">
+        <table class="tabela-palavras">
+          <thead><tr><th></th><th>Inglês</th><th>Português</th><th></th></tr></thead>
+          <tbody id="te-frases"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  const MESES = ['', 'janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  let temaEdicao = null;
+
+  function telaTemas(qual) {
+    $('t-lista').hidden = qual !== 'lista';
+    $('t-editor').hidden = qual !== 'editor';
+    window.scrollTo(0, 0);
+  }
+
+  function renderTemas() {
+    const serie = $('t-filtro-serie').value;
+    const lista = estado.temas.filter((t) => !serie || t.serie === serie);
+    $('t-tabela').innerHTML = lista.length ? lista.map((t) => {
+      const figuras = t.palavras.map((p) => p.figura).filter(Boolean).slice(0, 4).join('');
+      return `<tr>
+        <td class="figuras-mini">${esc(figuras)}</td>
+        <td><strong>${esc(t.titulo)}</strong><div class="suave pequeno">${esc(t.titulo_pt)}</div></td>
+        <td>${esc(t.serie)}</td>
+        <td class="pequeno">${esc(MESES[t.mes] || '')}<div class="suave">${t.trimestre}º tri</div></td>
+        <td class="pequeno">${t.palavras.length} palavras<div class="suave">${t.frases.length} frases</div></td>
+        <td><span class="selo ${esc(t.status)}">${t.status === 'liberado' ? 'Liberado' : 'Oculto'}</span></td>
+        <td class="acoes">
+          <button class="btn mini" data-acao="status" data-id="${esc(t.id)}">${t.status === 'liberado' ? 'Ocultar' : 'Liberar'}</button>
+          <button class="btn mini" data-acao="editar" data-id="${esc(t.id)}">Editar</button>
+          <button class="btn mini perigo" data-acao="excluir" data-id="${esc(t.id)}">Excluir</button>
+        </td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="7" class="vazio">Nenhum tema. Crie um novo, cole um JSON ou restaure os temas padrão.</td></tr>';
+  }
+
+  // ---------- Editor ----------
+  function abrirEditorTema(t) {
+    temaEdicao = t
+      ? { id: t.id, palavras: t.palavras.map((p) => ({ ...p })), frases: t.frases.map((f) => ({ ...f })) }
+      : { id: '', palavras: [], frases: [] };
+    $('te-titulo-tela').textContent = t ? 'Editar tema' : 'Novo tema';
+    $('te-titulo').value = t ? t.titulo : '';
+    $('te-titulo-pt').value = t ? t.titulo_pt : '';
+    $('te-serie').value = t ? t.serie : ($('t-filtro-serie').value || estado.resumo.series[0]);
+    $('te-trimestre').value = t ? t.trimestre : 1;
+    $('te-mes').value = t ? t.mes : new Date().getMonth() + 1 < 2 ? 2 : new Date().getMonth() + 1;
+    $('te-conteudo').value = t ? t.conteudo : '';
+    $('te-ia-status').textContent = '';
+    if (!t) { for (let i = 0; i < 4; i++) temaEdicao.palavras.push({ en: '', pt: '', figura: '' }); }
+    renderEditorTema();
+    telaTemas('editor');
+  }
+
+  function renderEditorTema() {
+    const ed = temaEdicao;
+    $('te-n-palavras').textContent = `(${ed.palavras.length})`;
+    $('te-n-frases').textContent = `(${ed.frases.length})`;
+    $('te-palavras').innerHTML = ed.palavras.map((p, i) => `
+      <tr data-p="${i}">
+        <td class="num-linha">${i + 1}</td>
+        <td><input class="figura" data-campo="figura" value="${esc(p.figura)}" placeholder="🙂" maxlength="16"></td>
+        <td><input data-campo="en" value="${esc(p.en)}" placeholder="apple" spellcheck="true" lang="en"></td>
+        <td><input data-campo="pt" value="${esc(p.pt)}" placeholder="maçã"></td>
+        <td class="acoes"><button class="btn mini" data-ouvir="${i}" title="Ouvir">🔊</button>
+          <button class="btn mini perigo" data-remover="${i}" title="Remover">✕</button></td>
+      </tr>`).join('') || '<tr><td colspan="5" class="vazio">Nenhuma palavra.</td></tr>';
+    $('te-frases').innerHTML = ed.frases.map((f, i) => `
+      <tr data-f="${i}">
+        <td class="num-linha">${i + 1}</td>
+        <td><input data-campo="en" value="${esc(f.en)}" placeholder="I like apples." spellcheck="true" lang="en"></td>
+        <td><input data-campo="pt" value="${esc(f.pt)}" placeholder="Eu gosto de maçãs."></td>
+        <td class="acoes"><button class="btn mini" data-ouvir="${i}" title="Ouvir">🔊</button>
+          <button class="btn mini perigo" data-remover="${i}" title="Remover">✕</button></td>
+      </tr>`).join('') || '<tr><td colspan="4" class="vazio">Nenhuma frase.</td></tr>';
+  }
+
+  function ligarTabela(idCorpo, atributo, lista) {
+    $(idCorpo).addEventListener('input', (ev) => {
+      const linha = ev.target.closest(`[data-${atributo}]`);
+      if (linha && ev.target.dataset.campo) temaEdicao[lista][Number(linha.dataset[atributo])][ev.target.dataset.campo] = ev.target.value;
+    });
+    $(idCorpo).addEventListener('click', async (ev) => {
+      const b = ev.target.closest('button');
+      if (!b) return;
+      if (b.dataset.ouvir !== undefined) {
+        await Fala.iniciar();
+        Fala.falar(temaEdicao[lista][Number(b.dataset.ouvir)].en);
+      }
+      if (b.dataset.remover !== undefined) {
+        temaEdicao[lista].splice(Number(b.dataset.remover), 1);
+        renderEditorTema();
+      }
+    });
+  }
+
+  function dadosEditorTema() {
+    return {
+      id: temaEdicao.id,
+      titulo: $('te-titulo').value, titulo_pt: $('te-titulo-pt').value,
+      serie: $('te-serie').value, trimestre: Number($('te-trimestre').value), mes: Number($('te-mes').value),
+      conteudo: $('te-conteudo').value,
+      palavras: temaEdicao.palavras, frases: temaEdicao.frases,
+    };
+  }
+
+  /** Aplica um tema vindo da IA ou do JSON colado ao editor (nada é salvo até clicar em Salvar). */
+  function aplicarNoEditor(t) {
+    if (t.titulo && !$('te-titulo').value) $('te-titulo').value = t.titulo;
+    if (t.titulo_pt && !$('te-titulo-pt').value) $('te-titulo-pt').value = t.titulo_pt;
+    if (t.serie && estado.resumo.series.includes(t.serie)) $('te-serie').value = t.serie;
+    if (t.trimestre) $('te-trimestre').value = t.trimestre;
+    if (t.mes) $('te-mes').value = t.mes;
+    const palavras = (t.palavras || []).map((p) => (Array.isArray(p) ? { en: p[0], pt: p[1], figura: p[2] } : p));
+    const frases = (t.frases || []).map((f) => (Array.isArray(f) ? { en: f[0], pt: f[1] } : f));
+    temaEdicao.palavras = palavras.map((p) => ({ en: String(p.en || ''), pt: String(p.pt || ''), figura: String(p.figura || '') }));
+    temaEdicao.frases = frases.map((f) => ({ en: String(f.en || ''), pt: String(f.pt || '') }));
+    renderEditorTema();
+  }
+
+  function configurarTemas() {
+    $('t-filtro-serie').innerHTML = opcoesSerie(true);
+    $('te-serie').innerHTML = opcoesSerie(false);
+    $('te-mes').innerHTML = MESES.map((m, i) => (i >= 2 ? `<option value="${i}">${m}</option>` : '')).join('');
+    $('t-filtro-serie').addEventListener('change', renderTemas);
+
+    $('t-tabela').addEventListener('click', (ev) => {
+      const b = ev.target.closest('button[data-acao]');
+      if (!b) return;
+      const t = estado.temas.find((x) => x.id === b.dataset.id);
+      if (b.dataset.acao === 'editar') abrirEditorTema(t);
+      if (b.dataset.acao === 'status') {
+        const novo = t.status === 'liberado' ? 'oculto' : 'liberado';
+        comBotao(b, async () => {
+          estado.temas = await chamar('profAlterarStatusTema', t.id, novo);
+          renderTemas();
+          avisar(novo === 'liberado' ? `"${t.titulo}" liberado para o ${t.serie} ano.` : `"${t.titulo}" ocultado.`);
+        });
+      }
+      if (b.dataset.acao === 'excluir') {
+        if (!confirm(`Excluir o tema "${t.titulo}" (${t.serie} ano)?`)) return;
+        comBotao(b, async () => {
+          estado.temas = await chamar('profExcluirTema', t.id);
+          renderTemas();
+          avisar('Tema excluído.');
+        });
+      }
+    });
+
+    $('t-novo').addEventListener('click', () => abrirEditorTema(null));
+    $('te-voltar').addEventListener('click', () => telaTemas('lista'));
+
+    $('t-restaurar').addEventListener('click', (ev) => {
+      if (!confirm('Criar de novo os temas padrão que não existem mais? Os temas atuais não mudam. Os restaurados entram ocultos.')) return;
+      comBotao(ev.target, async () => {
+        const r = await chamar('profRestaurarTemasPadrao');
+        estado.temas = r.temas;
+        renderTemas();
+        avisar(r.criados ? r.criados + ' tema(s) restaurado(s), ocultos.' : 'Todos os temas padrão já existem.');
+      });
+    });
+
+    $('t-importar').addEventListener('click', () => abrirJson('Colar temas (JSON)',
+      'Cole o JSON de um tema, de uma lista de temas ou { "temas": [...] }. Cada tema entra oculto, para você revisar e liberar.',
+      async (texto) => {
+        const r = await chamar('profImportarTemas', texto);
+        estado.temas = r.temas;
+        $('modal-json').close();
+        renderTemas();
+        avisar(r.importados + (r.importados === 1 ? ' tema importado.' : ' temas importados.'));
+      }));
+
+    $('te-colar').addEventListener('click', () => abrirJson('Colar tema no editor',
+      'Cole o JSON de um tema. As palavras e frases substituem as atuais do editor (nada é salvo até você clicar em Salvar).',
+      async (texto) => {
+        try {
+          let d = JSON.parse(texto);
+          if (Array.isArray(d.temas)) d = d.temas[0];
+          if (Array.isArray(d)) d = d[0];
+          if (!d || !Array.isArray(d.palavras)) throw new Error('não encontrei a lista "palavras"');
+          aplicarNoEditor(d);
+          $('modal-json').close();
+          avisar('Tema colado. Revise e clique em Salvar.');
+        } catch (e) { avisar('JSON inválido: ' + e.message, true); }
+      }));
+
+    ligarTabela('te-palavras', 'p', 'palavras');
+    ligarTabela('te-frases', 'f', 'frases');
+    $('te-add-palavra').addEventListener('click', () => {
+      temaEdicao.palavras.push({ en: '', pt: '', figura: '' });
+      renderEditorTema();
+      $('te-palavras').lastElementChild.querySelector('input').focus();
+    });
+    $('te-add-frase').addEventListener('click', () => {
+      temaEdicao.frases.push({ en: '', pt: '' });
+      renderEditorTema();
+      $('te-frases').lastElementChild.querySelector('input').focus();
+    });
+    $('te-ouvir-todas').addEventListener('click', async (ev) => {
+      await Fala.iniciar();
+      ev.target.disabled = true;
+      for (const p of temaEdicao.palavras) {
+        if (!p.en) continue;
+        await Fala.falar(p.en);
+        await new Promise((ok) => setTimeout(ok, 350));
+      }
+      ev.target.disabled = false;
+    });
+
+    $('te-salvar').addEventListener('click', (ev) => comBotao(ev.target, async () => {
+      const dados = dadosEditorTema();
+      estado.temas = await chamar('profSalvarTema', dados);
+      const salvo = estado.temas.find((t) => t.serie === dados.serie && t.titulo.toLowerCase() === dados.titulo.trim().replace(/\s+/g, ' ').toLowerCase());
+      if (salvo) temaEdicao.id = salvo.id;
+      renderTemas();
+      avisar('Tema salvo.' + (salvo && salvo.status === 'oculto' ? ' Ele está oculto: libere na lista quando quiser.' : ''));
+    }));
+
+    $('te-gerar').addEventListener('click', (ev) => {
+      if (!estado.resumo.temChaveApi) {
+        avisar('Cadastre a chave da API em Configurações, ou peça o tema no chat e use "Colar JSON".', true);
+        return;
+      }
+      const temAlgo = temaEdicao.palavras.some((p) => p.en || p.pt);
+      if (temAlgo && !confirm('Substituir as palavras e frases atuais pelas geradas pela IA?')) return;
+      $('te-ia-status').textContent = 'Gerando… pode levar até 1 minuto.';
+      comBotao(ev.target, async () => {
+        try {
+          const t = await chamar('profGerarTemaIA', {
+            serie: $('te-serie').value, titulo: $('te-titulo').value, conteudo: $('te-conteudo').value, quantidade: $('te-qtd').value,
+          });
+          aplicarNoEditor(t);
+          $('te-ia-status').textContent = 'Pronto. Confira os emojis e as traduções antes de salvar.';
+        } catch (e) {
+          $('te-ia-status').textContent = '';
+          throw e;
+        }
+      });
+    });
+  }
+</script>

@@ -1,0 +1,214 @@
+<!-- Relatórios -->
+<section id="aba-relatorios" class="pilha" hidden>
+  <style>
+    .dist { display: flex; height: 16px; border-radius: 6px; overflow: hidden; background: var(--borda); min-width: 140px; }
+    .dist span { display: block; height: 100%; }
+    .cor-Iniciante { background: #ff8787; } .cor-Básico { background: #ffd43b; }
+    .cor-Intermediário { background: #74c0fc; } .cor-Avançado { background: #69db7c; }
+    .legenda-n { display: flex; gap: 14px; flex-wrap: wrap; font-size: .85rem; color: var(--suave); }
+    .legenda-n i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+    .kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+    .kpi { border: 1px solid var(--borda); border-radius: 10px; padding: 10px 12px; background: #fff; }
+    .kpi .valor { font-size: 1.5rem; font-weight: 700; }
+    .pal-linha { display: grid; grid-template-columns: 36px 1fr 120px 46px; gap: 8px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--borda); font-size: .9rem; }
+    .pal-linha .fg { font-size: 1.4rem; text-align: center; }
+    .pal-linha .barra { margin: 0; height: 10px; }
+    .tema-linha { display: grid; grid-template-columns: 1fr 160px 50px 60px; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--borda); font-size: .9rem; }
+    .tema-linha .barra { margin: 0; height: 10px; }
+    .grafico svg { width: 100%; height: auto; display: block; }
+    .ficha-cab { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+    .ficha-cab .av { font-size: 3rem; }
+    #impressao * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  </style>
+
+  <div class="linha">
+    <div class="chips" id="rel-vistas">
+      <button class="btn ativa" data-vista="turmas">Comparativo das turmas</button>
+      <button class="btn" data-vista="palavras">Palavras com mais dificuldade</button>
+      <button class="btn" data-vista="aluno">Ficha do aluno</button>
+    </div>
+    <span class="espaco"></span>
+    <button class="btn" id="rel-atualizar">↻ Atualizar</button>
+    <button class="btn" id="rel-imprimir">Imprimir / PDF</button>
+    <button class="btn primario" id="rel-exportar">Exportar para planilha</button>
+  </div>
+  <div id="rel-exportado" class="link-box" hidden></div>
+
+  <div id="rel-turmas" class="pilha" data-titulo="Comparativo das turmas"></div>
+
+  <div id="rel-palavras" class="pilha" data-titulo="Palavras com mais dificuldade" hidden>
+    <div class="linha"><select id="rel-pal-serie" style="width:auto"></select>
+      <span class="suave pequeno">Do menor para o maior acerto. Boas candidatas para retomar em aula.</span></div>
+    <div class="grade-2">
+      <div class="cartao"><h3>📝 Nas avaliações</h3><p class="suave pequeno" style="margin-top:0">% de acerto nas questões sobre a palavra (online e impressas lançadas com letras).</p><div id="rel-pal-av"></div></div>
+      <div class="cartao"><h3>🎮 Nos jogos</h3><p class="suave pequeno" style="margin-top:0">Domínio médio entre os alunos que já jogaram a palavra.</p><div id="rel-pal-jogo"></div></div>
+    </div>
+  </div>
+
+  <div id="rel-aluno" class="pilha" data-titulo="Ficha do aluno" hidden>
+    <div class="linha">
+      <select id="rel-al-turma" style="width:auto"></select>
+      <select id="rel-al-aluno" style="flex:1;min-width:220px"></select>
+    </div>
+    <div id="rel-al-conteudo"><div class="cartao vazio">Escolha a turma e o aluno.</div></div>
+  </div>
+</section>
+
+<script>
+  let relGeral = null, relVista = 'turmas', relFicha = null;
+  const NOMES_MES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  const mesCurto = (m) => (m && m.length === 7 ? NOMES_MES[Number(m.slice(5)) - 1] + '/' + m.slice(2, 4) : m);
+  const pctBr = (v) => Number(v).toLocaleString('pt-BR', { maximumFractionDigits: 1 }) + '%';
+  const corBarra = (v) => (v < 40 ? 'var(--perigo)' : v < 70 ? '#f08c00' : 'var(--ok)');
+  const tempoRel = (s) => { const m = Math.round((Number(s) || 0) / 60); return m < 60 ? m + ' min' : Math.floor(m / 60) + ' h ' + (m % 60) + ' min'; };
+
+  async function carregarRelatorios() {
+    $('rel-turmas').innerHTML = '<div class="carregando">Carregando…</div>';
+    relGeral = await chamar('profRelatorioGeral');
+    renderRelTurmas();
+    renderRelPalavras();
+  }
+
+  function trocarVista(v) {
+    relVista = v;
+    document.querySelectorAll('#rel-vistas button').forEach((b) => b.classList.toggle('ativa', b.dataset.vista === v));
+    ['turmas', 'palavras', 'aluno'].forEach((x) => ($('rel-' + x).hidden = x !== v));
+  }
+
+  // ---------- Comparativo ----------
+  function renderRelTurmas() {
+    const g = relGeral;
+    const meses = [...new Set(g.turmas.flatMap((t) => t.porMes.map((m) => m.mes)))].sort();
+    $('rel-turmas').innerHTML = `
+      <div class="legenda-n">${g.niveis.map((n) => `<span><i class="cor-${n}"></i>${n}</span>`).join('')}<span><i style="background:var(--borda)"></i>sem avaliação</span></div>
+      ${g.series.map((s) => {
+        const ts = g.turmas.filter((t) => t.serie === s);
+        if (!ts.length) return '';
+        return `<div class="cartao"><h3>${esc(s)} ano</h3><div class="tabela-rolagem"><table>
+          <thead><tr><th>Turma</th><th>Alunos</th><th>Média aval.</th><th>Níveis</th><th>Jogaram</th><th>Ativos no mês</th><th>Domínio jogos</th><th>Partidas</th><th>Tempo</th></tr></thead>
+          <tbody>${ts.map((t) => `<tr>
+            <td><strong>${esc(t.turma)}</strong></td>
+            <td>${t.alunos}<div class="suave pequeno">${t.avaliados} avaliados</div></td>
+            <td>${t.media != null ? pctBr(t.media) : '—'}</td>
+            <td><div class="dist" title="${g.niveis.map((n) => n + ': ' + t.niveis[n]).join(' · ')}">${g.niveis.map((n) =>
+              t.niveis[n] ? `<span class="cor-${n}" style="width:${(t.niveis[n] / Math.max(1, t.alunos)) * 100}%"></span>` : '').join('')}</div>
+              <div class="suave pequeno">${g.niveis.map((n) => t.niveis[n]).join(' · ')}</div></td>
+            <td>${t.jogaram}/${t.alunos}</td>
+            <td>${t.ativosMes}</td>
+            <td>${t.dominio != null ? pctBr(t.dominio) : '—'}</td>
+            <td>${t.partidas}</td>
+            <td class="pequeno">${tempoRel(t.segundos)}</td></tr>`).join('')}</tbody></table></div></div>`;
+      }).join('')}
+      <div class="cartao"><h3>Média das avaliações por mês</h3>
+        ${meses.length ? `<div class="tabela-rolagem"><table><thead><tr><th>Turma</th>${meses.map((m) => `<th>${mesCurto(m)}</th>`).join('')}</tr></thead>
+          <tbody>${g.turmas.filter((t) => t.porMes.length).map((t) => `<tr><td><strong>${esc(t.turma)}</strong></td>${meses.map((m) => {
+            const x = t.porMes.find((p) => p.mes === m);
+            return `<td>${x ? `<span style="color:${corBarra(x.media)};font-weight:700">${pctBr(x.media)}</span>` : '<span class="suave">—</span>'}</td>`;
+          }).join('')}</tr>`).join('')}</tbody></table></div>` : '<p class="vazio">Nenhuma avaliação respondida ainda.</p>'}
+      </div>`;
+  }
+
+  // ---------- Palavras ----------
+  function linhaPalavra(w, v, extra) {
+    return `<div class="pal-linha"><span class="fg">${esc(w.figura) || '🔤'}</span>
+      <span><strong>${esc(w.en)}</strong> <span class="suave pequeno">${esc(w.pt)} · ${extra}</span></span>
+      <div class="barra"><i style="width:${v}%;background:${corBarra(v)}"></i></div><span class="suave">${v}%</span></div>`;
+  }
+  function renderRelPalavras() {
+    const lista = relGeral.dificeis[$('rel-pal-serie').value] || [];
+    const av = lista.filter((w) => w.avaliacao != null).sort((a, b) => a.avaliacao - b.avaliacao).slice(0, 15);
+    const jg = lista.filter((w) => w.jogos != null).sort((a, b) => a.jogos - b.jogos).slice(0, 15);
+    $('rel-pal-av').innerHTML = av.length ? av.map((w) => linhaPalavra(w, w.avaliacao, w.respostas + ' respostas')).join('') : '<p class="vazio">Sem avaliações respondidas nesta série.</p>';
+    $('rel-pal-jogo').innerHTML = jg.length ? jg.map((w) => linhaPalavra(w, w.jogos, w.alunos + ' alunos')).join('') : '<p class="vazio">Ninguém desta série jogou ainda.</p>';
+  }
+
+  // ---------- Ficha do aluno ----------
+  function graficoAvaliacoes(av, fx) {
+    if (!av.length) return '<p class="vazio">Nenhuma avaliação respondida ainda.</p>';
+    const W = 600, H = 200, m = { l: 34, r: 12, t: 12, b: 34 };
+    const x = (i) => m.l + (av.length === 1 ? (W - m.l - m.r) / 2 : (i * (W - m.l - m.r)) / (av.length - 1));
+    const y = (v) => m.t + ((100 - v) * (H - m.t - m.b)) / 100;
+    const faixas = [[fx.basico, '#ffd43b'], [fx.intermediario, '#74c0fc'], [fx.avancado, '#69db7c']]
+      .map(([v, c]) => `<line x1="${m.l}" x2="${W - m.r}" y1="${y(v)}" y2="${y(v)}" stroke="${c}" stroke-dasharray="4 4"/><text x="${W - m.r}" y="${y(v) - 3}" text-anchor="end" font-size="10" fill="#868e96">${v}%</text>`).join('');
+    const pts = av.map((a, i) => `${x(i)},${y(a.percentual)}`).join(' ');
+    return `<div class="grafico"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Evolução nas avaliações">
+      ${[0, 50, 100].map((v) => `<line x1="${m.l}" x2="${W - m.r}" y1="${y(v)}" y2="${y(v)}" stroke="#e9ecef"/><text x="${m.l - 6}" y="${y(v) + 4}" text-anchor="end" font-size="10" fill="#868e96">${v}</text>`).join('')}
+      ${faixas}
+      <polyline points="${pts}" fill="none" stroke="#c2410c" stroke-width="2.5"/>
+      ${av.map((a, i) => `<circle cx="${x(i)}" cy="${y(a.percentual)}" r="5" fill="#c2410c"><title>${esc(a.titulo)}: ${a.percentual}%</title></circle>
+        <text x="${x(i)}" y="${y(a.percentual) - 9}" text-anchor="middle" font-size="11" font-weight="700" fill="#343a40">${Math.round(a.percentual)}%</text>
+        <text x="${x(i)}" y="${H - 12}" text-anchor="middle" font-size="10" fill="#868e96">${a.tipo === 'diagnostico' ? 'Diagn.' : mesCurto(a.mes)}</text>`).join('')}
+    </svg></div>`;
+  }
+
+  function htmlFicha(f) {
+    const a = f.aluno;
+    return `<div class="pilha">
+      <div class="cartao ficha-cab"><span class="av">${esc(a.avatar)}</span>
+        <div style="flex:1"><h2 style="margin:0">${esc(a.nome)}</h2><div class="suave">Turma ${esc(a.turma)} · ${esc(a.serie)} ano · Língua Inglesa</div></div>
+        <div>${f.nivel ? `<span class="selo ${esc(f.nivel)}" style="font-size:1rem">${esc(f.nivel)}</span>` : '<span class="selo">sem avaliação</span>'}
+          <div class="suave pequeno" style="text-align:right">${f.media != null ? 'média ' + pctBr(f.media) : ''}</div></div></div>
+      <div class="kpis">
+        <div class="kpi"><div class="suave pequeno">Avaliações feitas</div><div class="valor">${f.avaliacoes.length}</div></div>
+        <div class="kpi"><div class="suave pequeno">Estrelas nos jogos</div><div class="valor">⭐ ${f.jogos.estrelas}</div></div>
+        <div class="kpi"><div class="suave pequeno">Partidas</div><div class="valor">${f.jogos.jogadas}</div></div>
+        <div class="kpi"><div class="suave pequeno">Tempo jogando</div><div class="valor" style="font-size:1.2rem">${tempoRel(f.jogos.segundos)}</div></div>
+        <div class="kpi"><div class="suave pequeno">Palavras dominadas</div><div class="valor">🏅 ${f.jogos.dominadas}</div></div>
+        <div class="kpi"><div class="suave pequeno">Equipe</div><div class="valor" style="font-size:1.2rem">${f.equipe ? esc(f.equipe.emoji + ' ' + f.equipe.nome) : '—'}</div></div>
+      </div>
+      <div class="cartao"><h3>Evolução nas avaliações</h3>${graficoAvaliacoes(f.avaliacoes, f.faixas)}
+        ${f.avaliacoes.length ? `<div class="tabela-rolagem"><table><thead><tr><th>Avaliação</th><th>Mês</th><th>Acertos</th><th>%</th><th>Forma</th></tr></thead><tbody>
+          ${f.avaliacoes.map((x) => `<tr><td>${esc(x.titulo)}</td><td>${mesCurto(x.mes)}</td><td>${x.pontuacao}/${x.total}</td><td><strong>${pctBr(x.percentual)}</strong></td><td class="suave pequeno">${x.origem === 'online' ? 'online' : 'impressa'}</td></tr>`).join('')}
+        </tbody></table></div>` : ''}</div>
+      <div class="cartao"><h3>Domínio nos temas (jogos)</h3>
+        ${f.temas.length ? f.temas.map((t) => `<div class="tema-linha"><span><strong>${esc(t.titulo)}</strong> <span class="suave pequeno">${esc(t.titulo_pt)}</span></span>
+          ${t.dominio == null ? '<span class="suave pequeno">ainda não jogou</span><span></span><span></span>' : `
+          <div class="barra"><i style="width:${t.dominio}%;background:${corBarra(t.dominio)}"></i></div><span>${t.dominio}%</span><span class="suave pequeno">⭐ ${t.estrelas}</span>`}</div>`).join('')
+        : '<p class="vazio">Nenhum tema liberado ainda.</p>'}</div>
+      <div class="cartao"><h3>Palavras para reforçar</h3>
+        ${f.reforcar.length ? `<p class="suave pequeno" style="margin-top:0">Palavras que a criança já encontrou nos jogos e ainda erra (domínio abaixo de 50%).</p>
+          ${f.reforcar.map((w) => linhaPalavra(w, w.pontos, esc(w.tema))).join('')}` : '<p class="vazio">Nenhuma palavra com dificuldade nos jogos. 🎉</p>'}</div>
+    </div>`;
+  }
+
+  async function carregarFicha() {
+    const email = $('rel-al-aluno').value;
+    if (!email) { $('rel-al-conteudo').innerHTML = '<div class="cartao vazio">Escolha a turma e o aluno.</div>'; relFicha = null; return; }
+    $('rel-al-conteudo').innerHTML = '<div class="carregando">Carregando…</div>';
+    relFicha = await chamar('profRelatorioAluno', email);
+    $('rel-al-conteudo').innerHTML = htmlFicha(relFicha);
+  }
+
+  function opcoesAlunosRel() {
+    const turma = $('rel-al-turma').value;
+    const lista = estado.alunos.filter((a) => a.turma === turma).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+    $('rel-al-aluno').innerHTML = '<option value="">Escolha o aluno…</option>' + lista.map((a) => `<option value="${esc(a.email)}">${esc(a.avatar)} ${esc(a.nome)}</option>`).join('');
+  }
+
+  function configurarRelatorios() {
+    $('rel-pal-serie').innerHTML = opcoesSerie(false);
+    $('rel-al-turma').innerHTML = opcoesTurma(false);
+    opcoesAlunosRel();
+    document.querySelector('.abas button[data-aba="relatorios"]').addEventListener('click', () => { if (!relGeral) comBotao($('rel-atualizar'), carregarRelatorios); });
+    $('rel-vistas').addEventListener('click', (ev) => { const b = ev.target.closest('[data-vista]'); if (b) trocarVista(b.dataset.vista); });
+    $('rel-atualizar').addEventListener('click', (ev) => comBotao(ev.target, async () => { await carregarRelatorios(); if (relVista === 'aluno' && relFicha) await carregarFicha(); }));
+    $('rel-pal-serie').addEventListener('change', renderRelPalavras);
+    $('rel-al-turma').addEventListener('change', () => { opcoesAlunosRel(); carregarFicha(); });
+    $('rel-al-aluno').addEventListener('change', () => carregarFicha());
+    $('rel-imprimir').addEventListener('click', () => {
+      const secao = $('rel-' + relVista);
+      if (relVista === 'aluno' && !relFicha) { avisar('Escolha um aluno antes de imprimir.', true); return; }
+      const titulo = relVista === 'aluno' ? 'Ficha do aluno – English Kids App' : secao.dataset.titulo + ' – English Kids App';
+      const corpo = relVista === 'aluno' ? htmlFicha(relFicha) : secao.innerHTML;
+      $('impressao').innerHTML = `<h2>${esc(titulo)}</h2><p style="color:#666">Gerado em ${new Date().toLocaleString('pt-BR')}</p>${corpo}`;
+      $('impressao').querySelectorAll('select').forEach((s) => s.remove());
+      document.body.classList.add('imprimindo');
+      setTimeout(() => { window.print(); document.body.classList.remove('imprimindo'); }, 80);
+    });
+    $('rel-exportar').addEventListener('click', (ev) => comBotao(ev.target, async () => {
+      const url = await chamar('profExportarPlanilha');
+      $('rel-exportado').hidden = false;
+      $('rel-exportado').innerHTML = `<span>✅ Planilha criada no seu Drive:</span> <a href="${esc(url)}" target="_blank" rel="noopener">abrir relatório</a>`;
+    }));
+  }
+</script>

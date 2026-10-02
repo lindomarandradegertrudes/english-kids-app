@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <?!= incluir('Estilo'); ?>
+  <?!= incluir('Fala'); ?>
+  <style>main { max-width: 720px; }</style>
+</head>
+<body>
+  <header class="topo">
+    <div class="marca">English Kids App <span>Teste do Chromebook</span></div>
+    <div class="suave pequeno"><?= email ?></div>
+  </header>
+  <main>
+    <p class="suave">Esta página só testa a voz e o microfone deste aparelho. Nada é gravado nem salvo.</p>
+    <?!= incluir('TesteConteudo'); ?>
+  </main>
+</body>
+</html>

@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&display=swap" rel="stylesheet">
+  <?!= incluir('Estilo'); ?>
+  <?!= incluir('Fala'); ?>
+  <?!= incluir('JogosTela'); ?>
+  <style>
+    :root {
+      --c1: #ff6b6b; --c2: #4dabf7; --c3: #51cf66; --c4: #fcc419; --c5: #b197fc; --c6: #ff922b;
+      --tinta: #2b2f42;
+    }
+    body { font-family: Nunito, "Segoe UI", Roboto, Arial, sans-serif; font-size: 18px; color: var(--tinta); background: #fff9f2; }
+    main { max-width: 980px; padding: 20px 16px 64px; }
+    button { font-family: inherit; }
+    h1 { font-size: 2rem; font-weight: 900; }
+    h2 { font-size: 1.4rem; font-weight: 800; }
+
+    .topo-kids { display: flex; align-items: center; gap: 14px; padding: 14px 20px; background: #fff; border-bottom: 3px solid #ffe8cc; }
+    .avatar-btn { font-size: 2.6rem; line-height: 1; background: #fff3e6; border: 3px solid #ffc078; border-radius: 50%; width: 68px; height: 68px; cursor: pointer; flex: none; }
+    .avatar-btn:hover { transform: scale(1.06); }
+    .ola-kids { font-size: 1.5rem; font-weight: 900; margin: 0; }
+    .sub-kids { color: #6c7086; font-weight: 700; font-size: .95rem; }
+
+    .botao-grande {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 0; border-radius: 16px;
+      padding: 14px 22px; font-size: 1.15rem; font-weight: 800; cursor: pointer; background: #e8590c; color: #fff;
+      box-shadow: 0 4px 0 #a33a05; transition: transform .08s;
+    }
+    .botao-grande:active { transform: translateY(3px); box-shadow: 0 1px 0 #a33a05; }
+    .botao-grande.claro { background: #fff; color: var(--tinta); box-shadow: 0 4px 0 #dee2e6; border: 2px solid #dee2e6; }
+    .botao-grande:disabled { opacity: .6; cursor: default; }
+
+    /* Cadastro */
+    .passo { background: #fff; border-radius: 22px; padding: 22px; box-shadow: 0 4px 0 #ffe8cc; }
+    .passo + .passo { margin-top: 16px; }
+    .passo h2 { margin-bottom: 12px; }
+    .passo input { font-size: 1.2rem; padding: 12px 14px; border-radius: 12px; border: 2px solid #dee2e6; }
+    .opcoes-turma { display: flex; flex-wrap: wrap; gap: 10px; }
+    .opcoes-turma button, .grade-avatares button {
+      border: 3px solid #dee2e6; background: #fff; border-radius: 14px; cursor: pointer; font-weight: 800;
+    }
+    .opcoes-turma button { font-size: 1.2rem; padding: 10px 18px; }
+    .opcoes-turma button.ativa, .grade-avatares button.ativa { border-color: #e8590c; background: #fff0e6; }
+    .grade-avatares { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; }
+    .grade-avatares button { font-size: 2.2rem; padding: 6px 0; }
+    .grade-avatares button:hover { transform: scale(1.08); }
+
+    /* Temas */
+    .grade-temas { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+    .cartao-tema {
+      border: 0; border-radius: 22px; padding: 18px 16px; text-align: left; cursor: pointer; color: var(--tinta);
+      box-shadow: 0 5px 0 rgba(0,0,0,.12); transition: transform .1s; min-height: 150px; display: flex; flex-direction: column; gap: 6px;
+    }
+    .cartao-tema:hover { transform: translateY(-3px) rotate(-.5deg); }
+    .cartao-tema .figs { font-size: 2.3rem; display: flex; gap: 10px; font-weight: 900; }
+    .cartao-tema .tit { font-size: 1.25rem; font-weight: 900; }
+    .cartao-tema .tit-pt { font-weight: 700; opacity: .75; font-size: .95rem; }
+    .cor-0 { background: #ffe3e3; } .cor-1 { background: #d0ebff; } .cor-2 { background: #d3f9d8; }
+    .cor-3 { background: #fff3bf; } .cor-4 { background: #e5dbff; } .cor-5 { background: #ffe8cc; }
+
+    /* Palavras */
+    .barra-tema { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+    .barra-tema h1 { margin: 0; flex: 1; }
+    .alternar { display: inline-flex; align-items: center; gap: 8px; font-weight: 800; cursor: pointer; background: #fff; border-radius: 99px; padding: 8px 14px; border: 2px solid #dee2e6; }
+    .alternar input { width: 22px; height: 22px; }
+    .grade-palavras { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+    .palavra {
+      position: relative; background: #fff; border: 3px solid #ffe8cc; border-radius: 20px; padding: 14px 8px 12px; text-align: center;
+      cursor: pointer; box-shadow: 0 4px 0 #ffe8cc; transition: transform .1s;
+    }
+    .palavra:hover { border-color: #ffc078; }
+    .palavra.falando { animation: pulo .45s; border-color: #e8590c; }
+    @keyframes pulo { 30% { transform: scale(1.1) rotate(-3deg); } 60% { transform: scale(.97); } }
+    .palavra .fig { font-size: 3.4rem; line-height: 1.1; min-height: 3.9rem; display: flex; align-items: center; justify-content: center; }
+    .palavra .fig.texto { font-size: 1.25rem; font-weight: 900; color: #5f3dc4; background: #f3f0ff; border-radius: 12px; margin: 0 6px; padding: 4px; }
+    .palavra .en { font-size: 1.3rem; font-weight: 900; margin-top: 6px; word-break: break-word; }
+    .palavra .pt { font-weight: 700; color: #6c7086; font-size: .95rem; }
+    .palavra .devagar { position: absolute; top: 6px; right: 6px; border: 0; background: #f1f3f5; border-radius: 50%; width: 34px; height: 34px; font-size: 1.1rem; cursor: pointer; }
+    .frase { display: flex; align-items: center; gap: 12px; background: #fff; border-radius: 16px; padding: 12px 14px; border: 2px solid #ffe8cc; }
+    .frase + .frase { margin-top: 10px; }
+    .frase .txt { flex: 1; }
+    .frase .en { font-size: 1.2rem; font-weight: 800; }
+    .frase .pt { color: #6c7086; font-weight: 700; font-size: .95rem; }
+    .frase button { border: 0; background: #fff0e6; border-radius: 50%; width: 48px; height: 48px; font-size: 1.4rem; cursor: pointer; flex: none; }
+    .sem-pt .pt { display: none; }
+
+    .minhas-estrelas { margin-left: auto; background: #fff9db; border: 3px solid #ffe066; border-radius: 99px; padding: 6px 16px; font-size: 1.4rem; font-weight: 900; white-space: nowrap; }
+    .progresso-tema { margin-top: auto; display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: .9rem; }
+    .barrinha { flex: 1; height: 12px; background: rgba(255,255,255,.75); border-radius: 99px; overflow: hidden; }
+    .barrinha i { display: block; height: 100%; background: #2f9e44; border-radius: 99px; }
+    .grade-jogos { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); margin-bottom: 26px; }
+    .cartao-jogo {
+      border-radius: 20px; padding: 16px; text-align: left; cursor: pointer; background: #fff; color: var(--tinta);
+      box-shadow: 0 5px 0 #ffd8a8; border: 3px solid #ffd8a8; display: flex; gap: 12px; align-items: center;
+    }
+    .cartao-jogo:hover { transform: translateY(-2px); border-color: #ff922b; }
+    .cartao-jogo .ic { font-size: 2.6rem; }
+    .cartao-jogo .nm { font-weight: 900; font-size: 1.15rem; }
+    .cartao-jogo .ds { font-weight: 700; font-size: .85rem; color: #6c7086; }
+    .cartao-jogo .st { font-size: 1.05rem; letter-spacing: 1px; }
+    .st .apagada { opacity: .25; filter: grayscale(1); }
+    .palavra .dom { height: 8px; background: #f1f3f5; border-radius: 99px; overflow: hidden; margin: 8px 10px 0; }
+    .palavra .dom i { display: block; height: 100%; background: #51cf66; }
+    .palavra .selo-dominada { position: absolute; top: 6px; left: 8px; font-size: 1.2rem; }
+    .quiz-aviso { display: flex; align-items: center; gap: 16px; background: linear-gradient(135deg, #fff3bf, #ffe8cc); border: 3px solid #ffd43b;
+      border-radius: 22px; padding: 16px 18px; margin-bottom: 18px; box-shadow: 0 5px 0 #ffe066; flex-wrap: wrap; }
+    .quiz-aviso .ic { font-size: 2.8rem; }
+    .quiz-aviso .tx { flex: 1; min-width: 180px; }
+    .quiz-aviso .tx strong { font-size: 1.25rem; font-weight: 900; display: block; }
+    .q-centro { text-align: center; margin: 8px 0 20px; }
+    .q-palavra { font-size: 2.6rem; font-weight: 900; background: #fff; border-radius: 18px; padding: 10px 26px; display: inline-block; border: 3px solid #ffe8cc; }
+    .q-figura { font-size: 5.5rem; line-height: 1.1; }
+    .q-figura.texto { font-size: 2rem; font-weight: 900; color: #5f3dc4; }
+    .q-opcoes { display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 560px; margin: 0 auto; }
+    .q-opcao { background: #fff; border: 4px solid #e9ecef; border-radius: 22px; min-height: 120px; cursor: pointer; font-size: 3.8rem; box-shadow: 0 5px 0 #e9ecef; padding: 8px; color: var(--tinta); }
+    .q-opcao.texto { font-size: 1.5rem; font-weight: 900; }
+    .q-opcao.marcada { border-color: #1c7ed6; background: #e7f5ff; box-shadow: 0 5px 0 #a5d8ff; }
+    .q-opcao .letra-op { display: block; font-size: .9rem; font-weight: 900; color: #868e96; text-align: left; }
+    .q-rodape { display: flex; justify-content: space-between; gap: 12px; max-width: 560px; margin: 22px auto 0; }
+    .minha-equipe { background: #fff; border-radius: 22px; padding: 16px 18px; margin-bottom: 20px; box-shadow: 0 5px 0 #d0ebff; border: 3px solid #a5d8ff; }
+    .minha-equipe .cab-eq { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .minha-equipe .emoji-eq { font-size: 3rem; }
+    .minha-equipe .nome-eq { font-size: 1.4rem; font-weight: 900; flex: 1; }
+    .colegas-eq { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
+    .colegas-eq span { background: #f1f3f5; border-radius: 99px; padding: 4px 12px 4px 6px; font-weight: 800; }
+    .colegas-eq span.eu { background: #d0ebff; }
+    .colegas-eq b { font-size: 1.4rem; vertical-align: middle; }
+    .placar-mini { display: grid; gap: 6px; }
+    .placar-mini div { display: grid; grid-template-columns: 34px 40px 1fr auto; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 12px; background: #f8f9fa; font-weight: 800; }
+    .placar-mini div.minha { background: #fff3bf; outline: 3px solid #ffd43b; }
+    .placar-mini .em { font-size: 1.6rem; }
+    .mensagem { background: #fff; border-radius: 22px; padding: 28px; text-align: center; box-shadow: 0 4px 0 #ffe8cc; }
+    .mensagem .grande { font-size: 4rem; }
+    dialog { border-radius: 22px; }
+    dialog h2 { font-weight: 900; }
+  </style>
+</head>
+<body>
+  <header class="topo-kids" id="topo" hidden>
+    <button class="avatar-btn" id="meu-avatar" title="Trocar meu bichinho" aria-label="Trocar meu bichinho"></button>
+    <div>
+      <p class="ola-kids">Hi, <span id="primeiro-nome"></span>! 👋</p>
+      <div class="sub-kids">Turma <span id="minha-turma"></span></div>
+    </div>
+    <div class="minhas-estrelas" id="minhas-estrelas" title="Minhas estrelas">⭐ 0</div>
+  </header>
+
+  <main>
+    <div id="carregando" class="carregando">Loading… ⏳</div>
+    <div id="erro" class="mensagem" hidden></div>
+
+    <!-- Cadastro -->
+    <form id="cadastro" hidden>
+      <h1>Welcome! 👋</h1>
+      <p class="sub-kids" style="margin-top:-6px">Este é o seu primeiro acesso. Vamos começar!</p>
+      <div class="passo">
+        <h2>1. Qual é o seu nome completo?</h2>
+        <input id="nome" autocomplete="name" required placeholder="Nome e sobrenome" spellcheck="false">
+      </div>
+      <div class="passo">
+        <h2>2. Qual é a sua turma?</h2>
+        <div class="opcoes-turma" id="opcoes-turma"></div>
+      </div>
+      <div class="passo">
+        <h2>3. Escolha o seu bichinho</h2>
+        <div class="grade-avatares" id="cad-avatares"></div>
+      </div>
+      <p style="text-align:center;margin-top:20px"><button class="botao-grande" type="submit">Pronto! ✅</button></p>
+    </form>
+
+    <div id="fechado" class="mensagem" hidden>
+      <div class="grande">🔒</div>
+      <h2>Hello!</h2>
+      <p>O cadastro de novos alunos está fechado no momento. Fale com o seu professor.</p>
+    </div>
+
+    <!-- Início: temas -->
+    <div id="inicio" hidden>
+      <div id="quizzes"></div>
+      <div id="equipe"></div>
+      <h1>Choose a theme! 🎨</h1>
+      <p class="sub-kids" style="margin-top:-6px">Escolha um tema para ouvir e aprender as palavras.</p>
+      <div class="grade-temas" id="temas"></div>
+    </div>
+
+    <!-- Tema -->
+    <div id="tema" hidden>
+      <div class="barra-tema">
+        <button class="botao-grande claro" id="voltar-temas" aria-label="Voltar">⬅</button>
+        <h1 id="tema-titulo"></h1>
+        <label class="alternar"><input type="checkbox" id="mostrar-pt"> 👀 Português</label>
+      </div>
+      <h2>🎮 Games</h2>
+      <div class="grade-jogos" id="jogos-tema"></div>
+      <h2>📚 Words</h2>
+      <p class="sub-kids" style="margin-top:-6px">Toque na figura para ouvir. 🐢 = mais devagar. A barrinha verde enche quando você acerta nos jogos.</p>
+      <div class="grade-palavras sem-pt" id="palavras"></div>
+      <div id="bloco-frases" hidden>
+        <h2 style="margin-top:28px">Sentences 💬</h2>
+        <div id="frases" class="sem-pt"></div>
+      </div>
+    </div>
+
+    <!-- Jogo -->
+    <div id="jogo" hidden></div>
+
+    <!-- Avaliação -->
+    <div id="quiz" hidden></div>
+  </main>
+
+  <dialog id="confirmar">
+    <h2>Está tudo certo?</h2>
+    <p style="font-size:1.1rem"><span id="conf-avatar" style="font-size:2.4rem"></span><br>
+      Nome: <strong id="conf-nome"></strong><br>Turma: <strong id="conf-turma"></strong></p>
+    <p class="suave pequeno">Depois de confirmar, só o professor poderá mudar o nome e a turma.</p>
+    <div class="rodape-modal">
+      <button class="botao-grande claro" id="corrigir">Corrigir</button>
+      <button class="botao-grande" id="confirmar-btn">Confirmar</button>
+    </div>
+  </dialog>
+
+  <dialog id="trocar-avatar" style="width:min(520px, calc(100vw - 32px))">
+    <h2>Escolha o seu bichinho</h2>
+    <div class="grade-avatares" id="troca-avatares"></div>
+    <div class="rodape-modal"><button class="botao-grande claro" id="fechar-avatar">Fechar</button></div>
+  </dialog>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    let estado = null;
+    let temaAtual = null;
+    const cadastro = { turma: '', avatar: '' };
+    const NOMES_AVATAR = {
+      '🐶': 'dog', '🐱': 'cat', '🦊': 'fox', '🐼': 'panda', '🐸': 'frog', '🦁': 'lion', '🐵': 'monkey', '🐰': 'rabbit', '🐯': 'tiger', '🐨': 'koala',
+      '🐷': 'pig', '🐙': 'octopus', '🦄': 'unicorn', '🐢': 'turtle', '🐧': 'penguin', '🦉': 'owl', '🐬': 'dolphin', '🦖': 'dinosaur', '🐞': 'ladybug', '🦋': 'butterfly',
+    };
+
+    function chamar(fn, ...args) {
+      return new Promise((ok, falha) => google.script.run.withSuccessHandler(ok).withFailureHandler(falha)[fn](...args));
+    }
+
+    function mostrar(id) {
+      ['carregando', 'erro', 'cadastro', 'fechado', 'inicio', 'tema', 'jogo', 'quiz'].forEach((x) => ($(x).hidden = x !== id));
+      $('topo').hidden = !estado || !estado.aluno;
+      window.scrollTo(0, 0);
+    }
+
+    function mostrarErro(msg) {
+      $('erro').innerHTML = `<div class="grande">😕</div><h2>Ops!</h2><p>${esc(msg)}</p>`;
+      mostrar('erro');
+    }
+
+    function render(e) {
+      estado = e;
+      Fala.velocidade = e.velocidadeVoz;
+      if (!e.aluno) { renderCadastro(); return; }
+      $('meu-avatar').textContent = e.aluno.avatar;
+      $('primeiro-nome').textContent = e.aluno.nome.split(' ')[0];
+      $('minha-turma').textContent = e.aluno.turma;
+      renderEstrelas();
+      renderQuizzes();
+      renderEquipe();
+      renderTemas();
+      mostrar('inicio');
+      enviarFila();
+    }
+
+    function progressoDe(temaId) {
+      return (estado.progresso && estado.progresso.porTema[temaId]) || { dominio: 0, palavras: {}, estrelas: {}, jogadas: 0 };
+    }
+    function somaEstrelas(estrelas) { return Object.values(estrelas || {}).reduce((s, n) => s + Number(n || 0), 0); }
+    function renderEstrelas() {
+      $('minhas-estrelas').textContent = '⭐ ' + (estado.progresso ? estado.progresso.totalEstrelas : 0);
+    }
+
+    // ---------- Cadastro ----------
+    function renderCadastro() {
+      if (!estado.cadastroAberto) { mostrar('fechado'); return; }
+      const series = [...new Set(estado.turmas.map((t) => t.serie))];
+      $('opcoes-turma').innerHTML = series.map((s) => estado.turmas.filter((t) => t.serie === s)
+        .map((t) => `<button type="button" data-turma="${esc(t.turma)}" class="${t.turma === cadastro.turma ? 'ativa' : ''}">${esc(t.turma)}</button>`).join('')).join('');
+      $('cad-avatares').innerHTML = estado.avatares.map((a) =>
+        `<button type="button" data-avatar="${esc(a)}" class="${a === cadastro.avatar ? 'ativa' : ''}">${esc(a)}</button>`).join('');
+      mostrar('cadastro');
+    }
+    $('opcoes-turma').addEventListener('click', (ev) => {
+      const b = ev.target.closest('[data-turma]');
+      if (!b) return;
+      cadastro.turma = b.dataset.turma;
+      $('opcoes-turma').querySelectorAll('button').forEach((x) => x.classList.toggle('ativa', x === b));
+    });
+    $('cad-avatares').addEventListener('click', (ev) => {
+      const b = ev.target.closest('[data-avatar]');
+      if (!b) return;
+      cadastro.avatar = b.dataset.avatar;
+      $('cad-avatares').querySelectorAll('button').forEach((x) => x.classList.toggle('ativa', x === b));
+      Fala.iniciar().then(() => Fala.falar(NOMES_AVATAR[b.dataset.avatar] || ''));
+    });
+    $('cadastro').addEventListener('submit', (ev) => {
+      ev.preventDefault();
+      const nome = $('nome').value.trim().replace(/\s+/g, ' ');
+      if (nome.split(' ').length < 2) { alert('Escreva o seu nome e o seu sobrenome.'); $('nome').focus(); return; }
+      if (!cadastro.turma) { alert('Escolha a sua turma.'); return; }
+      if (!cadastro.avatar) { alert('Escolha um bichinho.'); return; }
+      const minusculas = ['da', 'de', 'do', 'das', 'dos', 'e'];
+      $('conf-nome').textContent = nome.toLowerCase().split(' ')
+        .map((p, i) => (i > 0 && minusculas.includes(p) ? p : p.charAt(0).toUpperCase() + p.slice(1))).join(' ');
+      $('conf-turma').textContent = cadastro.turma;
+      $('conf-avatar').textContent = cadastro.avatar;
+      $('confirmar').showModal();
+    });
+    $('corrigir').addEventListener('click', () => $('confirmar').close());
+    $('confirmar-btn').addEventListener('click', async () => {
+      const botao = $('confirmar-btn');
+      botao.disabled = true;
+      try {
+        const e = await chamar('alunoCadastrar', $('nome').value, cadastro.turma, cadastro.avatar);
+        $('confirmar').close();
+        render(e);
+        Fala.iniciar().then(() => Fala.falar('Welcome! Let\'s learn English!'));
+      } catch (e) {
+        $('confirmar').close();
+        alert(e.message);
+      } finally { botao.disabled = false; }
+    });
+
+    // ---------- Bichinho ----------
+    $('meu-avatar').addEventListener('click', () => {
+      $('troca-avatares').innerHTML = estado.avatares.map((a) =>
+        `<button type="button" data-avatar="${esc(a)}" class="${a === estado.aluno.avatar ? 'ativa' : ''}">${esc(a)}</button>`).join('');
+      $('trocar-avatar').showModal();
+    });
+    $('fechar-avatar').addEventListener('click', () => $('trocar-avatar').close());
+    $('troca-avatares').addEventListener('click', async (ev) => {
+      const b = ev.target.closest('[data-avatar]');
+      if (!b) return;
+      const anterior = estado.aluno.avatar;
+      estado.aluno.avatar = b.dataset.avatar;
+      $('meu-avatar').textContent = b.dataset.avatar;
+      $('trocar-avatar').close();
+      try { await chamar('alunoTrocarAvatar', b.dataset.avatar); }
+      catch (e) { estado.aluno.avatar = anterior; $('meu-avatar').textContent = anterior; alert(e.message); }
+    });
+
+    // ---------- Temas ----------
+    function figuraHtml(p, classe) {
+      return p.figura
+        ? `<div class="${classe}">${esc(p.figura)}</div>`
+        : `<div class="${classe} texto">${esc(p.pt)}</div>`;
+    }
+
+    function renderTemas() {
+      const temas = estado.temas;
+      $('temas').innerHTML = temas.length ? temas.map((t, i) => `
+        <button class="cartao-tema cor-${i % 6}" data-tema="${esc(t.id)}">
+          <span class="figs">${(t.palavras.map((p) => p.figura).filter(Boolean).slice(0, 3).map((f) => `<span>${esc(f)}</span>`).join('')) || '<span>🔤</span>'}</span>
+          <span class="tit">${esc(t.titulo)}</span>
+          <span class="tit-pt">${esc(t.titulo_pt)}</span>
+          <span class="progresso-tema" title="Quanto você já aprendeu deste tema">
+            <span class="barrinha"><i style="width:${progressoDe(t.id).dominio}%"></i></span>${progressoDe(t.id).dominio}%
+            ${somaEstrelas(progressoDe(t.id).estrelas) ? ' · ⭐ ' + somaEstrelas(progressoDe(t.id).estrelas) : ''}
+          </span>
+        </button>`).join('')
+        : '<div class="mensagem" style="grid-column:1/-1"><div class="grande">🙂</div><p>O seu professor ainda não liberou nenhum tema. Volte mais tarde!</p></div>';
+    }
+    $('temas').addEventListener('click', (ev) => {
+      const b = ev.target.closest('[data-tema]');
+      if (!b) return;
+      abrirTema(estado.temas.find((t) => t.id === b.dataset.tema));
+    });
+
+    function abrirTema(t) {
+      temaAtual = t;
+      Fala.iniciar();
+      $('tema-titulo').textContent = t.titulo;
+      renderJogosTema();
+      const dom = progressoDe(t.id).palavras;
+      $('palavras').innerHTML = t.palavras.map((p, i) => `
+        <div class="palavra" data-i="${i}" role="button" tabindex="0" aria-label="Ouvir ${esc(p.en)}">
+          ${(dom[p.en] || 0) >= 100 ? '<span class="selo-dominada" title="Palavra dominada!">🏅</span>' : ''}
+          <button class="devagar" data-devagar="${i}" aria-label="Ouvir devagar">🐢</button>
+          ${figuraHtml(p, 'fig')}
+          <div class="en">${esc(p.en)}</div>
+          <div class="pt">${esc(p.pt)}</div>
+          <div class="dom" title="${dom[p.en] || 0}%"><i style="width:${dom[p.en] || 0}%"></i></div>
+        </div>`).join('');
+      $('bloco-frases').hidden = !t.frases.length;
+      $('frases').innerHTML = t.frases.map((f, i) => `
+        <div class="frase">
+          <button data-frase="${i}" aria-label="Ouvir a frase">🔊</button>
+          <div class="txt"><div class="en">${esc(f.en)}</div><div class="pt">${esc(f.pt)}</div></div>
+          <button data-frase-devagar="${i}" aria-label="Ouvir devagar">🐢</button>
+        </div>`).join('');
+      mostrar('tema');
+    }
+
+    async function falarPalavra(i, lento) {
+      const card = $('palavras').querySelector(`[data-i="${i}"]`);
+      card.classList.remove('falando');
+      void card.offsetWidth;
+      card.classList.add('falando');
+      await Fala.iniciar();
+      Fala.falar(temaAtual.palavras[i].en, lento);
+    }
+    $('palavras').addEventListener('click', (ev) => {
+      const devagar = ev.target.closest('[data-devagar]');
+      if (devagar) { falarPalavra(Number(devagar.dataset.devagar), true); return; }
+      const card = ev.target.closest('[data-i]');
+      if (card) falarPalavra(Number(card.dataset.i), false);
+    });
+    $('palavras').addEventListener('keydown', (ev) => {
+      const card = ev.target.closest('[data-i]');
+      if (card && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); falarPalavra(Number(card.dataset.i), false); }
+    });
+    $('frases').addEventListener('click', async (ev) => {
+      const b = ev.target.closest('button');
+      if (!b) return;
+      await Fala.iniciar();
+      if (b.dataset.frase !== undefined) Fala.falar(temaAtual.frases[Number(b.dataset.frase)].en);
+      if (b.dataset.fraseDevagar !== undefined) Fala.falar(temaAtual.frases[Number(b.dataset.fraseDevagar)].en, true);
+    });
+    $('mostrar-pt').addEventListener('change', () => {
+      $('palavras').classList.toggle('sem-pt', !$('mostrar-pt').checked);
+      $('frases').classList.toggle('sem-pt', !$('mostrar-pt').checked);
+    });
+    $('voltar-temas').addEventListener('click', () => { if (Fala.disponivel()) speechSynthesis.cancel(); renderTemas(); mostrar('inicio'); });
+
+    // ---------- Jogos ----------
+    function renderJogosTema() {
+      const t = temaAtual, pode = Jogos.disponiveis(t), est = progressoDe(t.id).estrelas;
+      $('jogos-tema').innerHTML = Object.keys(Jogos.DADOS).filter((j) => pode[j]).map((j) => {
+        const d = Jogos.DADOS[j], n = Number(est[j] || 0);
+        return `<button class="cartao-jogo" data-jogo="${j}">
+          <span class="ic">${d.icone}</span>
+          <span><div class="nm">${esc(d.nome)}</div><div class="ds">${esc(d.pt)}</div>
+            <div class="st">${[1, 2, 3].map((k) => `<span class="${k <= n ? '' : 'apagada'}">⭐</span>`).join('')}</div></span>
+        </button>`;
+      }).join('');
+    }
+    $('jogos-tema').addEventListener('click', (ev) => {
+      const b = ev.target.closest('[data-jogo]');
+      if (b) abrirJogo(b.dataset.jogo);
+    });
+
+    // ---------- Speak! (em outra aba, fora do Apps Script, por causa do microfone) ----------
+    const ORIGEM_SPEAK = 'https://lindomarandradegertrudes.github.io';
+    let speakPendente = null;
+
+    function base64url(texto) {
+      const bytes = new TextEncoder().encode(texto);
+      let bin = '';
+      bytes.forEach((b) => (bin += String.fromCharCode(b)));
+      return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
+    function abrirSpeak() {
+      const t = temaAtual;
+      const candidatas = t.palavras.filter((p) => p.en.replace(/[^a-z]/gi, '').length >= 2);
+      const palavras = Jogos.escolher(candidatas, progressoDe(t.id).palavras, Math.min(8, candidatas.length));
+      const id = 'j' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+      // Só vão as palavras do tema: nenhum dado da criança sai do app.
+      const dados = { v: 1, r: estado.urlApp, t: t.id, tt: t.titulo, id, vel: estado.velocidadeVoz, p: palavras.map((p) => [p.en, p.pt, p.figura]) };
+      const aba = window.open(estado.urlSpeak + '#' + base64url(JSON.stringify(dados)), '_blank');
+      if (!aba) { alert('O navegador bloqueou a nova aba. Peça ajuda ao professor para permitir pop-ups.'); return; }
+      speakPendente = { id, tema_id: t.id };
+    }
+
+    window.addEventListener('message', (ev) => {
+      const d = ev.data;
+      if (ev.origin !== ORIGEM_SPEAK || !d || d.tipo !== 'speak-resultado' || !speakPendente || d.id !== speakPendente.id) return;
+      guardarNaFila({
+        id: d.id, tema_id: speakPendente.tema_id, jogo: 'falar', palavras: d.palavras || {},
+        acertos: d.acertos, total: d.total, estrelas: d.estrelas, segundos: d.segundos,
+      });
+      try { ev.source.postMessage({ tipo: 'speak-ok', id: d.id }, ev.origin); } catch (e) { /* a aba do jogo já fechou */ }
+      speakPendente = null;
+      enviarFila(() => { if (temaAtual && !$('tema').hidden) abrirTema(temaAtual); });
+    });
+
+    function abrirJogo(jogo) {
+      if (jogo === 'falar') { abrirSpeak(); return; }
+      mostrar('jogo');
+      Jogos.iniciar(jogo, temaAtual, progressoDe(temaAtual.id).palavras, $('jogo'), (resultado, avisar) => {
+        if (!resultado) { abrirTema(temaAtual); return; }
+        guardarNaFila(resultado);
+        enviarFila(avisar);
+      });
+    }
+
+    // ---------- Equipe e placar ----------
+    const numeroBr = (n) => Number(n || 0).toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+    function renderEquipe() {
+      const e = estado.equipe;
+      if (!e || !e.minha) { $('equipe').innerHTML = ''; return; }
+      const medalha = ['🥇', '🥈', '🥉'];
+      $('equipe').innerHTML = `
+        <div class="minha-equipe">
+          <div class="cab-eq"><span class="emoji-eq">${esc(e.minha.emoji)}</span>
+            <span class="nome-eq">My team: ${esc(e.minha.nome)}</span>
+            <span class="minhas-estrelas" style="margin:0" title="Média de estrelas por membro neste mês">⭐ ${numeroBr(e.minha.pontos)}</span></div>
+          <div class="colegas-eq">${e.minha.membros.map((m) => `<span class="${m.eu ? 'eu' : ''}"><b>${esc(m.avatar)}</b> ${esc(m.nome)}</span>`).join('')}</div>
+          <p class="sub-kids" style="margin:0 0 10px">Você fez <strong>⭐ ${e.minhasEstrelas}</strong> neste mês. A equipe tem a média das estrelas de todos: cada jogo vale até 3 estrelas por tema!</p>
+          <details ${e.placar.length <= 8 ? 'open' : ''}><summary style="cursor:pointer;font-weight:900">🏆 Placar da turma</summary>
+            <div class="placar-mini" style="margin-top:8px">${e.placar.map((p) => `
+              <div class="${p.minha ? 'minha' : ''}"><span>${medalha[p.posicao - 1] || p.posicao + 'º'}</span><span class="em">${esc(p.emoji)}</span>
+                <span>${esc(p.nome)}</span><span>⭐ ${numeroBr(p.pontos)}</span></div>`).join('')}</div></details>
+        </div>`;
+    }
+
+    // ---------- Avaliações (quiz e diagnóstico) ----------
+    let quizAtual = null;
+
+    function renderQuizzes() {
+      const naFila = lerFila().filter((x) => x.tipo === 'quiz').map((x) => x.qid);
+      const lista = (estado.avaliacoes || []).filter((q) => !naFila.includes(q.id));
+      $('quizzes').innerHTML = lista.map((q) => `
+        <div class="quiz-aviso">
+          <span class="ic">📝</span>
+          <span class="tx"><strong>${q.tipo === 'diagnostico' ? "Let's start! " : 'Quiz time! '}${esc(q.titulo)}</strong>
+            <span class="sub-kids">${q.total} perguntas · responda com calma, sozinho(a)</span></span>
+          <button class="botao-grande" data-quiz="${esc(q.id)}">Começar ▶</button>
+        </div>`).join('');
+    }
+    $('quizzes').addEventListener('click', async (ev) => {
+      const b = ev.target.closest('[data-quiz]');
+      if (!b) return;
+      b.disabled = true;
+      try {
+        const q = await chamar('alunoAbrirAvaliacao', b.dataset.quiz);
+        quizAtual = { ...q, marcadas: q.questoes.map(() => null), i: 0 };
+        await Fala.iniciar();
+        renderPergunta();
+        mostrar('quiz');
+      } catch (e) {
+        alert(e.message);
+        estado.avaliacoes = estado.avaliacoes.filter((x) => x.id !== b.dataset.quiz);
+        renderQuizzes();
+      } finally { b.disabled = false; }
+    });
+
+    const CMD = { ouvir: 'Ouça e toque na figura certa.', ler: 'Leia a palavra e toque na figura certa.', figura: 'Olhe a figura e toque na palavra em inglês.' };
+
+    function renderPergunta() {
+      const z = quizAtual, q = z.questoes[z.i], ultima = z.i === z.questoes.length - 1;
+      const centro = q.tipo === 'ouvir'
+        ? '<div class="centro"><button class="botao-som" data-q-ouvir aria-label="Ouvir">🔊</button><button class="botao-som pequeno" data-q-devagar aria-label="Ouvir devagar">🐢</button></div>'
+        : q.tipo === 'ler' ? `<span class="q-palavra">${esc(q.texto)}</span>`
+        : `<div class="q-figura ${q.figuraTexto ? 'texto' : ''}">${esc(q.figura)}</div>`;
+      $('quiz').innerHTML = `
+        <div class="jogo-topo">
+          <button class="botao-grande claro" data-q-sair aria-label="Sair">⬅</button>
+          <h1>📝 ${esc(z.titulo)}</h1>
+          <div class="pontinhos">${z.questoes.map((_, k) => `<i class="${z.marcadas[k] != null ? 'feito' : ''} ${k === z.i ? 'agora' : ''}"></i>`).join('')}</div>
+        </div>
+        <p class="jogo-instrucao">${z.i + 1} de ${z.questoes.length} · ${q.figuraTexto ? 'Leia em português e toque na palavra em inglês.' : CMD[q.tipo]}</p>
+        <div class="q-centro">${centro}</div>
+        <div class="q-opcoes">${q.alternativas.map((a, j) => `
+          <button class="q-opcao ${a.texto ? 'texto' : ''} ${z.marcadas[z.i] === j ? 'marcada' : ''}" data-op="${j}">
+            <span class="letra-op">${'ABCD'[j]}</span>${esc(a.rotulo)}</button>`).join('')}</div>
+        <div class="q-rodape">
+          <button class="botao-grande claro" data-q-voltar ${z.i === 0 ? 'style="visibility:hidden"' : ''}>⬅ Anterior</button>
+          <button class="botao-grande" data-q-proxima ${z.marcadas[z.i] == null ? 'disabled' : ''}>${ultima ? 'Enviar ✅' : 'Próxima ➡'}</button>
+        </div>`;
+      if (q.tipo === 'ouvir') setTimeout(() => quizAtual === z && Fala.falar(q.audio), 300);
+    }
+
+    $('quiz').addEventListener('click', async (ev) => {
+      const b = ev.target.closest('button');
+      if (!b) return;
+      if (b.hasAttribute('data-q-fim')) { renderQuizzes(); renderTemas(); mostrar('inicio'); return; }
+      const z = quizAtual;
+      if (!z) return;
+      const q = z.questoes[z.i];
+      if (b.dataset.op !== undefined) { z.marcadas[z.i] = Number(b.dataset.op); renderPergunta(); return; }
+      if (b.hasAttribute('data-q-ouvir')) Fala.falar(q.audio);
+      if (b.hasAttribute('data-q-devagar')) Fala.falar(q.audio, true);
+      if (b.hasAttribute('data-q-voltar')) { z.i--; renderPergunta(); }
+      if (b.hasAttribute('data-q-sair')) {
+        if (!confirm('Sair agora? Suas respostas não serão enviadas e você vai precisar começar de novo.')) return;
+        quizAtual = null;
+        mostrar('inicio');
+      }
+      if (b.hasAttribute('data-q-proxima')) {
+        if (z.marcadas[z.i] == null) return;
+        if (z.i < z.questoes.length - 1) { z.i++; renderPergunta(); window.scrollTo(0, 0); return; }
+        if (!confirm('Enviar as respostas? Depois de enviar não dá para mudar.')) return;
+        b.disabled = true;
+        guardarNaFila({ tipo: 'quiz', id: 'q-' + z.id, qid: z.id, marcadas: z.marcadas });
+        quizAtual = null;
+        estado.avaliacoes = estado.avaliacoes.filter((x) => x.id !== z.id);
+        $('quiz').innerHTML = `<div class="resultado"><div style="font-size:4rem">✅</div><div class="frase-final">Great job!</div>
+          <p style="font-weight:700">Obrigado! Suas respostas foram enviadas para o professor.</p>
+          <div class="salvando" id="salvando-quiz">💾 Enviando…</div>
+          <div class="botoes"><button class="botao-grande" data-q-fim>Voltar ao início</button></div></div>`;
+        Som.vitoria();
+        Fala.falar('Great job!');
+        enviarFila((situacao) => {
+          const s = $('salvando-quiz');
+          if (s) s.textContent = situacao === 'ok' ? '✅ Enviado!' : '⏳ Sem conexão agora: vou enviar sozinho mais tarde.';
+        });
+      }
+    });
+
+    // Fila de partidas: fica guardada no navegador até o servidor confirmar.
+    // Assim nada se perde se a internet cair ou se muitos alunos salvarem ao mesmo tempo.
+    let memoriaFila = [];
+    const chaveFila = () => 'ek-fila:' + estado.email;
+    function lerFila() { try { return JSON.parse(localStorage.getItem(chaveFila())) || []; } catch (e) { return memoriaFila; } }
+    function gravarFila(f) { memoriaFila = f; try { localStorage.setItem(chaveFila(), JSON.stringify(f)); } catch (e) { /* só memória */ } }
+    function guardarNaFila(r) { const f = lerFila(); f.push(r); gravarFila(f); }
+
+    let enviando = false, tentativa = null;
+    async function enviarFila(avisar) {
+      if (enviando) { setTimeout(() => enviarFila(avisar), 1500); return; }
+      const fila = lerFila();
+      if (!fila.length) { if (avisar) avisar('ok'); return; }
+      enviando = true;
+      clearTimeout(tentativa);
+      let falhou = false;
+      for (const item of fila) {
+        try {
+          if (item.tipo === 'quiz') {
+            await chamar('alunoResponderAvaliacao', item.qid, item.marcadas);
+          } else {
+            const r = await chamar('alunoSalvarJogada', item);
+            estado.progresso = r.progresso;
+          }
+          gravarFila(lerFila().filter((x) => x.id !== item.id));
+        } catch (e) {
+          // Partida que nunca vai ser aceita (tema ocultado, por exemplo): descarta para não travar a fila.
+          if (/não está disponível|desconhecido|sem identificação|encerrada|Responda todas/i.test(e.message || '')) {
+            gravarFila(lerFila().filter((x) => x.id !== item.id));
+            continue;
+          }
+          falhou = true;
+          break;
+        }
+      }
+      enviando = false;
+      renderEstrelas();
+      if (avisar) avisar(falhou ? 'pendente' : 'ok');
+      // Tenta de novo em até ~1 minuto, com um sorteio para os alunos não tentarem todos juntos.
+      if (falhou) tentativa = setTimeout(() => enviarFila(), 20000 + Math.random() * 40000);
+    }
+
+    chamar('alunoObterEstado').then(render).catch((e) => mostrarErro(e.message));
+  </script>
+</body>
+</html>

@@ -1,0 +1,432 @@
+<!-- Avaliações -->
+<section id="aba-avaliacoes" hidden>
+  <style>
+    .selo.rascunho { background: #f1f3f5; color: #495057; }
+    .selo.aberto { background: #d3f9d8; color: #2b8a3e; }
+    .selo.encerrado { background: #e9ecef; color: #868e96; }
+    .selo.Iniciante { background: #ffe3e3; color: #c92a2a; }
+    .selo.Básico { background: #fff3bf; color: #a05a00; }
+    .selo.Intermediário { background: #d0ebff; color: #1864ab; }
+    .selo.Avançado { background: #d3f9d8; color: #2b8a3e; }
+    .temas-check { display: grid; gap: 6px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+    .temas-check label { font-weight: 400; display: flex; gap: 8px; align-items: center; border: 1px solid var(--borda); border-radius: 8px; padding: 6px 10px; cursor: pointer; margin: 0; }
+    .temas-check input { width: auto; }
+    .questao-k { border: 1px solid var(--borda); border-radius: var(--raio); padding: 14px; background: #fff; }
+    .questao-k .topo-q { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+    .questao-k .enunciado-k { font-size: 1.05rem; margin-bottom: 10px; }
+    .questao-k .enunciado-k .grande { font-size: 2.4rem; vertical-align: middle; }
+    .alts-k { display: grid; gap: 8px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    @media (max-width: 640px) { .alts-k { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .alt-k { border: 2px solid var(--borda); border-radius: 10px; padding: 8px; text-align: center; }
+    .alt-k .l { font-size: .75rem; font-weight: 700; color: var(--suave); }
+    .alt-k .v { font-size: 2rem; line-height: 1.2; }
+    .alt-k .v.txt { font-size: 1rem; font-weight: 700; }
+    .alt-k.certa { border-color: var(--ok); background: #ebfbee; }
+    .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chips .btn.ativa { background: var(--primaria); color: #fff; border-color: var(--primaria); }
+    .barra-q { display: grid; grid-template-columns: 34px 90px 1fr 140px 50px; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--borda); font-size: .9rem; }
+    .barra-q .barra { margin: 0; height: 10px; }
+    td input.lanc { width: 150px; font-family: monospace; text-transform: uppercase; }
+
+    #impressao { display: none; }
+    @media print {
+      body.imprimindo > *:not(#impressao) { display: none !important; }
+      body.imprimindo { background: #fff; }
+      #impressao { display: block; font: 13pt/1.4 Arial, sans-serif; color: #000; }
+      #impressao .cab { border: 2px solid #000; border-radius: 8px; padding: 8px 12px; margin-bottom: 14px; }
+      #impressao .cab div { margin: 5px 0; }
+      #impressao .q { margin: 0 0 16px; break-inside: avoid; }
+      #impressao .q .cmd { font-weight: 700; margin-bottom: 8px; }
+      #impressao .q .destaque { font-size: 22pt; font-weight: 700; }
+      #impressao .q .destaque.fig { font-size: 40pt; }
+      #impressao .ops { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+      #impressao .op { border: 2px solid #000; border-radius: 10px; padding: 6px; text-align: center; min-height: 80px; }
+      #impressao .op .let { font-weight: 700; text-align: left; }
+      #impressao .op .v { font-size: 34pt; }
+      #impressao .op .v.txt { font-size: 15pt; font-weight: 700; padding-top: 12px; }
+      #impressao table { border-collapse: collapse; }
+      #impressao td, #impressao th { border: 1px solid #000; padding: 4px 10px; text-align: center; }
+      #impressao .quebra { break-before: page; }
+    }
+  </style>
+
+  <!-- Lista -->
+  <div id="av-lista" class="pilha">
+    <div class="linha">
+      <select id="av-filtro-serie"></select>
+      <span class="espaco"></span>
+      <button class="btn" id="av-novo-diag">+ Diagnóstico</button>
+      <button class="btn primario" id="av-novo-mensal">+ Quiz mensal</button>
+    </div>
+    <p class="suave pequeno" style="margin:0">As questões são montadas sozinhas a partir das palavras dos temas: <strong>👂 ouvir</strong> e escolher a figura, <strong>📖 ler</strong> e escolher a figura, <strong>🖼️ ver a figura</strong> e escolher a palavra.
+      O nível do aluno é a média das avaliações (os jogos não entram).</p>
+    <div class="cartao tabela-rolagem">
+      <table>
+        <thead><tr><th>Avaliação</th><th>Série</th><th>Tipo</th><th>Mês</th><th>Status</th><th>Respostas</th><th></th></tr></thead>
+        <tbody id="av-tabela"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Editor -->
+  <div id="av-editor" class="pilha" hidden>
+    <div class="linha">
+      <button class="btn" data-av-voltar>← Voltar</button>
+      <h2 style="margin:0" id="ave-titulo-tela">Avaliação</h2>
+      <span class="espaco"></span>
+      <button class="btn" id="ave-imprimir">Imprimir prova</button>
+      <button class="btn primario" id="ave-salvar">Salvar</button>
+    </div>
+    <p id="ave-bloqueado" class="cartao pequeno" style="color:var(--perigo)" hidden>Esta avaliação já tem respostas: as questões e a série não podem mais mudar.</p>
+    <div class="cartao">
+      <div class="grade-2">
+        <div class="campo"><label for="ave-titulo">Título</label><input id="ave-titulo"></div>
+        <div class="grade-2">
+          <div class="campo"><label for="ave-tipo">Tipo</label>
+            <select id="ave-tipo"><option value="diagnostico">Diagnóstico</option><option value="mensal">Quiz mensal</option></select></div>
+          <div class="campo"><label for="ave-serie">Série</label><select id="ave-serie"></select></div>
+        </div>
+      </div>
+      <div class="grade-2" style="margin-top:14px">
+        <div class="campo"><label for="ave-mes">Mês de referência</label><input id="ave-mes" type="month"></div>
+        <div class="campo"><label for="ave-qtd">Quantidade de questões</label><input id="ave-qtd" type="number" min="3" max="20" value="10"></div>
+      </div>
+      <div class="campo" style="margin-top:14px">
+        <label>Temas avaliados</label>
+        <div class="temas-check" id="ave-temas"></div>
+      </div>
+      <div class="linha" style="margin-top:12px">
+        <button class="btn primario" id="ave-montar">🎲 Montar questões</button>
+        <span class="suave pequeno">Não gostou de alguma? Use 🔄 para trocar só aquela questão.</span>
+      </div>
+    </div>
+    <div class="linha"><h3 style="margin:0">Questões <span class="suave" id="ave-contagem"></span></h3></div>
+    <div id="ave-questoes" class="pilha"></div>
+  </div>
+
+  <!-- Resultados -->
+  <div id="av-resultados" class="pilha" hidden>
+    <div class="linha">
+      <button class="btn" data-av-voltar>← Voltar</button>
+      <h2 style="margin:0" id="avr-titulo"></h2>
+      <span class="espaco"></span>
+      <button class="btn" id="avr-imprimir">Imprimir prova</button>
+      <button class="btn" id="avr-gabarito">Imprimir gabarito</button>
+    </div>
+    <div class="chips" id="avr-turmas"></div>
+    <div class="cartao">
+      <p class="suave pequeno" style="margin-top:0">Para provas impressas, digite as letras marcadas pela criança em ordem (ex.: <code>ABDC…</code>; use <code>-</code> para questão em branco) ou só o número de acertos. Com as letras, o sistema mostra o acerto por questão.</p>
+      <div class="tabela-rolagem">
+        <table>
+          <thead><tr><th></th><th>Nome</th><th>Situação</th><th>Acertos</th><th>%</th><th>Lançar impresso</th><th></th></tr></thead>
+          <tbody id="avr-tabela"></tbody>
+        </table>
+      </div>
+      <div class="rodape-modal"><button class="btn primario" id="avr-salvar">Salvar lançamentos</button></div>
+    </div>
+    <div class="cartao">
+      <h3>Acerto por questão <span class="suave pequeno">(todas as turmas da série)</span></h3>
+      <div id="avr-questoes"></div>
+    </div>
+  </div>
+</section>
+
+<script>
+  const TIPOS_AV = { diagnostico: 'Diagnóstico', mensal: 'Quiz mensal' };
+  const STATUS_AV = { rascunho: 'Rascunho', aberto: 'Aberto', encerrado: 'Encerrado' };
+  const TIPOS_QUESTAO = {
+    ouvir: { icone: '👂', nome: 'Ouvir', cmd: 'Ouça a palavra e marque a figura.' },
+    ler: { icone: '📖', nome: 'Ler', cmd: 'Leia a palavra e marque a figura.' },
+    figura: { icone: '🖼️', nome: 'Figura', cmd: 'Olhe a figura e marque a palavra em inglês.' },
+  };
+  const LETRAS_AV = ['A', 'B', 'C', 'D'];
+  let avEdicao = null, avResultados = null, avTurma = '';
+
+  function telaAvaliacoes(qual) {
+    ['av-lista', 'av-editor', 'av-resultados'].forEach((id) => ($(id).hidden = id !== qual));
+    window.scrollTo(0, 0);
+  }
+
+  /** Comando da questão. Na questão "figura" de uma palavra sem emoji, a criança lê o português. */
+  function comandoQ(x) {
+    return x.tipo === 'figura' && !x.palavra.figura ? 'Leia em português e marque a palavra em inglês.' : TIPOS_QUESTAO[x.tipo].cmd;
+  }
+
+  function rotuloAlt(tipo, a) { return tipo === 'figura' ? a.en : a.figura || a.pt; }
+  function altEhTexto(tipo, a) { return tipo === 'figura' || !a.figura; }
+
+  // ---------- Lista ----------
+  function renderAvaliacoes() {
+    const serie = $('av-filtro-serie').value;
+    const lista = estado.avaliacoes.filter((q) => !serie || q.serie === serie);
+    $('av-tabela').innerHTML = lista.length ? lista.map((q) => {
+      const acao = q.status === 'rascunho' ? ['aberto', 'Liberar para alunos'] : q.status === 'aberto' ? ['encerrado', 'Encerrar'] : ['aberto', 'Reabrir'];
+      return `<tr>
+        <td><strong>${esc(q.titulo)}</strong><div class="suave pequeno">${q.questoes.length} questões</div></td>
+        <td>${esc(q.serie)}</td>
+        <td>${TIPOS_AV[q.tipo] || esc(q.tipo)}</td>
+        <td>${esc(q.mes)}</td>
+        <td><span class="selo ${esc(q.status)}">${STATUS_AV[q.status]}</span></td>
+        <td>${q.respostas}</td>
+        <td class="acoes">
+          <button class="btn mini" data-av="status" data-id="${esc(q.id)}" data-novo="${acao[0]}">${acao[1]}</button>
+          <button class="btn mini" data-av="resultados" data-id="${esc(q.id)}">Resultados</button>
+          <button class="btn mini" data-av="editar" data-id="${esc(q.id)}">Editar</button>
+          <button class="btn mini perigo" data-av="excluir" data-id="${esc(q.id)}">Excluir</button>
+        </td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="7" class="vazio">Nenhuma avaliação ainda. Comece pelo diagnóstico de cada série.</td></tr>';
+  }
+
+  // ---------- Editor ----------
+  function renderTemasEditor(marcados) {
+    const serie = $('ave-serie').value;
+    const temas = estado.temas.filter((t) => t.serie === serie);
+    $('ave-temas').innerHTML = temas.map((t) => `
+      <label><input type="checkbox" value="${esc(t.id)}" ${marcados.includes(t.id) ? 'checked' : ''}>
+        <span>${esc(t.titulo)} <span class="suave pequeno">· ${t.trimestre}º tri · ${t.palavras.length} pal.${t.status === 'oculto' ? ' · oculto' : ''}</span></span></label>`).join('')
+      || '<p class="suave pequeno">Nenhum tema nesta série.</p>';
+  }
+  function temasMarcados() { return [...$('ave-temas').querySelectorAll('input:checked')].map((i) => i.value); }
+
+  async function novaAvaliacao(tipo) {
+    const serie = $('av-filtro-serie').value || estado.resumo.series[0];
+    const s = await chamar('profSugestaoAvaliacao', tipo, serie);
+    abrirEditorAv({ id: '', tipo: s.tipo, serie: s.serie, mes: s.mes, titulo: s.titulo, temas: s.temas, questoes: [], respostas: 0 });
+  }
+
+  function abrirEditorAv(q) {
+    avEdicao = { id: q.id, respostas: q.respostas || 0, questoes: q.questoes.map((x) => JSON.parse(JSON.stringify(x))) };
+    $('ave-titulo-tela').textContent = q.id ? 'Editar avaliação' : q.tipo === 'diagnostico' ? 'Novo diagnóstico' : 'Novo quiz mensal';
+    $('ave-titulo').value = q.titulo;
+    $('ave-tipo').value = q.tipo;
+    $('ave-serie').value = q.serie;
+    $('ave-mes').value = q.mes;
+    $('ave-qtd').value = q.questoes.length || 10;
+    renderTemasEditor(q.temas || []);
+    renderQuestoesAv();
+    telaAvaliacoes('av-editor');
+  }
+
+  function renderQuestoesAv() {
+    const ed = avEdicao, bloqueado = ed.respostas > 0;
+    $('ave-bloqueado').hidden = !bloqueado;
+    ['ave-serie', 'ave-montar', 'ave-tipo'].forEach((id) => ($(id).disabled = bloqueado));
+    $('ave-contagem').textContent = `(${ed.questoes.length})`;
+    $('ave-questoes').innerHTML = ed.questoes.length ? ed.questoes.map((q, i) => {
+      const T = TIPOS_QUESTAO[q.tipo];
+      const enunciado = q.tipo === 'ouvir'
+        ? `${T.cmd} <button class="btn mini" data-ouvir-q="${i}">🔊 ${esc(q.palavra.en)}</button>`
+        : q.tipo === 'ler' ? `${T.cmd} <strong style="font-size:1.4rem">${esc(q.palavra.en)}</strong>`
+        : `${comandoQ(q)} <span class="grande">${esc(q.palavra.figura || q.palavra.pt)}</span>`;
+      return `<div class="questao-k" data-q="${i}">
+        <div class="topo-q"><strong>${i + 1}.</strong>
+          <select data-tipo="${i}" style="width:auto" ${bloqueado ? 'disabled' : ''}>${Object.keys(TIPOS_QUESTAO).map((k) =>
+            `<option value="${k}" ${k === q.tipo ? 'selected' : ''}>${TIPOS_QUESTAO[k].icone} ${TIPOS_QUESTAO[k].nome}</option>`).join('')}</select>
+          <span class="suave pequeno">${esc(q.tema)}</span><span class="espaco"></span>
+          <button class="btn mini" data-trocar="${i}" ${bloqueado ? 'disabled' : ''}>🔄 Trocar</button>
+          <button class="btn mini perigo" data-remover-q="${i}" ${bloqueado ? 'disabled' : ''}>✕</button></div>
+        <div class="enunciado-k">${enunciado}</div>
+        <div class="alts-k">${q.alternativas.map((a, j) => `
+          <div class="alt-k ${j === q.correta ? 'certa' : ''}"><div class="l">${LETRAS_AV[j]}${j === q.correta ? ' ✓' : ''}</div>
+            <div class="v ${altEhTexto(q.tipo, a) ? 'txt' : ''}">${esc(rotuloAlt(q.tipo, a))}</div></div>`).join('')}</div>
+      </div>`;
+    }).join('') : '<div class="cartao vazio">Escolha os temas e clique em "🎲 Montar questões".</div>';
+  }
+
+  function dadosAv() {
+    return {
+      id: avEdicao.id, titulo: $('ave-titulo').value, tipo: $('ave-tipo').value, serie: $('ave-serie').value,
+      mes: $('ave-mes').value, temas: temasMarcados(), questoes: avEdicao.questoes,
+    };
+  }
+
+  // ---------- Resultados ----------
+  async function abrirResultadosAv(id) {
+    avResultados = await chamar('profResultadosAvaliacao', id);
+    if (!avResultados.turmas.includes(avTurma)) {
+      avTurma = avResultados.turmas.find((t) => avResultados.alunos.some((a) => a.turma === t)) || avResultados.turmas[0];
+    }
+    renderResultadosAv();
+    telaAvaliacoes('av-resultados');
+  }
+
+  function renderResultadosAv() {
+    const r = avResultados;
+    $('avr-titulo').textContent = `${r.avaliacao.titulo} · ${r.avaliacao.serie} ano`;
+    $('avr-turmas').innerHTML = r.turmas.map((t) => {
+      const al = r.alunos.filter((a) => a.turma === t);
+      return `<button class="btn ${t === avTurma ? 'ativa' : ''}" data-turma="${esc(t)}">${esc(t)} <span class="pequeno">${al.filter((a) => a.resposta).length}/${al.length}</span></button>`;
+    }).join('');
+    const alunos = r.alunos.filter((a) => a.turma === avTurma).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+    $('avr-tabela').innerHTML = alunos.length ? alunos.map((a) => {
+      const x = a.resposta;
+      return `<tr>
+        <td class="avatar">${esc(a.avatar)}</td>
+        <td>${esc(a.nome)}</td>
+        <td>${x ? `<span class="selo ${x.origem === 'online' ? 'aberto' : 'rascunho'}">${x.origem === 'online' ? 'Online' : 'Impresso'}</span>` : '<span class="suave pequeno">pendente</span>'}</td>
+        <td>${x ? x.pontuacao + '/' + x.total : ''}</td>
+        <td>${x ? x.percentual + '%' : ''}</td>
+        <td><input class="lanc" data-email="${esc(a.email)}" data-nome="${esc(a.nome)}" placeholder="${x && x.marcadas ? esc(x.marcadas) : 'letras ou nº'}"></td>
+        <td class="acoes">${x ? `<button class="btn mini perigo" data-apagar="${esc(a.email)}">Apagar</button>` : ''}</td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="7" class="vazio">Nenhum aluno cadastrado nesta turma.</td></tr>';
+    $('avr-questoes').innerHTML = r.porQuestao.map((q) => {
+      const pct = q.respostas ? Math.round((q.acertos / q.respostas) * 100) : null;
+      return `<div class="barra-q"><strong>${q.numero}</strong>
+        <span class="suave pequeno">${TIPOS_QUESTAO[q.tipo].icone} ${TIPOS_QUESTAO[q.tipo].nome}</span>
+        <span>${esc(q.palavra.figura)} <strong>${esc(q.palavra.en)}</strong> <span class="suave pequeno">${esc(q.tema)}</span></span>
+        <div class="barra"><i style="width:${pct || 0}%;${pct !== null && pct < 50 ? 'background:var(--perigo)' : ''}"></i></div>
+        <span class="suave">${pct === null ? '—' : pct + '%'}</span></div>`;
+    }).join('') + '<p class="suave pequeno">Considera as respostas online e as impressas lançadas com letras.</p>';
+  }
+
+  // ---------- Impressão ----------
+  function imprimirAv(q, gabarito) {
+    const titulo = esc(q.titulo || 'Avaliação');
+    let html;
+    if (gabarito) {
+      const ouvir = q.questoes.map((x, i) => (x.tipo === 'ouvir' ? `<li>Questão ${i + 1}: <strong>${esc(x.palavra.en)}</strong></li>` : '')).join('');
+      html = `<h2>Gabarito – ${titulo} (${esc(q.serie)} ano)</h2>
+        <table><tr><th>Questão</th>${q.questoes.map((_, i) => `<th>${i + 1}</th>`).join('')}</tr>
+        <tr><th>Resposta</th>${q.questoes.map((x) => `<td><strong>${LETRAS_AV[x.correta]}</strong></td>`).join('')}</tr></table>
+        <p>Sequência para lançar no sistema: <strong style="font-family:monospace;font-size:14pt">${q.questoes.map((x) => LETRAS_AV[x.correta]).join('')}</strong></p>
+        ${ouvir ? `<h3>👂 Palavras para o professor falar em voz alta (2 vezes cada)</h3><ul>${ouvir}</ul>` : ''}`;
+    } else {
+      html = `<div class="cab"><div><strong>${titulo}</strong> – Língua Inglesa – ${esc(q.serie)} ano</div>
+          <div>Nome: ________________________________________ Turma: ______ Data: ___/___/______</div></div>
+        <p><em>Marque um X na resposta certa de cada questão.</em></p>
+        ${q.questoes.map((x, i) => {
+          const destaque = x.tipo === 'ouvir' ? '<div class="destaque">👂 🔊</div>'
+            : x.tipo === 'ler' ? `<div class="destaque">${esc(x.palavra.en)}</div>`
+            : `<div class="destaque ${x.palavra.figura ? 'fig' : ''}">${esc(x.palavra.figura || x.palavra.pt)}</div>`;
+          return `<div class="q"><div class="cmd">${i + 1}. ${x.tipo === 'ouvir' ? 'Ouça a palavra que o professor vai falar e marque a figura.' : comandoQ(x)}</div>${destaque}
+            <div class="ops">${x.alternativas.map((a, j) => `<div class="op"><div class="let">( ) ${LETRAS_AV[j]}</div>
+              <div class="v ${altEhTexto(x.tipo, a) ? 'txt' : ''}">${esc(rotuloAlt(x.tipo, a))}</div></div>`).join('')}</div></div>`;
+        }).join('')}`;
+    }
+    $('impressao').innerHTML = html;
+    document.body.classList.add('imprimindo');
+    setTimeout(() => { window.print(); document.body.classList.remove('imprimindo'); }, 80);
+  }
+
+  function configurarAvaliacoes() {
+    $('av-filtro-serie').innerHTML = opcoesSerie(true);
+    $('ave-serie').innerHTML = opcoesSerie(false);
+    $('av-filtro-serie').addEventListener('change', renderAvaliacoes);
+    $('av-novo-diag').addEventListener('click', (ev) => comBotao(ev.target, () => novaAvaliacao('diagnostico')));
+    $('av-novo-mensal').addEventListener('click', (ev) => comBotao(ev.target, () => novaAvaliacao('mensal')));
+    document.querySelectorAll('[data-av-voltar]').forEach((b) => b.addEventListener('click', async () => {
+      telaAvaliacoes('av-lista');
+      estado.avaliacoes = await chamar('profListarAvaliacoes');
+      renderAvaliacoes();
+    }));
+
+    $('av-tabela').addEventListener('click', (ev) => {
+      const b = ev.target.closest('button[data-av]');
+      if (!b) return;
+      const q = estado.avaliacoes.find((x) => x.id === b.dataset.id);
+      if (b.dataset.av === 'editar') abrirEditorAv(q);
+      if (b.dataset.av === 'resultados') comBotao(b, () => abrirResultadosAv(q.id));
+      if (b.dataset.av === 'status') {
+        if (b.dataset.novo === 'aberto' && !confirm(`Liberar "${q.titulo}" para todos os alunos do ${q.serie} ano?`)) return;
+        comBotao(b, async () => {
+          estado.avaliacoes = await chamar('profAlterarStatusAvaliacao', q.id, b.dataset.novo);
+          renderAvaliacoes();
+          avisar('Status atualizado.');
+        });
+      }
+      if (b.dataset.av === 'excluir') {
+        const aviso = q.respostas ? `\n\nATENÇÃO: as ${q.respostas} respostas também serão apagadas e os níveis recalculados.` : '';
+        if (!confirm(`Excluir "${q.titulo}"?${aviso}`)) return;
+        comBotao(b, async () => {
+          estado.avaliacoes = await chamar('profExcluirAvaliacao', q.id);
+          renderAvaliacoes();
+          estado.alunos = await chamar('profListarAlunos');
+          renderAlunos();
+          avisar('Avaliação excluída.');
+        });
+      }
+    });
+
+    $('ave-serie').addEventListener('change', () => { renderTemasEditor([]); });
+    $('ave-montar').addEventListener('click', (ev) => {
+      if (avEdicao.questoes.length && !confirm('Montar novas questões no lugar das atuais?')) return;
+      comBotao(ev.target, async () => {
+        avEdicao.questoes = await chamar('profGerarQuestoes', { serie: $('ave-serie').value, temas: temasMarcados(), quantidade: $('ave-qtd').value });
+        renderQuestoesAv();
+        avisar('Questões montadas. Revise e clique em Salvar.');
+      });
+    });
+
+    $('ave-questoes').addEventListener('click', async (ev) => {
+      const b = ev.target.closest('button');
+      if (!b) return;
+      if (b.dataset.ouvirQ !== undefined) { await Fala.iniciar(); Fala.falar(avEdicao.questoes[Number(b.dataset.ouvirQ)].palavra.en); }
+      if (b.dataset.removerQ !== undefined) { avEdicao.questoes.splice(Number(b.dataset.removerQ), 1); renderQuestoesAv(); }
+      if (b.dataset.trocar !== undefined) {
+        const i = Number(b.dataset.trocar), atual = avEdicao.questoes[i];
+        comBotao(b, async () => {
+          const [nova] = await chamar('profGerarQuestoes', {
+            serie: $('ave-serie').value, temas: temasMarcados(), quantidade: 1, evitar: avEdicao.questoes.map((q) => q.palavra.en), tipo: atual.tipo,
+          });
+          avEdicao.questoes[i] = nova;
+          renderQuestoesAv();
+        });
+      }
+    });
+    $('ave-questoes').addEventListener('change', (ev) => {
+      const s = ev.target.closest('[data-tipo]');
+      if (!s) return;
+      const q = avEdicao.questoes[Number(s.dataset.tipo)];
+      const rotulos = q.alternativas.map((a) => rotuloAlt(s.value, a).toLowerCase());
+      if (new Set(rotulos).size < rotulos.length) {
+        avisar('Neste tipo, duas alternativas ficariam iguais. Use 🔄 Trocar para outra palavra.', true);
+        s.value = q.tipo;
+        return;
+      }
+      q.tipo = s.value;
+      renderQuestoesAv();
+    });
+
+    $('ave-salvar').addEventListener('click', (ev) => comBotao(ev.target, async () => {
+      const r = await chamar('profSalvarAvaliacao', dadosAv());
+      avEdicao.id = r.id;
+      estado.avaliacoes = r.avaliacoes;
+      avisar('Avaliação salva. Para os alunos verem, clique em "Liberar para alunos" na lista.');
+    }));
+    $('ave-imprimir').addEventListener('click', () => imprimirAv(dadosAv(), false));
+
+    $('avr-turmas').addEventListener('click', (ev) => {
+      const b = ev.target.closest('button[data-turma]');
+      if (!b) return;
+      avTurma = b.dataset.turma;
+      renderResultadosAv();
+    });
+    $('avr-salvar').addEventListener('click', (ev) => {
+      const lancamentos = [...document.querySelectorAll('#avr-tabela input.lanc')].filter((i) => i.value.trim())
+        .map((i) => ({ email: i.dataset.email, nome: i.dataset.nome, valor: i.value }));
+      if (!lancamentos.length) { avisar('Nada para salvar: preencha a coluna "Lançar impresso".', true); return; }
+      comBotao(ev.target, async () => {
+        avResultados = await chamar('profLancarRespostas', avResultados.avaliacao.id, lancamentos);
+        renderResultadosAv();
+        estado.alunos = await chamar('profListarAlunos');
+        renderAlunos();
+        avisar(lancamentos.length + ' lançamento(s) salvo(s).');
+      });
+    });
+    $('avr-tabela').addEventListener('click', (ev) => {
+      const email = ev.target.dataset.apagar;
+      if (!email) return;
+      if (!confirm('Apagar a resposta desta criança? Ela poderá responder de novo online, ou você poderá lançar outra vez.')) return;
+      comBotao(ev.target, async () => {
+        avResultados = await chamar('profExcluirResposta', avResultados.avaliacao.id, email);
+        renderResultadosAv();
+        estado.alunos = await chamar('profListarAlunos');
+        renderAlunos();
+      });
+    });
+    $('avr-imprimir').addEventListener('click', () => imprimirAv(avResultados.avaliacao, false));
+    $('avr-gabarito').addEventListener('click', () => imprimirAv(avResultados.avaliacao, true));
+  }
+</script>
