@@ -309,14 +309,15 @@
     });
 
     // ---------- Speak! (em outra aba, fora do Apps Script, por causa do microfone) ----------
-    const ORIGEM_SPEAK = 'https://lindomarandradegertrudes.github.io';
+    // Nunca escreva duas barras seguidas no meio de uma linha de código: o Google corta a linha ali, como se fosse comentário.
+    const ORIGEM_SPEAK = 'https:' + '/' + '/lindomarandradegertrudes.github.io';
     let speakPendente = null;
 
     function base64url(texto) {
       const bytes = new TextEncoder().encode(texto);
       let bin = '';
       bytes.forEach((b) => (bin += String.fromCharCode(b)));
-      return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+      return btoa(bin).split('+').join('-').split('/').join('_').replace(/=+$/, '');
     }
 
     function abrirSpeak() {

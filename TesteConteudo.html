@@ -158,7 +158,7 @@
         } else if (d.captura === 'NotReadableError') {
           c = 'O microfone está sendo usado por outro programa (Meet, Zoom…) ou o sistema operacional não deixa o Chrome usá-lo. No Windows: Configurações > Privacidade > Microfone > permitir aplicativos da área de trabalho.';
         } else if (d.captura === 'NotAllowedError' && d.permissao === 'denied' && d.ms < 400) {
-          c = 'O microfone foi <strong>negado sem perguntar</strong>. Ou o site está bloqueado no Chrome (cadeado ao lado do endereço > Microfone > Permitir), ou a <strong>administração da conta/aparelho da escola</strong> desligou o microfone. Isso vale em qualquer rede, porque a regra vem junto com a conta @edu ou com o Chromebook. Para confirmar, abra <code>chrome://policy</code> e procure por <code>AudioCapture</code>.';
+          c = 'O microfone foi <strong>negado sem perguntar</strong>. Ou o site está bloqueado no Chrome (cadeado ao lado do endereço > Microfone > Permitir), ou a <strong>administração da conta/aparelho da escola</strong> desligou o microfone. Isso vale em qualquer rede, porque a regra vem junto com a conta @edu ou com o Chromebook. Para confirmar, abra <code>chrome:' + '/' + '/policy</code> e procure por <code>AudioCapture</code>.';
         } else if (d.captura === 'NotAllowedError') {
           c = 'O pedido de microfone foi recusado. Se você não clicou em "Bloquear", clique no cadeado ao lado do endereço > Microfone > Permitir e recarregue a página.';
         } else {
