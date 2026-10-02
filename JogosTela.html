@@ -822,8 +822,10 @@
                 Som.acerto();
                 if (!erros) acertos++;
                 // Credita as palavras do tema que aparecem na frase.
+                // Sem "cifrão + &" no código: o Google trata essa sequência de forma especial ao montar a página e quebra o script.
+                const soPalavras = (s) => ' ' + s.toLowerCase().replace(/[^a-z0-9' ]+/g, ' ').replace(/\s+/g, ' ').trim() + ' ';
                 tema.palavras.forEach((p) => {
-                  if (!new RegExp('\\b' + p.en.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i').test(f.en)) return;
+                  if (!soPalavras(f.en).includes(soPalavras(p.en))) return;
                   const r = registro(p.en);
                   if (!erros) r.a = 1;
                   r.c = 1;
