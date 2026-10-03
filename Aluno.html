@@ -19,7 +19,8 @@
     h1 { font-size: 2rem; font-weight: 900; }
     h2 { font-size: 1.4rem; font-weight: 800; }
 
-    .topo-kids { display: flex; align-items: center; gap: 14px; padding: 14px 20px; background: #fff; border-bottom: 3px solid #ffe8cc; }
+    .topo-kids { display: flex; align-items: center; gap: 14px 20px; padding: 12px 20px; background: #fff; border-bottom: 3px solid #ffe8cc; flex-wrap: wrap; }
+    .eu-kids { display: flex; align-items: center; gap: 14px; margin-left: auto; }
     .avatar-btn { font-size: 2.6rem; line-height: 1; background: #fff3e6; border: 3px solid #ffc078; border-radius: 50%; width: 68px; height: 68px; cursor: pointer; flex: none; }
     .avatar-btn:hover { transform: scale(1.06); }
     .ola-kids { font-size: 1.5rem; font-weight: 900; margin: 0; }
@@ -88,7 +89,7 @@
     .frase button { border: 0; background: #fff0e6; border-radius: 50%; width: 48px; height: 48px; font-size: 1.4rem; cursor: pointer; flex: none; }
     .sem-pt .pt { display: none; }
 
-    .minhas-estrelas { margin-left: auto; background: #fff9db; border: 3px solid #ffe066; border-radius: 99px; padding: 6px 16px; font-size: 1.4rem; font-weight: 900; white-space: nowrap; }
+    .minhas-estrelas { background: #fff9db; border: 3px solid #ffe066; border-radius: 99px; padding: 6px 16px; font-size: 1.4rem; font-weight: 900; white-space: nowrap; }
     .progresso-tema { margin-top: auto; display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: .9rem; }
     .barrinha { flex: 1; height: 12px; background: rgba(255,255,255,.75); border-radius: 99px; overflow: hidden; }
     .barrinha i { display: block; height: 100%; background: #2f9e44; border-radius: 99px; }
@@ -140,6 +141,17 @@
   </style>
 </head>
 <body>
+  <header class="topo-kids">
+    <div class="marca-app"><?!= incluir('Marca'); ?></div>
+    <div class="eu-kids" id="topo" hidden>
+      <button class="avatar-btn" id="meu-avatar" title="Trocar meu bichinho" aria-label="Trocar meu bichinho"></button>
+      <div>
+        <p class="ola-kids">Hi, <span id="primeiro-nome"></span>! 👋</p>
+        <div class="sub-kids">Turma <span id="minha-turma"></span></div>
+      </div>
+      <div class="minhas-estrelas" id="minhas-estrelas" title="Minhas estrelas">⭐ 0</div>
+    </div>
+  </header>
   <?!= incluir('AlunoCorpo'); ?>
 </body>
 </html>

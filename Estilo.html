@@ -1,3 +1,5 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Condensed:wght@400;700&display=swap" rel="stylesheet">
 <style>
   :root {
     --fundo: #fff9f2;
@@ -91,5 +93,20 @@
   .vazio { color: var(--suave); text-align: center; padding: 24px; }
   .link-box { display: flex; gap: 8px; align-items: center; background: var(--primaria-clara); border-radius: 8px; padding: 10px 12px; }
   .link-box code { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .85rem; }
+
+  /* Cabeçalho: marca do app (bandeira redonda + nome) */
+  .marca-app { display: flex; align-items: center; gap: 12px; min-width: 0; flex-wrap: wrap; }
+  .marca-app .bandeira {
+    position: relative; flex: none; width: 46px; height: 46px; border-radius: 50%; overflow: hidden; background: #012169;
+    box-shadow: 0 0 0 2px #fff, 0 0 0 3px #d5d9e2, 0 3px 8px rgba(16, 24, 40, .25);
+  }
+  .marca-app .bandeira svg { display: block; }
+  .marca-app .bandeira::after {
+    content: ""; position: absolute; inset: 0; border-radius: 50%;
+    background: radial-gradient(circle at 32% 25%, rgba(255,255,255,.55), rgba(255,255,255,0) 45%), radial-gradient(circle at 50% 120%, rgba(0,0,0,.25), rgba(0,0,0,0) 60%);
+  }
+  .marca-app .nome-app { font-family: "Roboto Condensed", "Arial Narrow", Arial, sans-serif; font-weight: 700; font-size: 1.65rem; color: #0b1736; letter-spacing: -.01em; line-height: 1.1; }
+  .marca-app .sub-app { font-family: "Roboto Condensed", "Arial Narrow", Arial, sans-serif; font-weight: 400; font-size: 1.65rem; color: #7a8090; line-height: 1.1; }
+  @media (max-width: 560px) { .marca-app .nome-app, .marca-app .sub-app { font-size: 1.3rem; } .marca-app .bandeira { width: 38px; height: 38px; } }
   [hidden] { display: none !important; }
 </style>

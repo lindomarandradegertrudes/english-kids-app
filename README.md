@@ -34,7 +34,7 @@ Roda **gratuitamente** no Google Workspace da escola, com Google Apps Script e G
 | `Aluno.html` / `AlunoCorpo.html` | Tela da criança (o modelo `Aluno` só inclui arquivos; todo o código fica em `AlunoCorpo`) |
 | `Fala.html` | Voz em inglês e reconhecimento de voz do Chrome |
 | `Teste.html` / `TesteConteudo.html` | Teste de voz e microfone (`?teste=1`) |
-| `Estilo.html` | Estilos compartilhados |
+| `Estilo.html` / `Marca.html` | Estilos compartilhados e marca do cabeçalho (bandeira + nome) |
 
 ## Privacidade
 
