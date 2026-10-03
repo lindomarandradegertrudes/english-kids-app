@@ -1,6 +1,6 @@
 <div class="pilha" id="teste-chromebook">
   <div class="cartao">
-    <h2>🔊 1. Voz em inglês</h2>
+    <h2>🔊 Voz em inglês</h2>
     <p class="suave pequeno">Os jogos falam as palavras com a voz do próprio Chrome. Aumente o volume e clique no botão.</p>
     <div class="linha">
       <button class="btn primario" type="button" id="tc-falar">🔊 Falar "Hello! Let's play English games!"</button>
@@ -10,56 +10,32 @@
   </div>
 
   <div class="cartao">
-    <h2>🎤 2. Microfone e reconhecimento de voz</h2>
-    <p class="suave pequeno">Para o jogo "Speak!". Clique no botão, permita o microfone se o Chrome perguntar e diga <strong>"apple"</strong> em voz alta.</p>
-    <div class="linha">
-      <button class="btn primario" type="button" id="tc-ouvir">🎤 Ouvir agora</button>
-      <span class="suave pequeno" id="tc-ouvindo"></span>
-    </div>
-    <div id="tc-mic-res" class="pequeno" style="margin-top:10px"></div>
-  </div>
-
-  <div class="cartao">
-    <h2>🩺 3. Diagnóstico detalhado do microfone</h2>
-    <p class="suave pequeno">Descobre <strong>quem</strong> está bloqueando: a página, o Chrome, a conta da escola ou o aparelho. Clique e, se o Chrome perguntar, escolha <strong>Permitir</strong>.</p>
-    <button class="btn primario" type="button" id="tc-diag">🩺 Diagnosticar</button>
-    <div id="tc-diag-res" class="pequeno" style="margin-top:10px"></div>
-  </div>
-
-  <div class="cartao">
     <h2>📋 Resumo deste aparelho</h2>
     <div id="tc-resumo" class="pequeno"></div>
-    <p class="suave pequeno">Anote o resultado (ou tire um print) e mande no chat do Claude para ajustarmos os jogos.</p>
   </div>
 </div>
 
 <script>
   (function () {
     const el = (id) => document.getElementById(id);
-    const res = { voz: null, mic: null };
+    let falou = null;
     const ok = (t) => `<span style="color:#2b8a3e;font-weight:700">✅ ${t}</span>`;
     const ruim = (t) => `<span style="color:#c92a2a;font-weight:700">❌ ${t}</span>`;
     const e = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
     function resumo() {
-      const politica = document.featurePolicy && document.featurePolicy.allowsFeature
-        ? (document.featurePolicy.allowsFeature('microphone') ? 'permite' : 'NÃO permite') : 'desconhecida';
       el('tc-resumo').innerHTML = `
         <div>Navegador: <code>${e(navigator.userAgent.match(/(CrOS|Windows|Mac OS X|Android|Linux)[^;)]*/)?.[0] || '?')}</code>
           ${/CrOS/.test(navigator.userAgent) ? '· <strong>Chromebook</strong>' : ''}</div>
         <div>Voz do Chrome: ${Fala.disponivel() ? ok('disponível') : ruim('indisponível')}</div>
         <div>Vozes em inglês: <strong>${Fala.vozesIngles().length}</strong>${Fala.voz ? ' · usando <code>' + e(Fala.voz.name) + '</code>' : ''}</div>
-        <div>Reconhecimento de voz: ${Escuta.suportada() ? ok('existe no navegador') : ruim('não existe neste navegador')}</div>
-        <div>Microfone permitido pela página: <strong>${politica}</strong></div>
-        <div>Teste da voz: ${res.voz === null ? '<span class="suave">não feito</span>' : res.voz ? ok('falou') : ruim('não falou')}</div>
-        <div>Teste do microfone: ${res.mic === null ? '<span class="suave">não feito</span>' : res.mic === true ? ok('entendeu "apple"') : ruim(e(res.mic))}</div>`;
+        <div>Teste da voz: ${falou === null ? '<span class="suave">não feito</span>' : falou ? ok('falou') : ruim('não falou')}</div>`;
     }
 
     async function falar(lento) {
       await Fala.iniciar();
       el('tc-voz-res').innerHTML = '<span class="suave">Falando…</span>';
-      const falou = await Fala.falar("Hello! Let's play English games!", lento);
-      res.voz = falou;
+      falou = await Fala.falar("Hello! Let's play English games!", lento);
       el('tc-voz-res').innerHTML = falou
         ? ok('A voz funcionou.') + ` <span class="suave">Voz: ${e(Fala.voz ? Fala.voz.name + ' (' + Fala.voz.lang + ')' : 'padrão do Chrome')}. Se não ouviu nada, confira o volume.</span>`
         : ruim('A voz não funcionou neste navegador.');
@@ -67,110 +43,6 @@
     }
     el('tc-falar').addEventListener('click', () => falar(false));
     el('tc-lento').addEventListener('click', () => falar(true));
-
-    el('tc-ouvir').addEventListener('click', async () => {
-      const botao = el('tc-ouvir');
-      botao.disabled = true;
-      el('tc-mic-res').innerHTML = '';
-      el('tc-ouvindo').textContent = 'Preparando…';
-      try {
-        const frases = await Escuta.ouvir({ aoComecar: () => (el('tc-ouvindo').textContent = '🔴 Ouvindo… diga "apple"') });
-        const entendeu = frases.some((f) => normalizarFala(f).split(' ').includes('apple'));
-        res.mic = entendeu ? true : 'ouviu, mas não reconheceu "apple"';
-        el('tc-mic-res').innerHTML = (entendeu ? ok('Funcionou! Entendi "apple".') : ruim('Ouvi, mas não reconheci "apple". Tente de novo, falando claramente.')) +
-          `<div class="suave">O Chrome entendeu: ${frases.map((f) => '"' + e(f) + '"').join(', ')}</div>`;
-      } catch (erro) {
-        res.mic = erro.mensagem + ' [' + erro.codigo + ']';
-        el('tc-mic-res').innerHTML = ruim(e(erro.mensagem)) + ` <span class="suave">(código: ${e(erro.codigo)})</span>`;
-      } finally {
-        el('tc-ouvindo').textContent = '';
-        botao.disabled = false;
-        resumo();
-      }
-    });
-
-    // ---------- Diagnóstico detalhado ----------
-    el('tc-diag').addEventListener('click', async () => {
-      const botao = el('tc-diag');
-      botao.disabled = true;
-      const linhas = [];
-      const d = {};
-      const add = (t) => { linhas.push(`<div>${t}</div>`); el('tc-diag-res').innerHTML = linhas.join(''); };
-      try {
-        let topo = true;
-        try { topo = window.top === window; } catch (x) { topo = false; }
-        d.topo = topo;
-        d.politica = document.featurePolicy && document.featurePolicy.allowsFeature ? document.featurePolicy.allowsFeature('microphone') : null;
-        add(`Página: ${topo ? 'aberta direto no navegador' : '<strong>dentro de uma moldura (iframe)</strong>'} · ${window.isSecureContext ? 'conexão segura (https)' : '<strong>conexão NÃO segura</strong>'}`);
-        add(`A página pode pedir o microfone? ${d.politica === null ? 'desconhecido' : d.politica ? ok('sim') : ruim('não: a moldura não tem permissão de microfone')}`);
-
-        if (navigator.permissions && navigator.permissions.query) {
-          try { d.permissao = (await navigator.permissions.query({ name: 'microphone' })).state; } catch (x) { d.permissao = 'indisponível'; }
-        } else d.permissao = 'indisponível';
-        const PERM = { granted: ok('permitido para este site'), denied: ruim('BLOQUEADO para este site'), prompt: 'vai perguntar (ainda não decidido)' };
-        add(`Permissão do microfone no Chrome: ${PERM[d.permissao] || e(d.permissao)}`);
-
-        if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
-          const disp = await navigator.mediaDevices.enumerateDevices();
-          d.microfones = disp.filter((x) => x.kind === 'audioinput').length;
-          add(`Microfones encontrados: <strong>${d.microfones}</strong>`);
-        }
-
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-          const t0 = performance.now();
-          try {
-            const fluxo = await navigator.mediaDevices.getUserMedia({ audio: true });
-            fluxo.getTracks().forEach((t) => t.stop());
-            d.captura = 'ok';
-            add(`Abrir o microfone: ${ok('funcionou')}`);
-          } catch (x) {
-            d.captura = x.name;
-            d.ms = Math.round(performance.now() - t0);
-            add(`Abrir o microfone: ${ruim(e(x.name) + ' (' + e(x.message || '') + ')')} <span class="suave">em ${d.ms} ms</span>`);
-          }
-        } else {
-          d.captura = 'sem-api';
-          add(`Abrir o microfone: ${ruim('este navegador não permite')}`);
-        }
-
-        if (d.captura === 'ok' && Escuta.suportada()) {
-          add('Reconhecimento de voz: diga <strong>"apple"</strong> agora…');
-          try {
-            const frases = await Escuta.ouvir({ segundos: 6 });
-            d.reconhecimento = 'ok';
-            add(`Reconhecimento de voz: ${ok('funcionou')} <span class="suave">(entendi: ${frases.map((f) => '"' + e(f) + '"').join(', ')})</span>`);
-          } catch (x) {
-            d.reconhecimento = x.codigo;
-            add(`Reconhecimento de voz: ${ruim(e(x.mensagem) + ' [' + e(x.codigo) + ']')}`);
-          }
-        }
-
-        // Conclusão em linguagem simples.
-        let c;
-        if (d.politica === false || !d.topo) {
-          c = 'A <strong>moldura da página</strong> não deixa usar o microfone. Isso acontece em todo app do Google Apps Script e não depende da sua rede nem de configuração: o microfone só funciona numa página aberta fora do Apps Script (como a página de teste no GitHub).';
-        } else if (d.captura === 'ok' && d.reconhecimento === 'ok') {
-          c = '🎉 <strong>Tudo funciona neste aparelho.</strong> O jogo Speak! pode rodar numa página fora do Apps Script.';
-        } else if (d.captura === 'ok') {
-          c = 'O microfone abre, mas o <strong>reconhecimento de voz do Google</strong> está bloqueado ou sem conexão. Em Chromebooks e contas da escola, isso costuma ser bloqueado pela administração; em janela anônima, tente numa janela normal.';
-        } else if (d.captura === 'NotFoundError' || d.microfones === 0) {
-          c = 'Nenhum microfone foi encontrado neste aparelho (ou ele está desligado/desconectado).';
-        } else if (d.captura === 'NotReadableError') {
-          c = 'O microfone está sendo usado por outro programa (Meet, Zoom…) ou o sistema operacional não deixa o Chrome usá-lo. No Windows: Configurações > Privacidade > Microfone > permitir aplicativos da área de trabalho.';
-        } else if (d.captura === 'NotAllowedError' && d.permissao === 'denied' && d.ms < 400) {
-          c = 'O microfone foi <strong>negado sem perguntar</strong>. Ou o site está bloqueado no Chrome (cadeado ao lado do endereço > Microfone > Permitir), ou a <strong>administração da conta/aparelho da escola</strong> desligou o microfone. Isso vale em qualquer rede, porque a regra vem junto com a conta @edu ou com o Chromebook. Para confirmar, abra <code>chrome:' + '/' + '/policy</code> e procure por <code>AudioCapture</code>.';
-        } else if (d.captura === 'NotAllowedError') {
-          c = 'O pedido de microfone foi recusado. Se você não clicou em "Bloquear", clique no cadeado ao lado do endereço > Microfone > Permitir e recarregue a página.';
-        } else {
-          c = 'Resultado incomum: mande um print deste quadro.';
-        }
-        add(`<div class="feedback" style="margin-top:10px;background:#fff9db;border-left:4px solid #fab005;border-radius:6px;padding:10px 12px">💡 ${c}</div>`);
-      } catch (x) {
-        add(ruim('Erro no diagnóstico: ' + e(x.message)));
-      } finally {
-        botao.disabled = false;
-      }
-    });
 
     Fala.iniciar().then(resumo);
     resumo();

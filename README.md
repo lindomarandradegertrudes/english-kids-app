@@ -15,7 +15,7 @@ Roda **gratuitamente** no Google Workspace da escola, com Google Apps Script e G
 | 3 | Diagnóstico e quizzes mensais montados a partir dos temas, prova impressa e níveis (só avaliações) | ✅ entregue |
 | 4 | Equipes de até 5 alunos (níveis misturados) e placar mensal por equipes | ✅ entregue |
 | 5 | Mais jogos: Find it! (caça-palavras), Color it!, Build it! (frases), Spelling Bee e Repeat after me | ✅ entregue |
-| + | Speak!: pronúncia com microfone, numa página externa (GitHub Pages `english-kids-speak`) que devolve as estrelas ao app | ✅ entregue |
+| + | Speak! (pronúncia com microfone): retirado, porque o reconhecimento de voz falhava muito com as crianças | ❌ removido |
 | 6 | Relatórios: comparativo das turmas, palavras difíceis, ficha do aluno (impressão) e exportação para planilha | ✅ entregue |
 
 ## Estrutura
@@ -32,13 +32,13 @@ Roda **gratuitamente** no Google Workspace da escola, com Google Apps Script e G
 | `Relatorios.gs` / `ProfRelatorios.html` | Relatórios, ficha do aluno e exportação |
 | `Professor.html` / `ProfTemas.html` / `ProfProgresso.html` / `ProfAvaliacoes.html` / `ProfEquipes.html` | Painel do professor e abas de Temas, Progresso, Avaliações e Equipes |
 | `Aluno.html` / `AlunoCorpo.html` | Tela da criança (o modelo `Aluno` só inclui arquivos; todo o código fica em `AlunoCorpo`) |
-| `Fala.html` | Voz em inglês e reconhecimento de voz do Chrome |
-| `Teste.html` / `TesteConteudo.html` | Teste de voz e microfone (`?teste=1`) |
+| `Fala.html` | Voz em inglês do Chrome |
+| `Teste.html` / `TesteConteudo.html` | Teste de voz (`?teste=1`) |
 | `Estilo.html` / `Marca.html` | Estilos compartilhados e marca do cabeçalho (bandeira + nome) |
 
 ## Privacidade
 
-Os dados dos alunos ficam somente na planilha do professor, dentro da conta Google da escola. A voz e o reconhecimento de voz são os do próprio Chrome, e nada é gravado. A geração de temas com IA, que é opcional, envia apenas o conteúdo pedagógico.
+Os dados dos alunos ficam somente na planilha do professor, dentro da conta Google da escola. A voz é a do próprio Chrome, e nada é gravado. A geração de temas com IA, que é opcional, envia apenas o conteúdo pedagógico.
 
 ## Autor
 

@@ -1,6 +1,6 @@
 # English Kids App — pacote completo para o Gemini
 
-Gerado em 02/10/2026. Este arquivo reúne a documentação e **todo o código-fonte** do English Kids App, para que outro assistente de IA (Gemini) entenda o sistema e continue o trabalho.
+Gerado em 03/10/2026. Este arquivo reúne a documentação e **todo o código-fonte** do English Kids App, para que outro assistente de IA (Gemini) entenda o sistema e continue o trabalho.
 
 **Como usar no Gemini:** envie este arquivo e escreva, por exemplo:
 > "Este é o código completo do meu sistema English Kids App (Google Apps Script). Leia a seção 'Regras obrigatórias' antes de propor qualquer mudança. Quero ..."
@@ -16,25 +16,21 @@ Sistema web para o professor de Língua Inglesa dos Anos Iniciais (3º ao 5º an
 - **Plataforma:** Google Apps Script (web app) ligado a uma Planilha Google, no Workspace da escola (domínio `edu.joinville.sc.gov.br`).
 - **Publicação:** Implantar > App da Web, "Executar como: Eu" e "Qualquer pessoa no domínio".
 - **Login:** conta Google da escola. No primeiro acesso, a criança escreve o nome, escolhe a turma e um bichinho (avatar).
-- **Quem vê o quê:** `doGet` mostra `Professor.html` para os e-mails da lista de professores e `Aluno.html` para os alunos. Com `?teste=1` mostra o teste de voz e microfone. Com `?speak=<resultado>` salva o resultado do Speak! (plano B).
+- **Quem vê o quê:** `doGet` mostra `Professor.html` para os e-mails da lista de professores e `Aluno.html` para os alunos. Com `?teste=1` mostra o teste de voz.
 - **9 turmas** (3ºA–5ºC, editáveis), até 38 alunos cada.
 - **Repositório:** https://github.com/lindomarandradegertrudes/english-kids-app (público).
 
 ## 2. Funcionalidades
 
 1. **Temas:** cada tema é uma lista de palavras `{en, pt, figura}` (figura = emoji ou número; vazia = o jogo mostra o português) e frases `{en, pt}`. Há 24 temas padrão dos Mapas 2026. Os temas cujo mês já chegou ficam liberados. O professor edita, importa JSON ou gera com IA. Todos os jogos e avaliações são montados a partir dos temas.
-2. **Jogos (10):** Listen & Click (`ouvir`), Memory (`memoria`), Match it! (`arrastar`), Spell it! (`montar`), Find it! (`cacar`), Color it! (`colorir`), Build it! (`frases`), Spelling Bee (`abelha`), Repeat after me (`repetir`) e Speak! (`falar`).
+2. **Jogos (9):** Listen & Click (`ouvir`), Memory (`memoria`), Match it! (`arrastar`), Spell it! (`montar`), Find it! (`cacar`), Color it! (`colorir`), Build it! (`frases`), Spelling Bee (`abelha`) e Repeat after me (`repetir`).
 3. **Domínio por palavra:** cada palavra vale de 0 a 100 por aluno, com ganho e perda por jogo (veja `JOGOS` em `Jogos.gs`). O domínio do tema é a média das palavras do tema (as não jogadas valem 0). Os jogos sorteiam mais vezes as palavras menos dominadas.
 4. **Estrelas:** 1 a 3 por partida (3 ⭐ para 90% ou mais de acertos de primeira, 2 ⭐ a partir de 70% e 1 ⭐ por terminar). Vale a melhor nota de cada jogo em cada tema. O Repeat after me vale sempre 1.
 5. **Avaliações:** diagnóstico e quiz mensal montados sozinhos (questões `ouvir`, `ler` e `figura`). Online, a criança vê uma pergunta por tela e não vê a nota. Há prova impressa, gabarito e lançamento das letras marcadas.
 6. **Níveis:** Iniciante abaixo de 40%, Básico a partir de 40%, Intermediário a partir de 60% e Avançado a partir de 80%. São a média simples das avaliações; **os jogos não entram**. Só o professor vê.
 7. **Equipes:** até 5 alunos, com níveis misturados (serpentina pela média + equilíbrio). Quem ainda não fez avaliação entra nas equipes menores. **Placar do mês** = média de estrelas por membro (melhor nota de cada jogo e tema no mês). Fica em cache de 2 minutos.
 8. **Relatórios:** comparativo das turmas, palavras com mais dificuldade (avaliações e jogos), ficha do aluno para imprimir e exportação para uma Planilha nova.
-9. **Speak!:** o microfone **não funciona dentro do Apps Script**, porque a moldura (iframe) do Google não tem permissão de microfone. Por isso o Speak! roda numa página separada no GitHub Pages: https://lindomarandradegertrudes.github.io/english-kids-speak/jogo.html.
-   - O app abre essa página numa aba nova com `#<base64url do JSON>`, que leva só as palavras do tema, o id da partida e o link do app (nenhum dado de aluno).
-   - No fim, a página manda o resultado à aba do app por `postMessage`. O app confere a origem, salva e responde `speak-ok`, e a página se fecha.
-   - **Plano B:** se a resposta não chegar, a página navega para `<app>/exec?speak=<base64url>` e o `doGet` salva o resultado (`paginaResultadoSpeak_`).
-   - A página de diagnóstico do microfone fica em `.../english-kids-speak/` (`index.html`).
+9. **Microfone e Speak!:** o jogo Speak! (reconhecimento de voz) foi **removido** porque falhava muito com as crianças. Além disso, o microfone **não funciona dentro do Apps Script**: a moldura (iframe) do Google não tem permissão de microfone. Não proponha jogos com microfone. Estrelas antigas com a chave `falar` podem existir no `estrelas_json` e continuam somando.
 
 ## 3. Planilha (abas e colunas)
 
@@ -61,7 +57,7 @@ Estas regras vieram de erros que travaram o app em produção. **Respeite todas.
 5. **`google.script.run` transforma campos `null` de objetos em `undefined`.** No navegador, compare com `== null` ou `!= null`.
 6. **O Sheets transforma texto em número ou data** (ex.: `"03"`, `"2026-10"`). Grave meses com apóstrofo na frente (`"'" + mes`) e leia com `String()`.
 7. **Concorrência:** a turma inteira salva junto. Os jogos salvam **sem trava global**: cada aluno só mexe nas próprias linhas, achadas com `TextFinder` pelo e-mail, e linhas novas entram com `appendRow`. No navegador, a fila em `localStorage` (`ek-fila:<email>`) reenvia sozinha o que não foi salvo.
-8. **Privacidade:** nenhum dado de aluno vai em endereço (URL) nem para a página externa do Speak!. A chave da API da Anthropic fica nas Propriedades do script, nunca no código.
+8. **Privacidade:** nenhum dado de aluno vai em endereço (URL). A chave da API da Anthropic fica nas Propriedades do script, nunca no código.
 9. **Linguagem:** a interface é em português do Brasil e o conteúdo de inglês é para crianças de 8 a 10 anos (textos curtos, emojis grandes, voz e 🐢 para ouvir devagar). O autor do repositório é só o professor, sem coautores.
 
 ## 5. Como atualizar o sistema instalado
@@ -79,7 +75,7 @@ Abaixo está cada arquivo exatamente como deve ser colado no editor do Apps Scri
 
 ### Arquivo: `Codigo.gs`
 
-Instalação, acesso à planilha, permissões, turmas, cadastro, doGet e painel. (478 linhas)
+Instalação, acesso à planilha, permissões, turmas, cadastro, doGet e painel. (476 linhas)
 
 ````javascript
 /**
@@ -270,11 +266,10 @@ function validarAluno_(email, cfg) {
 // Páginas
 // ============================================================
 
-/** ?teste=1 abre o teste de voz e microfone para qualquer conta (útil para testar no Chromebook de um aluno). */
+/** ?teste=1 abre o teste de voz para qualquer conta (útil para testar no Chromebook de um aluno). */
 function doGet(e) {
   try {
     const email = usuarioAtual_();
-    if (e && e.parameter && e.parameter.speak) return paginaResultadoSpeak_(e.parameter.speak);
     const teste = e && e.parameter && e.parameter.teste;
     const pagina = teste ? 'Teste' : ehProfessor_(email) ? 'Professor' : 'Aluno';
     const t = HtmlService.createTemplateFromFile(pagina);
@@ -344,7 +339,6 @@ function alunoObterEstado() {
     jogos: Object.keys(JOGOS).map(function (k) { return { id: k, nome: JOGOS[k].nome }; }),
     progresso: aluno ? resumoProgressoAluno_(email, temas) : null,
     urlApp: ScriptApp.getService().getUrl(),
-    urlSpeak: URL_SPEAK,
     avaliacoes: aluno ? avaliacoesPendentes_(email, serie) : [],
     equipe: aluno ? equipeSegura_(email, String(aluno.turma)) : null,
   };
@@ -1248,7 +1242,7 @@ const TEMAS_PADRAO = [
 
 ### Arquivo: `Jogos.gs`
 
-Partidas, domínio por palavra, estrelas, progresso da turma e retorno do Speak!. (284 linhas)
+Partidas, domínio por palavra, estrelas e progresso da turma. (255 linhas)
 
 ````javascript
 /**
@@ -1272,37 +1266,8 @@ const JOGOS = {
   frases: { nome: 'Build it!', ganho: 10, parcial: 5, perda: 0 },
   abelha: { nome: 'Spelling Bee', ganho: 35, parcial: 10, perda: 10 },
   repetir: { nome: 'Repeat after me', ganho: 0, parcial: 0, perda: 0 },
-  falar: { nome: 'Speak!', ganho: 25, parcial: 10, perda: 5 },
 };
 
-/**
- * Speak! roda numa página fora do Apps Script (a moldura do Google não deixa usar o microfone).
- * A página recebe só as palavras do tema e devolve o resultado para a aba do app (postMessage).
- * Se isso não for possível, ela volta para o app com ?speak=<resultado> e o resultado é salvo aqui.
- */
-const URL_SPEAK = 'https://lindomarandradegertrudes.github.io/english-kids-speak/jogo.html';
-
-function paginaResultadoSpeak_(codigo) {
-  let msg, ok = false;
-  try {
-    const b64 = String(codigo).replace(/-/g, '+').replace(/_/g, '/');
-    const json = Utilities.newBlob(Utilities.base64Decode(b64 + '==='.slice((b64.length + 3) % 4))).getDataAsString('UTF-8');
-    const r = JSON.parse(json);
-    alunoSalvarJogada({
-      id: r.id, tema_id: r.t, jogo: 'falar', palavras: r.palavras,
-      acertos: r.acertos, total: r.total, estrelas: r.estrelas, segundos: r.segundos,
-    });
-    ok = true;
-    msg = 'Suas estrelas do Speak! foram salvas. ⭐';
-  } catch (err) {
-    msg = 'Não consegui salvar o resultado do Speak!: ' + err.message;
-  }
-  const url = ScriptApp.getService().getUrl();
-  const html = '<div style="font-family:Nunito,Segoe UI,sans-serif;text-align:center;padding:40px 20px;font-size:20px">' +
-    '<div style="font-size:64px">' + (ok ? '✅' : '😕') + '</div><p style="font-weight:800">' + msg.replace(/</g, '&lt;') + '</p>' +
-    '<p><a href="' + url + '" target="_top" style="display:inline-block;background:#e8590c;color:#fff;padding:14px 22px;border-radius:16px;font-weight:800;text-decoration:none">Voltar ao English Kids</a></p></div>';
-  return HtmlService.createHtmlOutput(html).setTitle('English Kids App').addMetaTag('viewport', 'width=device-width, initial-scale=1');
-}
 const PONTOS_DOMINIO = 100;
 
 // ============================================================
@@ -2623,13 +2588,12 @@ Marca do cabeçalho: bandeira redonda do Reino Unido (SVG) + nome do app. (11 li
 
 ### Arquivo: `Fala.html`
 
-Voz em inglês (speechSynthesis) e reconhecimento de voz do Chrome. (122 linhas)
+Voz em inglês (speechSynthesis) do Chrome. (58 linhas)
 
 ````html
 <script>
   /**
-   * Voz (fala em inglês) e escuta (reconhecimento de voz) do próprio Chrome.
-   * Nada é gravado: o áudio do microfone é tratado pelo Chrome e só o texto reconhecido chega à página.
+   * Voz (fala em inglês) do próprio Chrome.
    */
   const Fala = {
     voz: null,
@@ -2684,69 +2648,6 @@ Voz em inglês (speechSynthesis) e reconhecimento de voz do Chrome. (122 linhas)
       });
     },
   };
-
-  const Escuta = {
-    Reconhecedor: window.SpeechRecognition || window.webkitSpeechRecognition || null,
-
-    suportada() { return !!this.Reconhecedor; },
-
-    /**
-     * Ouve uma fala curta em inglês e devolve as transcrições possíveis (em minúsculas).
-     * Em caso de erro, rejeita com { codigo, mensagem } em português.
-     */
-    ouvir(opcoes) {
-      opcoes = opcoes || {};
-      return new Promise((ok, falha) => {
-        if (!this.suportada()) { falha({ codigo: 'sem-suporte', mensagem: Escuta.mensagem('sem-suporte') }); return; }
-        const r = new this.Reconhecedor();
-        r.lang = opcoes.lang || 'en-US';
-        r.interimResults = false;
-        r.maxAlternatives = 5;
-        r.continuous = false;
-        let terminou = false;
-        const limite = setTimeout(() => { try { r.stop(); } catch (e) { /* já parou */ } }, opcoes.segundos ? opcoes.segundos * 1000 : 6000);
-        r.onresult = (ev) => {
-          terminou = true;
-          clearTimeout(limite);
-          const res = ev.results[0];
-          const lista = [];
-          for (let i = 0; i < res.length; i++) lista.push(String(res[i].transcript).toLowerCase().trim());
-          ok(lista);
-        };
-        r.onerror = (ev) => {
-          if (terminou) return;
-          terminou = true;
-          clearTimeout(limite);
-          falha({ codigo: ev.error, mensagem: Escuta.mensagem(ev.error) });
-        };
-        r.onend = () => {
-          clearTimeout(limite);
-          if (!terminou) { terminou = true; falha({ codigo: 'no-speech', mensagem: Escuta.mensagem('no-speech') }); }
-        };
-        if (opcoes.aoComecar) r.onstart = opcoes.aoComecar;
-        try { r.start(); } catch (e) { falha({ codigo: 'start', mensagem: e.message }); }
-      });
-    },
-
-    mensagem(codigo) {
-      return {
-        'sem-suporte': 'Este navegador não tem reconhecimento de voz.',
-        'not-allowed': 'O microfone foi bloqueado (pelo navegador, pela página ou pela administração dos Chromebooks).',
-        'service-not-allowed': 'O reconhecimento de voz está bloqueado neste navegador ou nesta página.',
-        'no-speech': 'Não ouvi nada. Fale mais perto do microfone.',
-        'audio-capture': 'Nenhum microfone encontrado.',
-        'network': 'O reconhecimento de voz precisa de internet e não conseguiu se conectar.',
-        'aborted': 'A escuta foi interrompida.',
-        'language-not-supported': 'O idioma inglês não está disponível para reconhecimento.',
-      }[codigo] || 'Erro no reconhecimento de voz (' + codigo + ').';
-    },
-  };
-
-  /** Normaliza para comparar o que a criança falou com a palavra esperada. */
-  function normalizarFala(s) {
-    return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-      .replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
-  }
 </script>
 ````
 
@@ -2916,7 +2817,7 @@ MODELO da tela da criança: só inclui arquivos, sem código. (157 linhas)
 
 ### Arquivo: `AlunoCorpo.html`
 
-Corpo e script da tela da criança. (506 linhas)
+Corpo e script da tela da criança. (469 linhas)
 
 ````html
 <!-- Corpo da tela da criança (marcação e script).
@@ -3221,44 +3122,7 @@ Corpo e script da tela da criança. (506 linhas)
       if (b) abrirJogo(b.dataset.jogo);
     });
 
-    // ---------- Speak! (em outra aba, fora do Apps Script, por causa do microfone) ----------
-    // Nunca escreva duas barras seguidas no meio de uma linha de código: o Google corta a linha ali, como se fosse comentário.
-    const ORIGEM_SPEAK = 'https:' + '/' + '/lindomarandradegertrudes.github.io';
-    let speakPendente = null;
-
-    function base64url(texto) {
-      const bytes = new TextEncoder().encode(texto);
-      let bin = '';
-      bytes.forEach((b) => (bin += String.fromCharCode(b)));
-      return btoa(bin).split('+').join('-').split('/').join('_').replace(/=+$/, '');
-    }
-
-    function abrirSpeak() {
-      const t = temaAtual;
-      const candidatas = t.palavras.filter((p) => p.en.replace(/[^a-z]/gi, '').length >= 2);
-      const palavras = Jogos.escolher(candidatas, progressoDe(t.id).palavras, Math.min(8, candidatas.length));
-      const id = 'j' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-      // Só vão as palavras do tema: nenhum dado da criança sai do app.
-      const dados = { v: 1, r: estado.urlApp, t: t.id, tt: t.titulo, id, vel: estado.velocidadeVoz, p: palavras.map((p) => [p.en, p.pt, p.figura]) };
-      const aba = window.open(estado.urlSpeak + '#' + base64url(JSON.stringify(dados)), '_blank');
-      if (!aba) { alert('O navegador bloqueou a nova aba. Peça ajuda ao professor para permitir pop-ups.'); return; }
-      speakPendente = { id, tema_id: t.id };
-    }
-
-    window.addEventListener('message', (ev) => {
-      const d = ev.data;
-      if (ev.origin !== ORIGEM_SPEAK || !d || d.tipo !== 'speak-resultado' || !speakPendente || d.id !== speakPendente.id) return;
-      guardarNaFila({
-        id: d.id, tema_id: speakPendente.tema_id, jogo: 'falar', palavras: d.palavras || {},
-        acertos: d.acertos, total: d.total, estrelas: d.estrelas, segundos: d.segundos,
-      });
-      try { ev.source.postMessage({ tipo: 'speak-ok', id: d.id }, ev.origin); } catch (e) { /* a aba do jogo já fechou */ }
-      speakPendente = null;
-      enviarFila(() => { if (temaAtual && !$('tema').hidden) abrirTema(temaAtual); });
-    });
-
     function abrirJogo(jogo) {
-      if (jogo === 'falar') { abrirSpeak(); return; }
       mostrar('jogo');
       Jogos.iniciar(jogo, temaAtual, progressoDe(temaAtual.id).palavras, $('jogo'), (resultado, avisar) => {
         if (!resultado) { abrirTema(temaAtual); return; }
@@ -3429,7 +3293,7 @@ Corpo e script da tela da criança. (506 linhas)
 
 ### Arquivo: `JogosTela.html`
 
-Os 9 jogos do app. (992 linhas)
+Os 9 jogos do app. (989 linhas)
 
 ````html
 <style>
@@ -3617,7 +3481,6 @@ Os 9 jogos do app. (992 linhas)
       frases: { icone: '🧱', nome: 'Build it!', pt: 'Monte a frase' },
       abelha: { icone: '🐝', nome: 'Spelling Bee', pt: 'Ouça e soletre' },
       repetir: { icone: '🗣️', nome: 'Repeat after me', pt: 'Ouça e repita' },
-      falar: { icone: '🎤', nome: 'Speak!', pt: 'Fale e o Chrome confere (abre outra aba)' },
     };
 
     /** Palavras que dá para soletrar: só letras (espaço, hífen e apóstrofo ficam fixos), até 12 letras. */
@@ -3639,8 +3502,6 @@ Os 9 jogos do app. (992 linhas)
         frases: frasesBoas(tema).length >= 3,
         abelha: tema.palavras.filter(soletravel).length >= 3,
         repetir: n >= 3,
-        // Letras soltas (alfabeto) o reconhecimento de voz não entende bem.
-        falar: tema.palavras.filter((p) => p.en.replace(/[^a-z]/gi, '').length >= 2).length >= 3,
       };
     }
 
@@ -6373,7 +6234,7 @@ Aba Relatórios. (214 linhas)
 
 ### Arquivo: `Teste.html`
 
-Página de teste de voz e microfone (?teste=1). (20 linhas)
+Página de teste de voz (?teste=1). (20 linhas)
 
 ````html
 <!DOCTYPE html>
@@ -6391,7 +6252,7 @@ Página de teste de voz e microfone (?teste=1). (20 linhas)
     <div class="suave pequeno"><?= email ?></div>
   </header>
   <main>
-    <p class="suave">Esta página só testa a voz e o microfone deste aparelho. Nada é gravado nem salvo.</p>
+    <p class="suave">Esta página só testa a voz em inglês deste aparelho. Nada é gravado nem salvo.</p>
     <?!= incluir('TesteConteudo'); ?>
   </main>
 </body>
@@ -6400,12 +6261,12 @@ Página de teste de voz e microfone (?teste=1). (20 linhas)
 
 ### Arquivo: `TesteConteudo.html`
 
-Conteúdo do teste de voz e microfone. (178 linhas)
+Conteúdo do teste de voz. (50 linhas)
 
 ````html
 <div class="pilha" id="teste-chromebook">
   <div class="cartao">
-    <h2>🔊 1. Voz em inglês</h2>
+    <h2>🔊 Voz em inglês</h2>
     <p class="suave pequeno">Os jogos falam as palavras com a voz do próprio Chrome. Aumente o volume e clique no botão.</p>
     <div class="linha">
       <button class="btn primario" type="button" id="tc-falar">🔊 Falar "Hello! Let's play English games!"</button>
@@ -6415,56 +6276,32 @@ Conteúdo do teste de voz e microfone. (178 linhas)
   </div>
 
   <div class="cartao">
-    <h2>🎤 2. Microfone e reconhecimento de voz</h2>
-    <p class="suave pequeno">Para o jogo "Speak!". Clique no botão, permita o microfone se o Chrome perguntar e diga <strong>"apple"</strong> em voz alta.</p>
-    <div class="linha">
-      <button class="btn primario" type="button" id="tc-ouvir">🎤 Ouvir agora</button>
-      <span class="suave pequeno" id="tc-ouvindo"></span>
-    </div>
-    <div id="tc-mic-res" class="pequeno" style="margin-top:10px"></div>
-  </div>
-
-  <div class="cartao">
-    <h2>🩺 3. Diagnóstico detalhado do microfone</h2>
-    <p class="suave pequeno">Descobre <strong>quem</strong> está bloqueando: a página, o Chrome, a conta da escola ou o aparelho. Clique e, se o Chrome perguntar, escolha <strong>Permitir</strong>.</p>
-    <button class="btn primario" type="button" id="tc-diag">🩺 Diagnosticar</button>
-    <div id="tc-diag-res" class="pequeno" style="margin-top:10px"></div>
-  </div>
-
-  <div class="cartao">
     <h2>📋 Resumo deste aparelho</h2>
     <div id="tc-resumo" class="pequeno"></div>
-    <p class="suave pequeno">Anote o resultado (ou tire um print) e mande no chat do Claude para ajustarmos os jogos.</p>
   </div>
 </div>
 
 <script>
   (function () {
     const el = (id) => document.getElementById(id);
-    const res = { voz: null, mic: null };
+    let falou = null;
     const ok = (t) => `<span style="color:#2b8a3e;font-weight:700">✅ ${t}</span>`;
     const ruim = (t) => `<span style="color:#c92a2a;font-weight:700">❌ ${t}</span>`;
     const e = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
     function resumo() {
-      const politica = document.featurePolicy && document.featurePolicy.allowsFeature
-        ? (document.featurePolicy.allowsFeature('microphone') ? 'permite' : 'NÃO permite') : 'desconhecida';
       el('tc-resumo').innerHTML = `
         <div>Navegador: <code>${e(navigator.userAgent.match(/(CrOS|Windows|Mac OS X|Android|Linux)[^;)]*/)?.[0] || '?')}</code>
           ${/CrOS/.test(navigator.userAgent) ? '· <strong>Chromebook</strong>' : ''}</div>
         <div>Voz do Chrome: ${Fala.disponivel() ? ok('disponível') : ruim('indisponível')}</div>
         <div>Vozes em inglês: <strong>${Fala.vozesIngles().length}</strong>${Fala.voz ? ' · usando <code>' + e(Fala.voz.name) + '</code>' : ''}</div>
-        <div>Reconhecimento de voz: ${Escuta.suportada() ? ok('existe no navegador') : ruim('não existe neste navegador')}</div>
-        <div>Microfone permitido pela página: <strong>${politica}</strong></div>
-        <div>Teste da voz: ${res.voz === null ? '<span class="suave">não feito</span>' : res.voz ? ok('falou') : ruim('não falou')}</div>
-        <div>Teste do microfone: ${res.mic === null ? '<span class="suave">não feito</span>' : res.mic === true ? ok('entendeu "apple"') : ruim(e(res.mic))}</div>`;
+        <div>Teste da voz: ${falou === null ? '<span class="suave">não feito</span>' : falou ? ok('falou') : ruim('não falou')}</div>`;
     }
 
     async function falar(lento) {
       await Fala.iniciar();
       el('tc-voz-res').innerHTML = '<span class="suave">Falando…</span>';
-      const falou = await Fala.falar("Hello! Let's play English games!", lento);
-      res.voz = falou;
+      falou = await Fala.falar("Hello! Let's play English games!", lento);
       el('tc-voz-res').innerHTML = falou
         ? ok('A voz funcionou.') + ` <span class="suave">Voz: ${e(Fala.voz ? Fala.voz.name + ' (' + Fala.voz.lang + ')' : 'padrão do Chrome')}. Se não ouviu nada, confira o volume.</span>`
         : ruim('A voz não funcionou neste navegador.');
@@ -6472,110 +6309,6 @@ Conteúdo do teste de voz e microfone. (178 linhas)
     }
     el('tc-falar').addEventListener('click', () => falar(false));
     el('tc-lento').addEventListener('click', () => falar(true));
-
-    el('tc-ouvir').addEventListener('click', async () => {
-      const botao = el('tc-ouvir');
-      botao.disabled = true;
-      el('tc-mic-res').innerHTML = '';
-      el('tc-ouvindo').textContent = 'Preparando…';
-      try {
-        const frases = await Escuta.ouvir({ aoComecar: () => (el('tc-ouvindo').textContent = '🔴 Ouvindo… diga "apple"') });
-        const entendeu = frases.some((f) => normalizarFala(f).split(' ').includes('apple'));
-        res.mic = entendeu ? true : 'ouviu, mas não reconheceu "apple"';
-        el('tc-mic-res').innerHTML = (entendeu ? ok('Funcionou! Entendi "apple".') : ruim('Ouvi, mas não reconheci "apple". Tente de novo, falando claramente.')) +
-          `<div class="suave">O Chrome entendeu: ${frases.map((f) => '"' + e(f) + '"').join(', ')}</div>`;
-      } catch (erro) {
-        res.mic = erro.mensagem + ' [' + erro.codigo + ']';
-        el('tc-mic-res').innerHTML = ruim(e(erro.mensagem)) + ` <span class="suave">(código: ${e(erro.codigo)})</span>`;
-      } finally {
-        el('tc-ouvindo').textContent = '';
-        botao.disabled = false;
-        resumo();
-      }
-    });
-
-    // ---------- Diagnóstico detalhado ----------
-    el('tc-diag').addEventListener('click', async () => {
-      const botao = el('tc-diag');
-      botao.disabled = true;
-      const linhas = [];
-      const d = {};
-      const add = (t) => { linhas.push(`<div>${t}</div>`); el('tc-diag-res').innerHTML = linhas.join(''); };
-      try {
-        let topo = true;
-        try { topo = window.top === window; } catch (x) { topo = false; }
-        d.topo = topo;
-        d.politica = document.featurePolicy && document.featurePolicy.allowsFeature ? document.featurePolicy.allowsFeature('microphone') : null;
-        add(`Página: ${topo ? 'aberta direto no navegador' : '<strong>dentro de uma moldura (iframe)</strong>'} · ${window.isSecureContext ? 'conexão segura (https)' : '<strong>conexão NÃO segura</strong>'}`);
-        add(`A página pode pedir o microfone? ${d.politica === null ? 'desconhecido' : d.politica ? ok('sim') : ruim('não: a moldura não tem permissão de microfone')}`);
-
-        if (navigator.permissions && navigator.permissions.query) {
-          try { d.permissao = (await navigator.permissions.query({ name: 'microphone' })).state; } catch (x) { d.permissao = 'indisponível'; }
-        } else d.permissao = 'indisponível';
-        const PERM = { granted: ok('permitido para este site'), denied: ruim('BLOQUEADO para este site'), prompt: 'vai perguntar (ainda não decidido)' };
-        add(`Permissão do microfone no Chrome: ${PERM[d.permissao] || e(d.permissao)}`);
-
-        if (navigator.mediaDevices && navigator.mediaDevices.enumerateDevices) {
-          const disp = await navigator.mediaDevices.enumerateDevices();
-          d.microfones = disp.filter((x) => x.kind === 'audioinput').length;
-          add(`Microfones encontrados: <strong>${d.microfones}</strong>`);
-        }
-
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-          const t0 = performance.now();
-          try {
-            const fluxo = await navigator.mediaDevices.getUserMedia({ audio: true });
-            fluxo.getTracks().forEach((t) => t.stop());
-            d.captura = 'ok';
-            add(`Abrir o microfone: ${ok('funcionou')}`);
-          } catch (x) {
-            d.captura = x.name;
-            d.ms = Math.round(performance.now() - t0);
-            add(`Abrir o microfone: ${ruim(e(x.name) + ' (' + e(x.message || '') + ')')} <span class="suave">em ${d.ms} ms</span>`);
-          }
-        } else {
-          d.captura = 'sem-api';
-          add(`Abrir o microfone: ${ruim('este navegador não permite')}`);
-        }
-
-        if (d.captura === 'ok' && Escuta.suportada()) {
-          add('Reconhecimento de voz: diga <strong>"apple"</strong> agora…');
-          try {
-            const frases = await Escuta.ouvir({ segundos: 6 });
-            d.reconhecimento = 'ok';
-            add(`Reconhecimento de voz: ${ok('funcionou')} <span class="suave">(entendi: ${frases.map((f) => '"' + e(f) + '"').join(', ')})</span>`);
-          } catch (x) {
-            d.reconhecimento = x.codigo;
-            add(`Reconhecimento de voz: ${ruim(e(x.mensagem) + ' [' + e(x.codigo) + ']')}`);
-          }
-        }
-
-        // Conclusão em linguagem simples.
-        let c;
-        if (d.politica === false || !d.topo) {
-          c = 'A <strong>moldura da página</strong> não deixa usar o microfone. Isso acontece em todo app do Google Apps Script e não depende da sua rede nem de configuração: o microfone só funciona numa página aberta fora do Apps Script (como a página de teste no GitHub).';
-        } else if (d.captura === 'ok' && d.reconhecimento === 'ok') {
-          c = '🎉 <strong>Tudo funciona neste aparelho.</strong> O jogo Speak! pode rodar numa página fora do Apps Script.';
-        } else if (d.captura === 'ok') {
-          c = 'O microfone abre, mas o <strong>reconhecimento de voz do Google</strong> está bloqueado ou sem conexão. Em Chromebooks e contas da escola, isso costuma ser bloqueado pela administração; em janela anônima, tente numa janela normal.';
-        } else if (d.captura === 'NotFoundError' || d.microfones === 0) {
-          c = 'Nenhum microfone foi encontrado neste aparelho (ou ele está desligado/desconectado).';
-        } else if (d.captura === 'NotReadableError') {
-          c = 'O microfone está sendo usado por outro programa (Meet, Zoom…) ou o sistema operacional não deixa o Chrome usá-lo. No Windows: Configurações > Privacidade > Microfone > permitir aplicativos da área de trabalho.';
-        } else if (d.captura === 'NotAllowedError' && d.permissao === 'denied' && d.ms < 400) {
-          c = 'O microfone foi <strong>negado sem perguntar</strong>. Ou o site está bloqueado no Chrome (cadeado ao lado do endereço > Microfone > Permitir), ou a <strong>administração da conta/aparelho da escola</strong> desligou o microfone. Isso vale em qualquer rede, porque a regra vem junto com a conta @edu ou com o Chromebook. Para confirmar, abra <code>chrome:' + '/' + '/policy</code> e procure por <code>AudioCapture</code>.';
-        } else if (d.captura === 'NotAllowedError') {
-          c = 'O pedido de microfone foi recusado. Se você não clicou em "Bloquear", clique no cadeado ao lado do endereço > Microfone > Permitir e recarregue a página.';
-        } else {
-          c = 'Resultado incomum: mande um print deste quadro.';
-        }
-        add(`<div class="feedback" style="margin-top:10px;background:#fff9db;border-left:4px solid #fab005;border-radius:6px;padding:10px 12px">💡 ${c}</div>`);
-      } catch (x) {
-        add(ruim('Erro no diagnóstico: ' + e(x.message)));
-      } finally {
-        botao.disabled = false;
-      }
-    });
 
     Fala.iniciar().then(resumo);
     resumo();
@@ -6585,392 +6318,7 @@ Conteúdo do teste de voz e microfone. (178 linhas)
 
 ---
 
-## 7. Página externa do Speak! (repositório `english-kids-speak`, GitHub Pages)
-
-Este arquivo não vai para o Apps Script: fica no GitHub Pages. A página `index.html` do mesmo repositório é o teste de microfone, montada com `Estilo.html` + `Fala.html` + `TesteConteudo.html`.
-
-### Arquivo: `english-kids-speak/jogo.html`
-
-````html
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Speak! – English Kids</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&display=swap" rel="stylesheet">
-<script>
-  /**
-   * Voz (fala em inglês) e escuta (reconhecimento de voz) do próprio Chrome.
-   * Nada é gravado: o áudio do microfone é tratado pelo Chrome e só o texto reconhecido chega à página.
-   */
-  const Fala = {
-    voz: null,
-    velocidade: 0.85,
-    pronta: null,
-
-    disponivel() { return 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window; },
-
-    /** Escolhe a melhor voz em inglês. As vozes do Chrome carregam depois da página, por isso a espera. */
-    iniciar() {
-      if (this.pronta) return this.pronta;
-      this.pronta = new Promise((ok) => {
-        if (!this.disponivel()) { ok(null); return; }
-        const escolher = () => {
-          const vozes = speechSynthesis.getVoices();
-          const ingles = vozes.filter((v) => /^en[-_]/i.test(v.lang));
-          this.voz = ingles.find((v) => /Google US English/i.test(v.name))
-            || ingles.find((v) => /^en[-_]US/i.test(v.lang) && v.localService)
-            || ingles.find((v) => /^en[-_]US/i.test(v.lang))
-            || ingles.find((v) => /^en[-_]GB/i.test(v.lang))
-            || ingles[0] || null;
-          return vozes.length > 0;
-        };
-        if (escolher()) { ok(this.voz); return; }
-        speechSynthesis.addEventListener('voiceschanged', () => { escolher(); ok(this.voz); }, { once: true });
-        setTimeout(() => { escolher(); ok(this.voz); }, 2500);
-      });
-      return this.pronta;
-    },
-
-    vozesIngles() {
-      return this.disponivel() ? speechSynthesis.getVoices().filter((v) => /^en[-_]/i.test(v.lang)) : [];
-    },
-
-    /** Fala o texto em inglês. lento = para repetir devagar. Resolve quando termina (ou falha). */
-    falar(texto, lento) {
-      return new Promise((ok) => {
-        if (!this.disponivel() || !texto) { ok(false); return; }
-        speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(String(texto));
-        u.lang = this.voz ? this.voz.lang : 'en-US';
-        if (this.voz) u.voice = this.voz;
-        u.rate = lento ? Math.max(0.5, this.velocidade - 0.25) : this.velocidade;
-        // Alguns navegadores nunca disparam onend; o limite evita que o jogo fique esperando para sempre.
-        let comecou = false, fim = false;
-        const terminar = (v) => { if (!fim) { fim = true; clearTimeout(limite); ok(v); } };
-        const limite = setTimeout(() => terminar(comecou), 2500 + String(texto).length * 150 / u.rate);
-        u.onstart = () => (comecou = true);
-        u.onend = () => terminar(true);
-        u.onerror = () => terminar(false);
-        speechSynthesis.speak(u);
-      });
-    },
-  };
-
-  const Escuta = {
-    Reconhecedor: window.SpeechRecognition || window.webkitSpeechRecognition || null,
-
-    suportada() { return !!this.Reconhecedor; },
-
-    /**
-     * Ouve uma fala curta em inglês e devolve as transcrições possíveis (em minúsculas).
-     * Em caso de erro, rejeita com { codigo, mensagem } em português.
-     */
-    ouvir(opcoes) {
-      opcoes = opcoes || {};
-      return new Promise((ok, falha) => {
-        if (!this.suportada()) { falha({ codigo: 'sem-suporte', mensagem: Escuta.mensagem('sem-suporte') }); return; }
-        const r = new this.Reconhecedor();
-        r.lang = opcoes.lang || 'en-US';
-        r.interimResults = false;
-        r.maxAlternatives = 5;
-        r.continuous = false;
-        let terminou = false;
-        const limite = setTimeout(() => { try { r.stop(); } catch (e) { /* já parou */ } }, opcoes.segundos ? opcoes.segundos * 1000 : 6000);
-        r.onresult = (ev) => {
-          terminou = true;
-          clearTimeout(limite);
-          const res = ev.results[0];
-          const lista = [];
-          for (let i = 0; i < res.length; i++) lista.push(String(res[i].transcript).toLowerCase().trim());
-          ok(lista);
-        };
-        r.onerror = (ev) => {
-          if (terminou) return;
-          terminou = true;
-          clearTimeout(limite);
-          falha({ codigo: ev.error, mensagem: Escuta.mensagem(ev.error) });
-        };
-        r.onend = () => {
-          clearTimeout(limite);
-          if (!terminou) { terminou = true; falha({ codigo: 'no-speech', mensagem: Escuta.mensagem('no-speech') }); }
-        };
-        if (opcoes.aoComecar) r.onstart = opcoes.aoComecar;
-        try { r.start(); } catch (e) { falha({ codigo: 'start', mensagem: e.message }); }
-      });
-    },
-
-    mensagem(codigo) {
-      return {
-        'sem-suporte': 'Este navegador não tem reconhecimento de voz.',
-        'not-allowed': 'O microfone foi bloqueado (pelo navegador, pela página ou pela administração dos Chromebooks).',
-        'service-not-allowed': 'O reconhecimento de voz está bloqueado neste navegador ou nesta página.',
-        'no-speech': 'Não ouvi nada. Fale mais perto do microfone.',
-        'audio-capture': 'Nenhum microfone encontrado.',
-        'network': 'O reconhecimento de voz precisa de internet e não conseguiu se conectar.',
-        'aborted': 'A escuta foi interrompida.',
-        'language-not-supported': 'O idioma inglês não está disponível para reconhecimento.',
-      }[codigo] || 'Erro no reconhecimento de voz (' + codigo + ').';
-    },
-  };
-
-  /** Normaliza para comparar o que a criança falou com a palavra esperada. */
-  function normalizarFala(s) {
-    return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-      .replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
-  }
-</script>
-
-</head>
-<body>
-<style>
-  :root { --tinta: #2b2f42; }
-  body { margin: 0; font-family: Nunito, "Segoe UI", Roboto, Arial, sans-serif; font-size: 18px; color: var(--tinta); background: #fff9f2; }
-  main { max-width: 760px; margin: 0 auto; padding: 18px 16px 60px; }
-  h1 { font-size: 1.7rem; font-weight: 900; margin: 0; }
-  .topo { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
-  .topo h1 { flex: 1; }
-  .pontinhos { display: flex; gap: 6px; }
-  .pontinhos i { width: 14px; height: 14px; border-radius: 50%; background: #dee2e6; display: block; }
-  .pontinhos i.feito { background: #51cf66; } .pontinhos i.meio { background: #fcc419; } .pontinhos i.pulou { background: #ff8787; }
-  .pontinhos i.agora { outline: 3px solid #e8590c; outline-offset: 2px; }
-  .cartao { background: #fff; border-radius: 26px; padding: 24px 18px; text-align: center; box-shadow: 0 5px 0 #ffe8cc; }
-  .fig { font-size: 5.5rem; line-height: 1.1; }
-  .fig.texto { font-size: 2rem; font-weight: 900; color: #5f3dc4; }
-  .en { font-size: 2.3rem; font-weight: 900; margin: 6px 0 2px; }
-  .pt { color: #6c7086; font-weight: 700; }
-  .linha { display: flex; justify-content: center; align-items: center; gap: 14px; flex-wrap: wrap; margin-top: 16px; }
-  .bt { border: 0; border-radius: 16px; padding: 14px 22px; font: inherit; font-size: 1.15rem; font-weight: 800; cursor: pointer; background: #e8590c; color: #fff; box-shadow: 0 4px 0 #a33a05; }
-  .bt.claro { background: #fff; color: var(--tinta); box-shadow: 0 4px 0 #dee2e6; border: 2px solid #dee2e6; }
-  .bt:disabled { opacity: .55; cursor: default; }
-  .mic { width: 110px; height: 110px; border-radius: 50%; font-size: 3.2rem; padding: 0; background: #2f9e44; box-shadow: 0 6px 0 #1b5e20; }
-  .mic.ouvindo { background: #e03131; box-shadow: 0 6px 0 #a61e1e; animation: pulsar 1s infinite; }
-  @keyframes pulsar { 50% { transform: scale(1.08); } }
-  .som { width: 58px; height: 58px; border-radius: 50%; padding: 0; font-size: 1.5rem; }
-  .retorno { min-height: 3.2rem; margin-top: 14px; font-weight: 800; font-size: 1.15rem; }
-  .retorno.bom { color: #2b8a3e; } .retorno.ruim { color: #c92a2a; }
-  .ouvi { color: #6c7086; font-weight: 700; font-size: .95rem; }
-  .estrelas { font-size: 4rem; letter-spacing: 6px; }
-  .estrelas span { opacity: .2; filter: grayscale(1); } .estrelas span.ganha { opacity: 1; filter: none; }
-  .aviso { background: #fff3bf; border-left: 5px solid #fab005; border-radius: 10px; padding: 12px 14px; text-align: left; font-weight: 700; }
-</style>
-
-<main>
-  <div class="topo">
-    <h1 id="titulo">🎤 Speak!</h1>
-    <div class="pontinhos" id="pontinhos"></div>
-  </div>
-  <div id="area"></div>
-</main>
-
-<script>
-  (function () {
-    const area = document.getElementById('area');
-    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-    const espera = (ms) => new Promise((ok) => setTimeout(ok, ms));
-    const URL_APP = /^https:\/\/script\.google\.com\/[\w.\/-]+\/exec$/; // só volta para um app do Google Apps Script
-
-    function lerDados() {
-      try {
-        const b64 = location.hash.slice(1).replace(/-/g, '+').replace(/_/g, '/');
-        const bin = atob(b64 + '==='.slice((b64.length + 3) % 4));
-        const d = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0))));
-        if (!d || !Array.isArray(d.p) || !d.p.length || !d.id) return null;
-        d.r = URL_APP.test(d.r || '') ? d.r : '';
-        return d;
-      } catch (e) { return null; }
-    }
-    const b64url = (txt) => {
-      let bin = '';
-      new TextEncoder().encode(txt).forEach((b) => (bin += String.fromCharCode(b)));
-      return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-    };
-
-    // ---------- Comparar o que a criança falou ----------
-    const NUM = { zero: 0, one: 1, two: 2, three: 3, four: 4, five: 5, six: 6, seven: 7, eight: 8, nine: 9, ten: 10, eleven: 11, twelve: 12,
-      thirteen: 13, fourteen: 14, fifteen: 15, sixteen: 16, seventeen: 17, eighteen: 18, nineteen: 19, twenty: 20, thirty: 30, forty: 40,
-      fifty: 50, sixty: 60, seventy: 70, eighty: 80, ninety: 90 };
-    function emNumero(txt) {
-      const t = txt.replace(/-/g, ' ').trim();
-      if (t === 'one hundred' || t === 'a hundred' || t === 'hundred') return '100';
-      const partes = t.split(' ');
-      if (partes.length === 1 && NUM[partes[0]] !== undefined) return String(NUM[partes[0]]);
-      if (partes.length === 2 && NUM[partes[0]] >= 20 && NUM[partes[1]] < 10) return String(NUM[partes[0]] + NUM[partes[1]]);
-      return null;
-    }
-    function distancia(a, b) {
-      const d = Array.from({ length: a.length + 1 }, (_, i) => [i]);
-      for (let j = 1; j <= b.length; j++) d[0][j] = j;
-      for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++) {
-        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
-      }
-      return d[a.length][b.length];
-    }
-    function confere(alvo, ouvidas) {
-      const a = normalizarFala(alvo), semEspaco = a.replace(/ /g, ''), num = emNumero(a);
-      return ouvidas.some((o) => {
-        const x = normalizarFala(o);
-        if (!x) return false;
-        if (x === a || x.replace(/ /g, '') === semEspaco || (num && x.split(' ').includes(num))) return true;
-        // A criança pode falar "it's a cat": basta a palavra aparecer.
-        if ((' ' + x + ' ').includes(' ' + a + ' ')) return true;
-        // Pequena tolerância para palavras longas (sotaque, plural).
-        return semEspaco.length >= 5 && distancia(x.replace(/ /g, ''), semEspaco) <= 1;
-      });
-    }
-
-    // ---------- Jogo ----------
-    const dados = lerDados();
-    if (!dados) {
-      area.innerHTML = '<div class="cartao"><div class="fig">🎤</div><p>Abra o <strong>Speak!</strong> pelo English Kids App, dentro de um tema.</p></div>';
-      return;
-    }
-    document.title = 'Speak! – ' + (dados.tt || 'English Kids');
-    document.getElementById('titulo').textContent = '🎤 Speak! · ' + (dados.tt || '');
-    Fala.velocidade = Number(dados.vel) || 0.85;
-    const palavras = dados.p.map(([en, pt, figura]) => ({ en: String(en), pt: String(pt || ''), figura: String(figura || '') }));
-    const resultado = {};
-    const inicio = Date.now();
-    let acertos = 0, micBloqueado = false;
-    document.getElementById('pontinhos').innerHTML = palavras.map(() => '<i></i>').join('');
-    const pontos = () => [...document.querySelectorAll('#pontinhos i')];
-
-    async function rodada(i) {
-      const p = palavras[i], r = (resultado[p.en] = { a: 0, e: 0, c: 0 });
-      pontos().forEach((x, k) => x.classList.toggle('agora', k === i));
-      let tentativas = 0;
-      await new Promise((proxima) => {
-        area.innerHTML = `<div class="cartao">
-            ${p.figura ? `<div class="fig">${esc(p.figura)}</div>` : `<div class="fig texto">${esc(p.pt)}</div>`}
-            <div class="en">${esc(p.en)}</div><div class="pt">${p.figura ? esc(p.pt) : ''}</div>
-            <div class="linha">
-              <button class="bt claro som" id="ouvir" aria-label="Ouvir">🔊</button>
-              <button class="bt mic" id="falar" aria-label="Falar">🎤</button>
-              <button class="bt claro som" id="devagar" aria-label="Ouvir devagar">🐢</button>
-            </div>
-            <div class="retorno" id="retorno">Ouça e depois toque no 🎤 para falar.</div>
-            <div class="ouvi" id="ouvi"></div>
-            <div class="linha"><button class="bt claro" id="pular">Pular ➡</button></div>
-          </div>`;
-        const ret = document.getElementById('retorno'), ouvi = document.getElementById('ouvi'), mic = document.getElementById('falar');
-        document.getElementById('ouvir').onclick = () => Fala.falar(p.en);
-        document.getElementById('devagar').onclick = () => Fala.falar(p.en, true);
-        document.getElementById('pular').onclick = () => { pontos()[i].className = 'pulou'; proxima(); };
-        mic.onclick = async () => {
-          if (mic.disabled) return;
-          mic.disabled = true;
-          ret.className = 'retorno';
-          ret.textContent = 'Preparando…';
-          try {
-            const ouvidas = await Escuta.ouvir({ segundos: 6, aoComecar: () => { mic.classList.add('ouvindo'); ret.textContent = '🔴 Pode falar!'; } });
-            mic.classList.remove('ouvindo');
-            ouvi.textContent = 'Ouvi: "' + ouvidas[0] + '"';
-            if (confere(p.en, ouvidas)) {
-              r.c = 1;
-              if (!tentativas) { r.a = 1; acertos++; }
-              pontos()[i].className = tentativas ? 'meio' : 'feito';
-              ret.className = 'retorno bom';
-              ret.textContent = tentativas ? '👍 Good job!' : '🌟 Excellent!';
-              await Fala.falar(tentativas ? 'Good job!' : 'Excellent!');
-              await espera(500);
-              proxima();
-              return;
-            }
-            tentativas++;
-            r.e = Math.min(5, r.e + 1);
-            ret.className = 'retorno ruim';
-            if (tentativas >= 3) {
-              ret.textContent = 'Quase! Vamos para a próxima.';
-              pontos()[i].className = 'pulou';
-              await Fala.falar(p.en);
-              await espera(900);
-              proxima();
-              return;
-            }
-            ret.textContent = 'Quase! Ouça de novo e tente outra vez. 💪';
-            await Fala.falar(p.en);
-          } catch (erro) {
-            mic.classList.remove('ouvindo');
-            if (erro.codigo === 'not-allowed' || erro.codigo === 'service-not-allowed' || erro.codigo === 'audio-capture') {
-              micBloqueado = true;
-              area.innerHTML = `<div class="cartao"><div class="fig">🔇</div>
-                <div class="aviso">O microfone está bloqueado neste aparelho (${esc(erro.codigo)}). Clique no cadeado ao lado do endereço &gt; Microfone &gt; Permitir e recarregue a página. Se não aparecer essa opção, peça ajuda ao professor.</div>
-                <div class="linha"><button class="bt" onclick="location.reload()">🔄 Tentar de novo</button></div></div>`;
-              return;
-            }
-            ret.className = 'retorno ruim';
-            ret.textContent = erro.mensagem;
-          } finally {
-            const m = document.getElementById('falar');
-            if (m) m.disabled = false;
-          }
-        };
-        setTimeout(() => Fala.falar(p.en), 300);
-      });
-    }
-
-    async function salvar(final) {
-      const status = document.getElementById('status');
-      // 1º caminho: avisar a aba do app que abriu esta.
-      if (window.opener && !window.opener.closed) {
-        const confirmado = await new Promise((ok) => {
-          const ouvir = (ev) => {
-            if (ev.data && ev.data.tipo === 'speak-ok' && ev.data.id === dados.id) { window.removeEventListener('message', ouvir); ok(true); }
-          };
-          window.addEventListener('message', ouvir);
-          try { window.opener.postMessage(Object.assign({ tipo: 'speak-resultado' }, final), '*'); } catch (e) { /* segue para o plano B */ }
-          setTimeout(() => { window.removeEventListener('message', ouvir); ok(false); }, 3500);
-        });
-        if (confirmado) {
-          status.innerHTML = '✅ Estrelas salvas! Esta aba vai fechar e você volta para o English Kids.';
-          await espera(2200);
-          window.close();
-          status.innerHTML = '✅ Estrelas salvas! Pode fechar esta aba e voltar para o English Kids.';
-          return;
-        }
-      }
-      // 2º caminho: voltar para o app levando o resultado.
-      if (dados.r) {
-        status.innerHTML = '💾 Salvando no English Kids…';
-        await espera(800);
-        location.href = dados.r + '?speak=' + b64url(JSON.stringify(final));
-        return;
-      }
-      status.textContent = 'Não consegui salvar automaticamente. Volte ao English Kids e jogue de novo.';
-    }
-
-    (async function jogar() {
-      area.innerHTML = `<div class="cartao"><div class="fig">🎤</div><div class="en">Speak!</div>
-        <p>Você vai ver e ouvir ${palavras.length} palavras. Toque no 🎤 e fale em inglês.<br>O Chrome confere se entendeu. Você tem 3 tentativas por palavra.</p>
-        <div class="linha"><button class="bt" id="comecar">Começar ▶</button></div></div>`;
-      await new Promise((ok) => (document.getElementById('comecar').onclick = ok));
-      await Fala.iniciar();
-      for (let i = 0; i < palavras.length; i++) {
-        await rodada(i);
-        if (micBloqueado) return;
-      }
-      const pct = (acertos / palavras.length) * 100;
-      const estrelas = pct >= 90 ? 3 : pct >= 70 ? 2 : 1;
-      const final = { id: dados.id, t: dados.t, palavras: resultado, acertos, total: palavras.length, estrelas, segundos: Math.round((Date.now() - inicio) / 1000) };
-      const frase = estrelas === 3 ? 'Excellent!' : estrelas === 2 ? 'Great job!' : 'Good try!';
-      area.innerHTML = `<div class="cartao"><div class="estrelas">${[1, 2, 3].map((n) => `<span class="${n <= estrelas ? 'ganha' : ''}">⭐</span>`).join('')}</div>
-        <div class="en">${frase}</div><p style="font-weight:700">${acertos} de ${palavras.length} certas de primeira</p>
-        <p id="status" style="font-weight:800">💾 Salvando…</p></div>`;
-      Fala.falar(frase);
-      salvar(final);
-    })();
-  })();
-</script>
-
-</body>
-</html>
-````
-
----
-
-## 8. Documentação do projeto
+## 7. Documentação do projeto
 
 ### Arquivo: `README.md`
 
@@ -6992,7 +6340,7 @@ Roda **gratuitamente** no Google Workspace da escola, com Google Apps Script e G
 | 3 | Diagnóstico e quizzes mensais montados a partir dos temas, prova impressa e níveis (só avaliações) | ✅ entregue |
 | 4 | Equipes de até 5 alunos (níveis misturados) e placar mensal por equipes | ✅ entregue |
 | 5 | Mais jogos: Find it! (caça-palavras), Color it!, Build it! (frases), Spelling Bee e Repeat after me | ✅ entregue |
-| + | Speak!: pronúncia com microfone, numa página externa (GitHub Pages `english-kids-speak`) que devolve as estrelas ao app | ✅ entregue |
+| + | Speak! (pronúncia com microfone): retirado, porque o reconhecimento de voz falhava muito com as crianças | ❌ removido |
 | 6 | Relatórios: comparativo das turmas, palavras difíceis, ficha do aluno (impressão) e exportação para planilha | ✅ entregue |
 
 ## Estrutura
@@ -7009,13 +6357,13 @@ Roda **gratuitamente** no Google Workspace da escola, com Google Apps Script e G
 | `Relatorios.gs` / `ProfRelatorios.html` | Relatórios, ficha do aluno e exportação |
 | `Professor.html` / `ProfTemas.html` / `ProfProgresso.html` / `ProfAvaliacoes.html` / `ProfEquipes.html` | Painel do professor e abas de Temas, Progresso, Avaliações e Equipes |
 | `Aluno.html` / `AlunoCorpo.html` | Tela da criança (o modelo `Aluno` só inclui arquivos; todo o código fica em `AlunoCorpo`) |
-| `Fala.html` | Voz em inglês e reconhecimento de voz do Chrome |
-| `Teste.html` / `TesteConteudo.html` | Teste de voz e microfone (`?teste=1`) |
+| `Fala.html` | Voz em inglês do Chrome |
+| `Teste.html` / `TesteConteudo.html` | Teste de voz (`?teste=1`) |
 | `Estilo.html` / `Marca.html` | Estilos compartilhados e marca do cabeçalho (bandeira + nome) |
 
 ## Privacidade
 
-Os dados dos alunos ficam somente na planilha do professor, dentro da conta Google da escola. A voz e o reconhecimento de voz são os do próprio Chrome, e nada é gravado. A geração de temas com IA, que é opcional, envia apenas o conteúdo pedagógico.
+Os dados dos alunos ficam somente na planilha do professor, dentro da conta Google da escola. A voz é a do próprio Chrome, e nada é gravado. A geração de temas com IA, que é opcional, envia apenas o conteúdo pedagógico.
 
 ## Autor
 
@@ -7031,36 +6379,26 @@ Faça tudo com a sua **conta institucional** (@edu.joinville.sc.gov.br).
 
 ---
 
-# Speak! — jogo de pronúncia (atualização)
+# Remoção do Speak! (atualização)
 
-## A. Atualizar o código
-Não há arquivos novos. No editor, apague tudo e cole as novas versões de:
+O jogo **Speak!** foi retirado: o reconhecimento de voz falhava muito em entender a fala das crianças. A pronúncia continua sendo praticada no **🗣️ Repeat after me**.
+
+## Atualizar o código
+No editor, apague tudo e cole as novas versões de:
 - `Codigo` ← **Codigo.gs**
 - `Jogos` ← **Jogos.gs**
 - `JogosTela` ← **JogosTela.html**
-- `Aluno` ← **Aluno.html**
+- `AlunoCorpo` ← **AlunoCorpo.html**
+- `Fala` ← **Fala.html**
+- `Teste` ← **Teste.html**
+- `TesteConteudo` ← **TesteConteudo.html**
 
 Depois publique a nova versão: **Implantar > Gerenciar implantações > ✏️ > Versão: Nova versão > Implantar**. Não precisa executar `instalar`.
 
-## B. Como funciona
-1. Dentro do tema, a criança toca em **🎤 Speak!**. O jogo abre numa **aba nova**, porque a moldura do Google Apps Script não deixa usar o microfone.
-2. Para cada palavra (até 8), ela ouve, toca no 🎤 e fala. O reconhecimento de voz do Chrome confere.
-   - Valem pequenas diferenças de pronúncia.
-   - Vale falar a palavra dentro de uma frase ("it's a cat").
-   - Nos números, vale também o algarismo.
-   - São **3 tentativas** por palavra. Também dá para **Pular**.
-3. **No fim:** a aba do jogo avisa o app, as estrelas são salvas e a aba se fecha sozinha.
-   - **Plano B:** se o aviso entre as abas não funcionar, ela volta para o link do app levando o resultado, e aparece "✅ Suas estrelas do Speak! foram salvas".
-4. **Pontos no domínio:** +25 de primeira, +10 depois de errar, −5 por erro. As estrelas seguem a regra de sempre.
-
-O tema do alfabeto não tem Speak!, porque o reconhecimento entende mal letras soltas.
-
-## C. Se aparecer "🔇 O microfone está bloqueado"
-- Clique no cadeado ao lado do endereço > **Microfone > Permitir** e recarregue a página.
-- Se não houver essa opção no Chromebook da escola, a administração bloqueou o microfone. Peça à TI que libere só o endereço `https://lindomarandradegertrudes.github.io` (política "Permitir captura de áudio – URLs permitidos" / `AudioCaptureAllowedUrls`).
-- Para descobrir a causa exata, use o diagnóstico em `https://lindomarandradegertrudes.github.io/english-kids-speak/` (botão **🩺 Diagnosticar**).
-
-**Privacidade:** a página do jogo recebe só as palavras do tema. Nome, e-mail e notas nunca saem do app.
+**O que muda:**
+- O botão 🎤 Speak! sai dos temas.
+- A página de teste (`?teste=1`) agora testa só a voz.
+- As estrelas que as crianças já ganharam no Speak! continuam valendo no total e no placar do mês.
 
 ---
 
@@ -7309,17 +6647,13 @@ O **domínio do tema** é a média de todas as palavras do tema. As palavras ain
 
 Para atualizar o código depois: **Implantar > Gerenciar implantações > ✏️ > Versão: Nova versão > Implantar**. O link continua o mesmo.
 
-## 3. Primeiro teste no Chromebook (importante)
+## 3. Primeiro teste no Chromebook
 
-Antes dos jogos, precisamos saber se a **voz** e o **microfone** funcionam nos Chromebooks da escola.
+Antes dos jogos, confira se a **voz em inglês** funciona nos Chromebooks da escola.
 
 1. No painel, abra a aba **Teste do Chromebook** e copie o link de teste. É o link do sistema com `?teste=1` no final.
 2. Num Chromebook da escola, entre **com a conta de um aluno** e abra esse link.
-3. Clique em **🔊 Falar** e confira se ouviu a frase em inglês.
-4. Clique em **🎤 Ouvir agora**, permita o microfone se o Chrome perguntar e diga **"apple"**.
-5. Tire um print do quadro **📋 Resumo deste aparelho** e mande no chat.
-
-Se o microfone for bloqueado (`not-allowed`), o jogo **Speak!** precisará de outra solução. O resto do sistema não é afetado.
+3. Clique em **🔊 Falar** e confira se ouviu a frase em inglês. Se não ouvir nada, confira o volume.
 
 ## 4. Usar
 

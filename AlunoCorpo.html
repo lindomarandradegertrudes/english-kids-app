@@ -300,44 +300,7 @@
       if (b) abrirJogo(b.dataset.jogo);
     });
 
-    // ---------- Speak! (em outra aba, fora do Apps Script, por causa do microfone) ----------
-    // Nunca escreva duas barras seguidas no meio de uma linha de código: o Google corta a linha ali, como se fosse comentário.
-    const ORIGEM_SPEAK = 'https:' + '/' + '/lindomarandradegertrudes.github.io';
-    let speakPendente = null;
-
-    function base64url(texto) {
-      const bytes = new TextEncoder().encode(texto);
-      let bin = '';
-      bytes.forEach((b) => (bin += String.fromCharCode(b)));
-      return btoa(bin).split('+').join('-').split('/').join('_').replace(/=+$/, '');
-    }
-
-    function abrirSpeak() {
-      const t = temaAtual;
-      const candidatas = t.palavras.filter((p) => p.en.replace(/[^a-z]/gi, '').length >= 2);
-      const palavras = Jogos.escolher(candidatas, progressoDe(t.id).palavras, Math.min(8, candidatas.length));
-      const id = 'j' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
-      // Só vão as palavras do tema: nenhum dado da criança sai do app.
-      const dados = { v: 1, r: estado.urlApp, t: t.id, tt: t.titulo, id, vel: estado.velocidadeVoz, p: palavras.map((p) => [p.en, p.pt, p.figura]) };
-      const aba = window.open(estado.urlSpeak + '#' + base64url(JSON.stringify(dados)), '_blank');
-      if (!aba) { alert('O navegador bloqueou a nova aba. Peça ajuda ao professor para permitir pop-ups.'); return; }
-      speakPendente = { id, tema_id: t.id };
-    }
-
-    window.addEventListener('message', (ev) => {
-      const d = ev.data;
-      if (ev.origin !== ORIGEM_SPEAK || !d || d.tipo !== 'speak-resultado' || !speakPendente || d.id !== speakPendente.id) return;
-      guardarNaFila({
-        id: d.id, tema_id: speakPendente.tema_id, jogo: 'falar', palavras: d.palavras || {},
-        acertos: d.acertos, total: d.total, estrelas: d.estrelas, segundos: d.segundos,
-      });
-      try { ev.source.postMessage({ tipo: 'speak-ok', id: d.id }, ev.origin); } catch (e) { /* a aba do jogo já fechou */ }
-      speakPendente = null;
-      enviarFila(() => { if (temaAtual && !$('tema').hidden) abrirTema(temaAtual); });
-    });
-
     function abrirJogo(jogo) {
-      if (jogo === 'falar') { abrirSpeak(); return; }
       mostrar('jogo');
       Jogos.iniciar(jogo, temaAtual, progressoDe(temaAtual.id).palavras, $('jogo'), (resultado, avisar) => {
         if (!resultado) { abrirTema(temaAtual); return; }

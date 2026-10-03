@@ -1,7 +1,6 @@
 <script>
   /**
-   * Voz (fala em inglês) e escuta (reconhecimento de voz) do próprio Chrome.
-   * Nada é gravado: o áudio do microfone é tratado pelo Chrome e só o texto reconhecido chega à página.
+   * Voz (fala em inglês) do próprio Chrome.
    */
   const Fala = {
     voz: null,
@@ -56,67 +55,4 @@
       });
     },
   };
-
-  const Escuta = {
-    Reconhecedor: window.SpeechRecognition || window.webkitSpeechRecognition || null,
-
-    suportada() { return !!this.Reconhecedor; },
-
-    /**
-     * Ouve uma fala curta em inglês e devolve as transcrições possíveis (em minúsculas).
-     * Em caso de erro, rejeita com { codigo, mensagem } em português.
-     */
-    ouvir(opcoes) {
-      opcoes = opcoes || {};
-      return new Promise((ok, falha) => {
-        if (!this.suportada()) { falha({ codigo: 'sem-suporte', mensagem: Escuta.mensagem('sem-suporte') }); return; }
-        const r = new this.Reconhecedor();
-        r.lang = opcoes.lang || 'en-US';
-        r.interimResults = false;
-        r.maxAlternatives = 5;
-        r.continuous = false;
-        let terminou = false;
-        const limite = setTimeout(() => { try { r.stop(); } catch (e) { /* já parou */ } }, opcoes.segundos ? opcoes.segundos * 1000 : 6000);
-        r.onresult = (ev) => {
-          terminou = true;
-          clearTimeout(limite);
-          const res = ev.results[0];
-          const lista = [];
-          for (let i = 0; i < res.length; i++) lista.push(String(res[i].transcript).toLowerCase().trim());
-          ok(lista);
-        };
-        r.onerror = (ev) => {
-          if (terminou) return;
-          terminou = true;
-          clearTimeout(limite);
-          falha({ codigo: ev.error, mensagem: Escuta.mensagem(ev.error) });
-        };
-        r.onend = () => {
-          clearTimeout(limite);
-          if (!terminou) { terminou = true; falha({ codigo: 'no-speech', mensagem: Escuta.mensagem('no-speech') }); }
-        };
-        if (opcoes.aoComecar) r.onstart = opcoes.aoComecar;
-        try { r.start(); } catch (e) { falha({ codigo: 'start', mensagem: e.message }); }
-      });
-    },
-
-    mensagem(codigo) {
-      return {
-        'sem-suporte': 'Este navegador não tem reconhecimento de voz.',
-        'not-allowed': 'O microfone foi bloqueado (pelo navegador, pela página ou pela administração dos Chromebooks).',
-        'service-not-allowed': 'O reconhecimento de voz está bloqueado neste navegador ou nesta página.',
-        'no-speech': 'Não ouvi nada. Fale mais perto do microfone.',
-        'audio-capture': 'Nenhum microfone encontrado.',
-        'network': 'O reconhecimento de voz precisa de internet e não conseguiu se conectar.',
-        'aborted': 'A escuta foi interrompida.',
-        'language-not-supported': 'O idioma inglês não está disponível para reconhecimento.',
-      }[codigo] || 'Erro no reconhecimento de voz (' + codigo + ').';
-    },
-  };
-
-  /** Normaliza para comparar o que a criança falou com a palavra esperada. */
-  function normalizarFala(s) {
-    return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
-      .replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
-  }
 </script>

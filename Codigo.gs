@@ -186,11 +186,10 @@ function validarAluno_(email, cfg) {
 // Páginas
 // ============================================================
 
-/** ?teste=1 abre o teste de voz e microfone para qualquer conta (útil para testar no Chromebook de um aluno). */
+/** ?teste=1 abre o teste de voz para qualquer conta (útil para testar no Chromebook de um aluno). */
 function doGet(e) {
   try {
     const email = usuarioAtual_();
-    if (e && e.parameter && e.parameter.speak) return paginaResultadoSpeak_(e.parameter.speak);
     const teste = e && e.parameter && e.parameter.teste;
     const pagina = teste ? 'Teste' : ehProfessor_(email) ? 'Professor' : 'Aluno';
     const t = HtmlService.createTemplateFromFile(pagina);
@@ -260,7 +259,6 @@ function alunoObterEstado() {
     jogos: Object.keys(JOGOS).map(function (k) { return { id: k, nome: JOGOS[k].nome }; }),
     progresso: aluno ? resumoProgressoAluno_(email, temas) : null,
     urlApp: ScriptApp.getService().getUrl(),
-    urlSpeak: URL_SPEAK,
     avaliacoes: aluno ? avaliacoesPendentes_(email, serie) : [],
     equipe: aluno ? equipeSegura_(email, String(aluno.turma)) : null,
   };

@@ -183,7 +183,6 @@
       frases: { icone: '🧱', nome: 'Build it!', pt: 'Monte a frase' },
       abelha: { icone: '🐝', nome: 'Spelling Bee', pt: 'Ouça e soletre' },
       repetir: { icone: '🗣️', nome: 'Repeat after me', pt: 'Ouça e repita' },
-      falar: { icone: '🎤', nome: 'Speak!', pt: 'Fale e o Chrome confere (abre outra aba)' },
     };
 
     /** Palavras que dá para soletrar: só letras (espaço, hífen e apóstrofo ficam fixos), até 12 letras. */
@@ -205,8 +204,6 @@
         frases: frasesBoas(tema).length >= 3,
         abelha: tema.palavras.filter(soletravel).length >= 3,
         repetir: n >= 3,
-        // Letras soltas (alfabeto) o reconhecimento de voz não entende bem.
-        falar: tema.palavras.filter((p) => p.en.replace(/[^a-z]/gi, '').length >= 2).length >= 3,
       };
     }
 

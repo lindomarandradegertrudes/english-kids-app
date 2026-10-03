@@ -4,36 +4,26 @@ Faça tudo com a sua **conta institucional** (@edu.joinville.sc.gov.br).
 
 ---
 
-# Speak! — jogo de pronúncia (atualização)
+# Remoção do Speak! (atualização)
 
-## A. Atualizar o código
-Não há arquivos novos. No editor, apague tudo e cole as novas versões de:
+O jogo **Speak!** foi retirado: o reconhecimento de voz falhava muito em entender a fala das crianças. A pronúncia continua sendo praticada no **🗣️ Repeat after me**.
+
+## Atualizar o código
+No editor, apague tudo e cole as novas versões de:
 - `Codigo` ← **Codigo.gs**
 - `Jogos` ← **Jogos.gs**
 - `JogosTela` ← **JogosTela.html**
-- `Aluno` ← **Aluno.html**
+- `AlunoCorpo` ← **AlunoCorpo.html**
+- `Fala` ← **Fala.html**
+- `Teste` ← **Teste.html**
+- `TesteConteudo` ← **TesteConteudo.html**
 
 Depois publique a nova versão: **Implantar > Gerenciar implantações > ✏️ > Versão: Nova versão > Implantar**. Não precisa executar `instalar`.
 
-## B. Como funciona
-1. Dentro do tema, a criança toca em **🎤 Speak!**. O jogo abre numa **aba nova**, porque a moldura do Google Apps Script não deixa usar o microfone.
-2. Para cada palavra (até 8), ela ouve, toca no 🎤 e fala. O reconhecimento de voz do Chrome confere.
-   - Valem pequenas diferenças de pronúncia.
-   - Vale falar a palavra dentro de uma frase ("it's a cat").
-   - Nos números, vale também o algarismo.
-   - São **3 tentativas** por palavra. Também dá para **Pular**.
-3. **No fim:** a aba do jogo avisa o app, as estrelas são salvas e a aba se fecha sozinha.
-   - **Plano B:** se o aviso entre as abas não funcionar, ela volta para o link do app levando o resultado, e aparece "✅ Suas estrelas do Speak! foram salvas".
-4. **Pontos no domínio:** +25 de primeira, +10 depois de errar, −5 por erro. As estrelas seguem a regra de sempre.
-
-O tema do alfabeto não tem Speak!, porque o reconhecimento entende mal letras soltas.
-
-## C. Se aparecer "🔇 O microfone está bloqueado"
-- Clique no cadeado ao lado do endereço > **Microfone > Permitir** e recarregue a página.
-- Se não houver essa opção no Chromebook da escola, a administração bloqueou o microfone. Peça à TI que libere só o endereço `https://lindomarandradegertrudes.github.io` (política "Permitir captura de áudio – URLs permitidos" / `AudioCaptureAllowedUrls`).
-- Para descobrir a causa exata, use o diagnóstico em `https://lindomarandradegertrudes.github.io/english-kids-speak/` (botão **🩺 Diagnosticar**).
-
-**Privacidade:** a página do jogo recebe só as palavras do tema. Nome, e-mail e notas nunca saem do app.
+**O que muda:**
+- O botão 🎤 Speak! sai dos temas.
+- A página de teste (`?teste=1`) agora testa só a voz.
+- As estrelas que as crianças já ganharam no Speak! continuam valendo no total e no placar do mês.
 
 ---
 
@@ -282,17 +272,13 @@ O **domínio do tema** é a média de todas as palavras do tema. As palavras ain
 
 Para atualizar o código depois: **Implantar > Gerenciar implantações > ✏️ > Versão: Nova versão > Implantar**. O link continua o mesmo.
 
-## 3. Primeiro teste no Chromebook (importante)
+## 3. Primeiro teste no Chromebook
 
-Antes dos jogos, precisamos saber se a **voz** e o **microfone** funcionam nos Chromebooks da escola.
+Antes dos jogos, confira se a **voz em inglês** funciona nos Chromebooks da escola.
 
 1. No painel, abra a aba **Teste do Chromebook** e copie o link de teste. É o link do sistema com `?teste=1` no final.
 2. Num Chromebook da escola, entre **com a conta de um aluno** e abra esse link.
-3. Clique em **🔊 Falar** e confira se ouviu a frase em inglês.
-4. Clique em **🎤 Ouvir agora**, permita o microfone se o Chrome perguntar e diga **"apple"**.
-5. Tire um print do quadro **📋 Resumo deste aparelho** e mande no chat.
-
-Se o microfone for bloqueado (`not-allowed`), o jogo **Speak!** precisará de outra solução. O resto do sistema não é afetado.
+3. Clique em **🔊 Falar** e confira se ouviu a frase em inglês. Se não ouvir nada, confira o volume.
 
 ## 4. Usar
 

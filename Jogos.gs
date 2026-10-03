@@ -19,37 +19,8 @@ const JOGOS = {
   frases: { nome: 'Build it!', ganho: 10, parcial: 5, perda: 0 },
   abelha: { nome: 'Spelling Bee', ganho: 35, parcial: 10, perda: 10 },
   repetir: { nome: 'Repeat after me', ganho: 0, parcial: 0, perda: 0 },
-  falar: { nome: 'Speak!', ganho: 25, parcial: 10, perda: 5 },
 };
 
-/**
- * Speak! roda numa página fora do Apps Script (a moldura do Google não deixa usar o microfone).
- * A página recebe só as palavras do tema e devolve o resultado para a aba do app (postMessage).
- * Se isso não for possível, ela volta para o app com ?speak=<resultado> e o resultado é salvo aqui.
- */
-const URL_SPEAK = 'https://lindomarandradegertrudes.github.io/english-kids-speak/jogo.html';
-
-function paginaResultadoSpeak_(codigo) {
-  let msg, ok = false;
-  try {
-    const b64 = String(codigo).replace(/-/g, '+').replace(/_/g, '/');
-    const json = Utilities.newBlob(Utilities.base64Decode(b64 + '==='.slice((b64.length + 3) % 4))).getDataAsString('UTF-8');
-    const r = JSON.parse(json);
-    alunoSalvarJogada({
-      id: r.id, tema_id: r.t, jogo: 'falar', palavras: r.palavras,
-      acertos: r.acertos, total: r.total, estrelas: r.estrelas, segundos: r.segundos,
-    });
-    ok = true;
-    msg = 'Suas estrelas do Speak! foram salvas. ⭐';
-  } catch (err) {
-    msg = 'Não consegui salvar o resultado do Speak!: ' + err.message;
-  }
-  const url = ScriptApp.getService().getUrl();
-  const html = '<div style="font-family:Nunito,Segoe UI,sans-serif;text-align:center;padding:40px 20px;font-size:20px">' +
-    '<div style="font-size:64px">' + (ok ? '✅' : '😕') + '</div><p style="font-weight:800">' + msg.replace(/</g, '&lt;') + '</p>' +
-    '<p><a href="' + url + '" target="_top" style="display:inline-block;background:#e8590c;color:#fff;padding:14px 22px;border-radius:16px;font-weight:800;text-decoration:none">Voltar ao English Kids</a></p></div>';
-  return HtmlService.createHtmlOutput(html).setTitle('English Kids App').addMetaTag('viewport', 'width=device-width, initial-scale=1');
-}
 const PONTOS_DOMINIO = 100;
 
 // ============================================================
