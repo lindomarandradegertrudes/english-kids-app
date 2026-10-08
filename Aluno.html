@@ -8,6 +8,7 @@
   <?!= incluir('Estilo'); ?>
   <?!= incluir('Fala'); ?>
   <?!= incluir('JogosTela'); ?>
+  <?!= incluir('MissaoTela'); ?>
   <style>
     :root {
       --c1: #ff6b6b; --c2: #4dabf7; --c3: #51cf66; --c4: #fcc419; --c5: #b197fc; --c6: #ff922b;
@@ -134,6 +135,12 @@
     .placar-mini div { display: grid; grid-template-columns: 34px 40px 1fr auto; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 12px; background: #f8f9fa; font-weight: 800; }
     .placar-mini div.minha { background: #fff3bf; outline: 3px solid #ffd43b; }
     .placar-mini .em { font-size: 1.6rem; }
+    .missao-aviso { display: flex; align-items: center; gap: 16px; background: linear-gradient(135deg, #e7f5ff, #fff0e6); border: 3px solid #74c0fc;
+      border-radius: 22px; padding: 16px 18px; margin-bottom: 18px; box-shadow: 0 5px 0 #a5d8ff; flex-wrap: wrap; }
+    .missao-aviso .ic { font-size: 3rem; }
+    .missao-aviso .tx { flex: 1; min-width: 180px; }
+    .missao-aviso .tx strong { font-size: 1.25rem; font-weight: 900; display: block; }
+    .missao-aviso .feita { font-weight: 900; color: #2b8a3e; }
     .mensagem { background: #fff; border-radius: 22px; padding: 28px; text-align: center; box-shadow: 0 4px 0 #ffe8cc; }
     .mensagem .grande { font-size: 4rem; }
     dialog { border-radius: 22px; }

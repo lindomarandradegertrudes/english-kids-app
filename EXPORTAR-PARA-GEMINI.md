@@ -1,6 +1,6 @@
 # English Kids App — pacote completo para o Gemini
 
-Gerado em 03/10/2026. Este arquivo reúne a documentação e **todo o código-fonte** do English Kids App, para que outro assistente de IA (Gemini) entenda o sistema e continue o trabalho.
+Gerado em 08/10/2026. Este arquivo reúne a documentação e **todo o código-fonte** do English Kids App, para que outro assistente de IA (Gemini) entenda o sistema e continue o trabalho.
 
 **Como usar no Gemini:** envie este arquivo e escreva, por exemplo:
 > "Este é o código completo do meu sistema English Kids App (Google Apps Script). Leia a seção 'Regras obrigatórias' antes de propor qualquer mudança. Quero ..."
@@ -27,7 +27,8 @@ Sistema web para o professor de Língua Inglesa dos Anos Iniciais (3º ao 5º an
 3. **Domínio por palavra:** cada palavra vale de 0 a 100 por aluno, com ganho e perda por jogo (veja `JOGOS` em `Jogos.gs`). O domínio do tema é a média das palavras do tema (as não jogadas valem 0). Os jogos sorteiam mais vezes as palavras menos dominadas.
 4. **Estrelas:** 1 a 3 por partida (3 ⭐ para 90% ou mais de acertos de primeira, 2 ⭐ a partir de 70% e 1 ⭐ por terminar). Vale a melhor nota de cada jogo em cada tema. O Repeat after me vale sempre 1.
 5. **Avaliações:** diagnóstico e quiz mensal montados sozinhos (questões `ouvir`, `ler` e `figura`). Online, a criança vê uma pergunta por tela e não vê a nota. Há prova impressa, gabarito e lançamento das letras marcadas.
-6. **Níveis:** Iniciante abaixo de 40%, Básico a partir de 40%, Intermediário a partir de 60% e Avançado a partir de 80%. São a média simples das avaliações; **os jogos não entram**. Só o professor vê.
+6. **Níveis:** Iniciante abaixo de 40%, Básico a partir de 40%, Intermediário a partir de 60% e Avançado a partir de 80%. São a média simples das avaliações **e das notas mensais de missões** (Respostas com id `MIS-aaaa-mm`, origem `missoes`); **os jogos livres não entram**. Só o professor vê.
+10. **Missões do mês:** o professor abre uma missão para a turma na aula e fecha no fim (aba Sessoes); pode reabrir só para alguns alunos. A criança faz a missão comum (história com o cachorro **Max** + 4 desafios: Listen & Click, Read & Choose, Spell it!, Build it!; 25 pontos cada; 1ª tentativa cheio, 2ª metade, depois 0) e um reforço de 2 desafios com as palavras que mais erra. Degrau pelo nível (★ Iniciante/sem nota, ★★ Básico/Intermediário, ★★★ Avançado): 2/3/4 opções, legenda em inglês+português só no ★, português por botão no ★★, palavras-chave `[[palavra|tradução]]` com tooltip no ★★★. Nota do mês = média de tudo o que fez no mês; quem não fez nada fica sem nota.
 7. **Equipes:** até 5 alunos, com níveis misturados (serpentina pela média + equilíbrio). Quem ainda não fez avaliação entra nas equipes menores. **Placar do mês** = média de estrelas por membro (melhor nota de cada jogo e tema no mês). Fica em cache de 2 minutos.
 8. **Relatórios:** comparativo das turmas, palavras com mais dificuldade (avaliações e jogos), ficha do aluno para imprimir e exportação para uma Planilha nova.
 9. **Microfone e Speak!:** o jogo Speak! (reconhecimento de voz) foi **removido** porque falhava muito com as crianças. Além disso, o microfone **não funciona dentro do Apps Script**: a moldura (iframe) do Google não tem permissão de microfone. Não proponha jogos com microfone. Estrelas antigas com a chave `falar` podem existir no `estrelas_json` e continuam somando.
@@ -55,6 +56,7 @@ Estas regras vieram de erros que travaram o app em produção. **Respeite todas.
 3. **Arquivos-modelo não podem ter código.** São os abertos com `createTemplateFromFile`: `Aluno`, `Professor` e `Teste`. Eles só podem ter a estrutura HTML e os `<?!= incluir('Arquivo'); ?>`. O código fica nos arquivos incluídos, que o Google entrega sem processar (`incluir()` usa `createHtmlOutputFromFile().getContent()`).
 4. **No Apps Script não pode haver um `.gs` e um `.html` com o mesmo nome.** Por isso o HTML dos jogos se chama `JogosTela`.
 5. **`google.script.run` transforma campos `null` de objetos em `undefined`.** No navegador, compare com `== null` ou `!= null`.
+5b. **Constantes globais de outros arquivos (`Fala`, `Som`, `Jogos`) não ficam em `window`.** Para testar se existem, use `typeof Fala !== 'undefined'`, nunca `window.Fala`.
 6. **O Sheets transforma texto em número ou data** (ex.: `"03"`, `"2026-10"`). Grave meses com apóstrofo na frente (`"'" + mes`) e leia com `String()`.
 7. **Concorrência:** a turma inteira salva junto. Os jogos salvam **sem trava global**: cada aluno só mexe nas próprias linhas, achadas com `TextFinder` pelo e-mail, e linhas novas entram com `appendRow`. No navegador, a fila em `localStorage` (`ek-fila:<email>`) reenvia sozinha o que não foi salvo.
 8. **Privacidade:** nenhum dado de aluno vai em endereço (URL). A chave da API da Anthropic fica nas Propriedades do script, nunca no código.
@@ -75,7 +77,7 @@ Abaixo está cada arquivo exatamente como deve ser colado no editor do Apps Scri
 
 ### Arquivo: `Codigo.gs`
 
-Instalação, acesso à planilha, permissões, turmas, cadastro, doGet e painel. (476 linhas)
+Instalação, acesso à planilha, permissões, turmas, cadastro, doGet e painel. (484 linhas)
 
 ````javascript
 /**
@@ -99,6 +101,8 @@ const CABECALHOS = {
   Questionarios: ['id', 'tipo', 'serie', 'mes', 'titulo', 'temas_json', 'questoes_json', 'status', 'criado_em'],
   Respostas: ['questionario_id', 'email', 'turma', 'pontuacao', 'total', 'percentual', 'detalhe_json', 'origem', 'respondido_em'],
   Equipes: ['mes', 'turma', 'equipe', 'email', 'nome', 'nivel', 'media', 'aplicado_em'],
+  Sessoes: ['id', 'missao_id', 'turma', 'serie', 'mes', 'status', 'aberta_ms', 'fechada_ms', 'reabertos_json'],
+  MissoesFeitas: ['id', 'sessao_id', 'missao_id', 'email', 'turma', 'mes', 'tipo', 'degrau', 'pontos', 'detalhe_json', 'feito_em'],
 };
 
 const CONFIG_PADRAO = [
@@ -341,7 +345,13 @@ function alunoObterEstado() {
     urlApp: ScriptApp.getService().getUrl(),
     avaliacoes: aluno ? avaliacoesPendentes_(email, serie) : [],
     equipe: aluno ? equipeSegura_(email, String(aluno.turma)) : null,
+    missoes: aluno ? missoesSeguras_(email, String(aluno.turma)) : [],
   };
+}
+
+/** As missões são um extra da tela inicial: se der erro, o resto da tela abre normalmente. */
+function missoesSeguras_(email, turma) {
+  try { return missoesDoAluno_(email, turma); } catch (e) { return []; }
 }
 
 /** A equipe é um extra da tela inicial: se der erro, a criança continua jogando normalmente. */
@@ -2193,6 +2203,696 @@ function profPlacar(turma) {
 }
 ````
 
+### Arquivo: `MissoesPadrao.gs`
+
+Banco das Missões do mês (história com o Max + 4 desafios em 3 degraus). (274 linhas)
+
+````javascript
+/**
+ * Missões do mês padrão (outubro e novembro) — 3º, 4º e 5º ano, cada uma em 3 degraus.
+ *
+ * Uma missão = história curta com o Max + 4 desafios (25 pontos cada):
+ *   ouvir    – Listen & Click: ouvir a palavra e tocar na figura (palavras do tema);
+ *   ler      – Read & Choose: ler a frase e escolher a figura (opções: emojis ou monstros desenhados; a 1ª é a certa);
+ *   soletrar – Spell it!: montar a palavra (no degrau 3 há letras extras);
+ *   montar   – Build it!: montar a frase com blocos.
+ * Falas: [inglês, português]. No degrau 3, [[palavra|tradução]] vira palavra-chave sublinhada com tradução.
+ * As palavras de ouvir/soletrar precisam existir no tema (série + título).
+ */
+
+const MISSOES_PADRAO = [
+  // ---------------- 3º ano ----------------
+  {
+    id: 'm3-2026-10-pets', serie: '3º', mes: '2026-10', tema: 'My pets', titulo: 'Max e o Show dos Bichinhos', icone: '🐾',
+    historia: {
+      intro: {
+        1: ["Hi! I'm Max. Today is the Pet Show!", 'Oi! Eu sou o Max. Hoje é o Show dos Bichinhos!'],
+        2: ["Hi! I'm Max. Today is the school Pet Show, but the pets are lost! Can you help me?", 'Oi! Eu sou o Max. Hoje é o Show dos Bichinhos da escola, mas os bichinhos se perderam! Você me ajuda?'],
+        3: ["Hi, I'm Max! Today is the school [[Pet Show|Show dos Bichinhos]], but the [[gate|portão]] was open and the pets [[ran away|fugiram]]. Listen and help me [[find|achar]] them!", ''],
+      },
+      c2: {
+        1: ['Look! A pet is here.', 'Olhe! Um bichinho está aqui.'],
+        2: ['Now read the name card. Which pet is it?', 'Agora leia o cartão. Qual bichinho é?'],
+        3: ['The [[owner|dona]] wrote a [[card|cartão]] about her pets. Read it and find her pets!', ''],
+      },
+      c3: {
+        1: ['Oh no! The name fell off!', 'Ah, não! O nome caiu!'],
+        2: ['Oh no! A name tag fell off. Help me spell it!', 'Ah, não! Um crachá caiu. Me ajude a soletrar!'],
+        3: ['Oh no! The [[name tags|crachás]] fell in the [[water bowl|tigela de água]] and the letters got [[mixed up|misturadas]]. Spell the name again!', ''],
+      },
+      c4: {
+        1: ['Last one! Talk about your pet!', 'Última! Fale do seu bichinho!'],
+        2: ['Last one! The judge needs a sentence. Build it!', 'Última! O juiz precisa de uma frase. Monte-a!'],
+        3: ['Last one! The [[judge|juiz]] will read your sentence to [[everyone|todos]]. Put the words in the [[right order|ordem certa]]!', ''],
+      },
+      fim: {
+        1: ['Thank you! All the pets are home! 🎉', 'Obrigado! Todos os bichinhos estão em casa! 🎉'],
+        2: ['Thank you! The pets are back. The Pet Show can start! 🎉', 'Obrigado! Os bichinhos voltaram. O show pode começar! 🎉'],
+        3: ['Thank you so much! Every pet is [[back|de volta]] and the Pet Show can [[start|começar]]. You are a [[great|ótimo]] helper! 🎉', ''],
+      },
+    },
+    ouvir: { 1: ['cat', 'dog', 'fish'], 2: ['rabbit', 'bird', 'turtle'], 3: ['parrot', 'hamster', 'mouse'] },
+    ler: {
+      1: { en: 'It is a cat.', pt: 'É um gato.', opcoes: ['🐱', '🐶'] },
+      2: { en: 'I have a black cat.', pt: 'Eu tenho um gato preto.', opcoes: ['🐈‍⬛', '🐱', '🐶'] },
+      3: { en: 'I have [[two|dois]] cats and a [[fish|peixe]].', pt: '', opcoes: ['🐱🐱🐠', '🐱🐠', '🐶🐶🐠', '🐱🐱🐦'] },
+    },
+    soletrar: { 1: { en: 'dog', extras: '' }, 2: { en: 'rabbit', extras: '' }, 3: { en: 'parrot', extras: 'tk' } },
+    montar: {
+      1: { blocos: ['I have', 'a', 'dog.'], pt: 'Eu tenho um cachorro.' },
+      2: { blocos: ['My', 'cat', 'is', 'black.'], pt: 'Meu gato é preto.' },
+      3: { blocos: ['I', 'have', 'three', 'white', 'rabbits.'], pt: 'Eu tenho três coelhos brancos.' },
+    },
+  },
+  {
+    id: 'm3-2026-11-toys', serie: '3º', mes: '2026-11', tema: 'Toys', titulo: 'Max na Loja de Brinquedos', icone: '🧸',
+    historia: {
+      intro: {
+        1: ["Hi! I'm Max. It's my birthday!", 'Oi! Eu sou o Max. É meu aniversário!'],
+        2: ["Hi! I'm Max. Today is my birthday! Let's go to the toy shop!", 'Oi! Eu sou o Max. Hoje é meu aniversário! Vamos à loja de brinquedos!'],
+        3: ["Hi, I'm Max! Today is my [[birthday|aniversário]] and Grandma gave me money for a [[new toy|brinquedo novo]]. Let's go to the [[toy shop|loja de brinquedos]] and choose!", ''],
+      },
+      c2: {
+        1: ['Look at the shop window!', 'Olhe a vitrine!'],
+        2: ['The shop has a sign. Read it and find the toy.', 'A loja tem uma placa. Leia e ache o brinquedo.'],
+        3: ['The [[shop owner|dono da loja]] has a [[special offer|oferta especial]]. Read the sign and find the right toys!', ''],
+      },
+      c3: {
+        1: ['Oh no! The toy box is open!', 'Ah, não! A caixa de brinquedos abriu!'],
+        2: ['Oh no! The letters on the toy box fell off. Help me!', 'Ah, não! As letras da caixa de brinquedos caíram. Me ajude!'],
+        3: ['Oh no! A little kid [[dropped|derrubou]] the [[letter blocks|blocos de letras]] from the shelf. Spell the toy name again!', ''],
+      },
+      c4: {
+        1: ['Last one! Say what you like!', 'Última! Diga do que você gosta!'],
+        2: ['Last one! Write my birthday card!', 'Última! Escreva meu cartão de aniversário!'],
+        3: ['Last one! Grandma wants a [[thank-you card|cartão de agradecimento]]. Build the sentence for her!', ''],
+      },
+      fim: {
+        1: ['Thank you! I love my new toy! 🎉', 'Obrigado! Eu amo meu brinquedo novo! 🎉'],
+        2: ["Thank you! I have a new toy. Let's play! 🎉", 'Obrigado! Eu tenho um brinquedo novo. Vamos brincar! 🎉'],
+        3: ["Thank you so much! My [[new|novo]] robot is [[awesome|incrível]]. Let's play [[together|juntos]]! 🎉", ''],
+      },
+    },
+    ouvir: { 1: ['ball', 'car', 'kite'], 2: ['doll', 'robot', 'train'], 3: ['puzzle', 'skateboard', 'balloon'] },
+    ler: {
+      1: { en: 'It is a ball.', pt: 'É uma bola.', opcoes: ['⚽', '🚗'] },
+      2: { en: 'I have a red car.', pt: 'Eu tenho um carrinho vermelho.', opcoes: ['🚗', '🚙', '🚂'] },
+      3: { en: 'Two [[kites|pipas]] and one [[robot|robô]] for ten [[dollars|dólares]]!', pt: '', opcoes: ['🪁🪁🤖', '🪁🤖🤖', '🪁🪁🚂', '🎈🎈🤖'] },
+    },
+    soletrar: { 1: { en: 'car', extras: '' }, 2: { en: 'robot', extras: '' }, 3: { en: 'puzzle', extras: 'sb' } },
+    montar: {
+      1: { blocos: ['I like', 'my', 'ball.'], pt: 'Eu gosto da minha bola.' },
+      2: { blocos: ['My', 'new', 'toy', 'is', 'red.'], pt: 'Meu brinquedo novo é vermelho.' },
+      3: { blocos: ['Thank', 'you', 'for', 'my', 'new', 'robot!'], pt: 'Obrigado pelo meu robô novo!' },
+    },
+  },
+
+  // ---------------- 4º ano ----------------
+  {
+    id: 'm4-2026-10-body', serie: '4º', mes: '2026-10', tema: 'My body', titulo: 'Max e a Festa dos Monstros', icone: '👾',
+    historia: {
+      intro: {
+        1: ["Hi! I'm Max. Help me make a monster!", 'Oi! Eu sou o Max. Me ajude a fazer um monstro!'],
+        2: ["Hi! I'm Max. Tonight is the Monster Party! I need a monster costume. Can you help me?", 'Oi! Eu sou o Max. Hoje à noite é a Festa dos Monstros! Preciso de uma fantasia de monstro. Você me ajuda?'],
+        3: ["Hi, I'm Max! Tonight is the big [[Monster Party|Festa dos Monstros]] at school, and every dog [[needs|precisa de]] a [[costume|fantasia]]. My monster needs [[eyes|olhos]], [[ears|orelhas]] and a big [[mouth|boca]]. Can you [[help|ajudar]] me [[find|achar]] the parts?", ''],
+      },
+      c2: {
+        1: ['Great! Now look at my monster.', 'Ótimo! Agora olhe o meu monstro.'],
+        2: ['Great job! I drew my monster. Which one is it?', 'Muito bem! Eu desenhei o meu monstro. Qual é ele?'],
+        3: ['Great job! I [[drew|desenhei]] four monsters, but my friend Bella only [[likes|gosta de]] one. Read her [[message|mensagem]] and find it.', ''],
+      },
+      c3: {
+        1: ['Oh no! My sign fell down!', 'Ah, não! Minha placa caiu!'],
+        2: ['Oh no! The letters fell off my party sign. Help me!', 'Ah, não! As letras caíram da minha placa da festa. Me ajude!'],
+        3: ['Oh no! The [[wind|vento]] [[blew|soprou]] the letters off my party [[sign|placa]], and some letters from another sign are [[mixed in|misturadas]]. [[Spell|Soletre]] the word again!', ''],
+      },
+      c4: {
+        1: ['Last one! Say it like a monster!', 'Última! Fale como um monstro!'],
+        2: ['Last one! The DJ needs my monster sentence. Build it!', 'Última! O DJ precisa da minha frase de monstro. Monte-a!'],
+        3: ['Last one! The DJ will read my monster [[sentence|frase]] on [[stage|palco]]. Put the words in the [[right order|ordem certa]], please!', ''],
+      },
+      fim: {
+        1: ['Thank you! See you at the party! 🎉', 'Obrigado! Até a festa! 🎉'],
+        2: ['Thank you! My costume is ready. See you at the party! 🎉', 'Obrigado! Minha fantasia está pronta. Até a festa! 🎉'],
+        3: ['Thank you so much! My costume is [[ready|pronta]] and Bella [[loves|adora]] it. See you at the Monster Party [[tonight|hoje à noite]]! 🎉', ''],
+      },
+    },
+    ouvir: { 1: ['ear', 'hand', 'eye'], 2: ['mouth', 'ear', 'foot'], 3: ['tongue', 'teeth', 'leg'] },
+    ler: {
+      1: { en: 'It has two eyes.', pt: 'Ele tem dois olhos.', monstros: true,
+        opcoes: [{ olhos: 2, grande: true, bracos: 2 }, { olhos: 1, grande: true, bracos: 2 }] },
+      2: { en: 'It has three small eyes.', pt: 'Ele tem três olhos pequenos.', monstros: true,
+        opcoes: [{ olhos: 3, grande: false, bracos: 2 }, { olhos: 3, grande: true, bracos: 2 }, { olhos: 2, grande: false, bracos: 2 }] },
+      3: { en: 'My [[favourite|favorito]] monster has three [[big|grandes]] eyes and four [[arms|braços]].', pt: '', monstros: true,
+        opcoes: [{ olhos: 3, grande: true, bracos: 4 }, { olhos: 3, grande: false, bracos: 4 }, { olhos: 3, grande: true, bracos: 2 }, { olhos: 2, grande: true, bracos: 4 }] },
+    },
+    soletrar: { 1: { en: 'hand', extras: '' }, 2: { en: 'mouth', extras: '' }, 3: { en: 'tongue', extras: 'ra' } },
+    montar: {
+      1: { blocos: ['I have', 'two', 'hands.'], pt: 'Eu tenho duas mãos.' },
+      2: { blocos: ['The', 'monster', 'has', 'big', 'ears.'], pt: 'O monstro tem orelhas grandes.' },
+      3: { blocos: ['My', 'monster', 'has', 'three', 'small', 'noses.'], pt: 'Meu monstro tem três narizes pequenos.' },
+    },
+  },
+  {
+    id: 'm4-2026-11-food', serie: '4º', mes: '2026-11', tema: 'Food and drinks', titulo: 'Max e o Piquenique', icone: '🧺',
+    historia: {
+      intro: {
+        1: ["Hi! I'm Max. Let's have a picnic!", 'Oi! Eu sou o Max. Vamos fazer um piquenique!'],
+        2: ["Hi! I'm Max. It's a sunny day. Let's make a picnic basket!", 'Oi! Eu sou o Max. É um dia de sol. Vamos montar uma cesta de piquenique!'],
+        3: ["Hi, I'm Max! It's a [[sunny|ensolarado]] day and my friends are coming to the park. I need to [[pack|arrumar]] the [[picnic basket|cesta de piquenique]]. Can you help me?", ''],
+      },
+      c2: {
+        1: ['Look! My friend likes this.', 'Olhe! Meu amigo gosta disto.'],
+        2: ['My friend Bella sent a note. Read it!', 'Minha amiga Bella mandou um bilhete. Leia!'],
+        3: ['Bella sent a message about her [[favorite|favorita]] food. Read it and [[pack|coloque]] the right food!', ''],
+      },
+      c3: {
+        1: ['Oh no! The menu fell!', 'Ah, não! O cardápio caiu!'],
+        2: ['Oh no! The menu got wet. Help me spell the word!', 'Ah, não! O cardápio molhou. Me ajude a soletrar a palavra!'],
+        3: ['Oh no! It started to rain and the [[menu|cardápio]] got [[wet|molhado]]. Some letters [[washed away|sumiram]]. Spell the food again!', ''],
+      },
+      c4: {
+        1: ['Last one! Tell me what you like!', 'Última! Me diga do que você gosta!'],
+        2: ['Last one! Answer my question!', 'Última! Responda à minha pergunta!'],
+        3: ["Last one! Bella [[asks|pergunta]]: Do you like milk? Build your [[answer|resposta]]!", ''],
+      },
+      fim: {
+        1: ['Yummy! Thank you! 🎉', 'Delícia! Obrigado! 🎉'],
+        2: ["Thank you! The basket is ready. Let's eat! 🎉", 'Obrigado! A cesta está pronta. Vamos comer! 🎉'],
+        3: ["Thank you so much! The basket is [[full|cheia]] of [[yummy|gostosa]] food. Let's [[eat|comer]] in the park! 🎉", ''],
+      },
+    },
+    ouvir: { 1: ['apple', 'banana', 'pizza'], 2: ['bread', 'cheese', 'juice'], 3: ['sandwich', 'grapes', 'carrot'] },
+    ler: {
+      1: { en: 'I like apples.', pt: 'Eu gosto de maçãs.', opcoes: ['🍎', '🍕'] },
+      2: { en: "I like cake. I don't like fish.", pt: 'Eu gosto de bolo. Eu não gosto de peixe.', opcoes: ['🍰', '🐟', '🍕'] },
+      3: { en: "I [[don't like|não gosto de]] pizza. I like [[sandwiches|sanduíches]] and [[orange juice|suco de laranja]].", pt: '', opcoes: ['🥪🍊🧃', '🍕🍊🧃', '🥪🥛', '🍕🍎'] },
+    },
+    soletrar: { 1: { en: 'egg', extras: '' }, 2: { en: 'bread', extras: '' }, 3: { en: 'cheese', extras: 'ky' } },
+    montar: {
+      1: { blocos: ['I', 'like', 'pizza.'], pt: 'Eu gosto de pizza.' },
+      2: { blocos: ['I', "don't", 'like', 'fish.'], pt: 'Eu não gosto de peixe.' },
+      3: { blocos: ['No,', 'I', "don't.", 'I', 'like', 'juice.'], pt: 'Não, eu não gosto. Eu gosto de suco.' },
+    },
+  },
+
+  // ---------------- 5º ano ----------------
+  {
+    id: 'm5-2026-10-weather', serie: '5º', mes: '2026-10', tema: 'The weather', titulo: 'Max, o Repórter do Tempo', icone: '🌦️',
+    historia: {
+      intro: {
+        1: ["Hi! I'm Max. I'm a weather reporter!", 'Oi! Eu sou o Max. Eu sou repórter do tempo!'],
+        2: ["Hi! I'm Max. Today I'm the TV weather reporter. Help me with the news!", 'Oi! Eu sou o Max. Hoje sou o repórter do tempo da TV. Me ajude com o jornal!'],
+        3: ["Hi, I'm Max! Today I'm the [[weather reporter|repórter do tempo]] on TV, but my [[notes|anotações]] are a [[mess|bagunça]]. Help me get the [[forecast|previsão]] ready!", ''],
+      },
+      c2: {
+        1: ['Look at the map!', 'Olhe o mapa!'],
+        2: ['Read the message from the studio.', 'Leia a mensagem do estúdio.'],
+        3: ['The [[studio|estúdio]] sent the forecast for [[tomorrow|amanhã]]. Read it and choose the right [[weather icons|ícones do tempo]]!', ''],
+      },
+      c3: {
+        1: ['Oh no! My sign fell!', 'Ah, não! Minha placa caiu!'],
+        2: ['Oh no! The wind blew my sign. Spell the word!', 'Ah, não! O vento levou minha placa. Soletre a palavra!'],
+        3: ['Oh no! A [[strong wind|vento forte]] blew the letters off my [[weather board|quadro do tempo]]. Spell the word again before we go [[live|ao vivo]]!', ''],
+      },
+      c4: {
+        1: ['Last one! Say the weather!', 'Última! Diga como está o tempo!'],
+        2: ['Last one! Build my TV sentence!', 'Última! Monte minha frase da TV!'],
+        3: ['Last one! We are [[on air|no ar]] in ten seconds! Build the [[sentence|frase]] for the [[news|jornal]]!', ''],
+      },
+      fim: {
+        1: ['Great job! Thank you! 🎉', 'Muito bem! Obrigado! 🎉'],
+        2: ['Great job! The weather news was perfect! 🎉', 'Muito bem! O jornal do tempo foi perfeito! 🎉'],
+        3: ['Great job! The forecast was [[perfect|perfeita]] and the [[viewers|telespectadores]] loved it. See you tomorrow on TV! 🎉', ''],
+      },
+    },
+    ouvir: { 1: ['sunny', 'rainy', 'cold'], 2: ['cloudy', 'windy', 'hot'], 3: ['stormy', 'foggy', 'snowy'] },
+    ler: {
+      1: { en: "It's sunny.", pt: 'Está ensolarado.', opcoes: ['☀️', '🌧️'] },
+      2: { en: "It's cold and rainy.", pt: 'Está frio e chuvoso.', opcoes: ['🥶🌧️', '🥵☀️', '🥶❄️'] },
+      3: { en: "In the [[morning|manhã]] it's foggy, but in the [[afternoon|tarde]] it's sunny and hot.", pt: '', opcoes: ['🌫️☀️🥵', '☀️🌫️🥶', '🌧️☀️🥵', '🌫️⛈️🥵'] },
+    },
+    soletrar: { 1: { en: 'hot', extras: '' }, 2: { en: 'windy', extras: '' }, 3: { en: 'rainbow', extras: 'ue' } },
+    montar: {
+      1: { blocos: ["It's", 'sunny', 'today.'], pt: 'Está ensolarado hoje.' },
+      2: { blocos: ["It's", 'cold', 'and', 'rainy.'], pt: 'Está frio e chuvoso.' },
+      3: { blocos: ['Take', 'your', 'umbrella.', "It's", 'rainy', 'today.'], pt: 'Leve seu guarda-chuva. Está chuvoso hoje.' },
+    },
+  },
+  {
+    id: 'm5-2026-11-seasons', serie: '5º', mes: '2026-11', tema: 'Seasons and days', titulo: 'Max e a Agenda Maluca', icone: '📅',
+    historia: {
+      intro: {
+        1: ["Hi! I'm Max. I have a busy week!", 'Oi! Eu sou o Max. Tenho uma semana cheia!'],
+        2: ["Hi! I'm Max. My calendar is a mess. Can you help me?", 'Oi! Eu sou o Max. Minha agenda está uma bagunça. Você me ajuda?'],
+        3: ["Hi, I'm Max! I have a [[busy|cheia]] week and my [[calendar|calendário]] is a mess. I also need to plan a trip for every [[season|estação]]. Can you help me?", ''],
+      },
+      c2: {
+        1: ['Look at my plan!', 'Olhe meu plano!'],
+        2: ['Read my plan for the weekend.', 'Leia meu plano para o fim de semana.'],
+        3: ['My friend Bella wrote my [[plan|plano]] for the [[holidays|férias]]. Read it and find the right pictures!', ''],
+      },
+      c3: {
+        1: ['Oh no! My calendar fell!', 'Ah, não! Meu calendário caiu!'],
+        2: ['Oh no! The day names fell off my calendar!', 'Ah, não! Os nomes dos dias caíram do meu calendário!'],
+        3: ['Oh no! My little brother [[played|brincou]] with my calendar and [[mixed up|misturou]] the letters. Spell the word again!', ''],
+      },
+      c4: {
+        1: ['Last one! What day is today?', 'Última! Que dia é hoje?'],
+        2: ['Last one! Build my sentence for the calendar!', 'Última! Monte minha frase para o calendário!'],
+        3: ['Last one! Write the [[note|recado]] for my [[birthday party|festa de aniversário]]!', ''],
+      },
+      fim: {
+        1: ['Thank you! My week is ready! 🎉', 'Obrigado! Minha semana está pronta! 🎉'],
+        2: ['Thank you! My calendar is perfect now! 🎉', 'Obrigado! Minha agenda está perfeita agora! 🎉'],
+        3: ["Thank you so much! My calendar is [[organized|organizado]] and I'm ready for every season. See you on [[Saturday|sábado]]! 🎉", ''],
+      },
+    },
+    ouvir: { 1: ['spring', 'summer', 'winter'], 2: ['autumn', 'Monday', 'Friday'], 3: ['Tuesday', 'Thursday', 'Saturday'] },
+    ler: {
+      1: { en: "It's hot in summer.", pt: 'Faz calor no verão.', opcoes: ['🏖️', '⛄'] },
+      2: { en: 'On Saturday I go to the beach.', pt: 'No sábado eu vou à praia.', opcoes: ['🏖️', '⛄', '🌸'] },
+      3: { en: "In [[winter|inverno]] it's cold, so we [[build|construímos]] a [[snowman|boneco de neve]]. In spring we see [[flowers|flores]].", pt: '', opcoes: ['⛄🌸', '🏖️🌸', '⛄🍂', '🏖️🍂'] },
+    },
+    soletrar: { 1: { en: 'summer', extras: '' }, 2: { en: 'Sunday', extras: '' }, 3: { en: 'Wednesday', extras: 'ko' } },
+    montar: {
+      1: { blocos: ['Today', 'is', 'Monday.'], pt: 'Hoje é segunda-feira.' },
+      2: { blocos: ["It's", 'cold', 'in', 'winter.'], pt: 'Faz frio no inverno.' },
+      3: { blocos: ['My', 'party', 'is', 'on', 'Saturday', 'afternoon.'], pt: 'Minha festa é no sábado à tarde.' },
+    },
+  },
+];
+````
+
+### Arquivo: `Missoes.gs`
+
+Missões: aulas abertas/fechadas, reabertura, reforço individual e nota do mês. (402 linhas)
+
+````javascript
+/**
+ * Missões do mês (valem nota).
+ *
+ * - O professor ABRE uma missão para a turma na aula com Chromebook e FECHA no fim (uma "aula de missão").
+ * - Quem faltou ou não terminou: o professor REABRE só para essas crianças.
+ * - Cada criança faz a missão comum (4 desafios, 0–100) e depois uma mini-missão de REFORÇO (~5 min, 0–100)
+ *   com as palavras que mais erra. Vale só a 1ª vez de cada uma.
+ * - Nota do mês = média de todas as missões feitas no mês (comum + reforço), gravada em Respostas
+ *   como "MIS-aaaa-mm" (origem 'missoes'). Entra no nível com o mesmo peso de um quiz.
+ *   Quem não fez nenhuma missão no mês fica sem nota (não zero).
+ * - Degrau pelo nível: Iniciante ou sem avaliação = 1, Básico/Intermediário = 2, Avançado = 3.
+ */
+
+const COL_SESSOES = ['id', 'missao_id', 'turma', 'serie', 'mes', 'status', 'aberta_ms', 'fechada_ms', 'reabertos_json'];
+const COL_FEITAS = ['id', 'sessao_id', 'missao_id', 'email', 'turma', 'mes', 'tipo', 'degrau', 'pontos', 'detalhe_json', 'feito_em'];
+const TOLERANCIA_FECHAMENTO_MS = 10 * 60 * 1000; // resultado que chega da fila até 10 min depois de a aula fechar ainda vale
+const NOMES_MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+
+// ============================================================
+// Abas (criadas sozinhas se ainda não existirem)
+// ============================================================
+
+function abaMissoes_(nome) {
+  const ss = planilha_();
+  let aba = ss.getSheetByName(nome);
+  if (!aba) {
+    aba = ss.insertSheet(nome);
+    const cab = CABECALHOS[nome];
+    aba.getRange(1, 1, 1, cab.length).setValues([cab]).setFontWeight('bold').setBackground('#ffe8cc');
+    aba.setFrozenRows(1);
+  }
+  return aba;
+}
+
+function lerSessoes_() {
+  abaMissoes_('Sessoes');
+  return lerTabela_('Sessoes').map(function (s) {
+    let reabertos = [];
+    try { reabertos = JSON.parse(s.reabertos_json || '[]'); } catch (e) { /* vazio */ }
+    return {
+      _linha: s._linha, id: String(s.id), missao_id: String(s.missao_id), turma: String(s.turma), serie: String(s.serie),
+      mes: String(s.mes), status: String(s.status) === 'aberta' ? 'aberta' : 'fechada',
+      aberta_ms: Number(s.aberta_ms) || 0, fechada_ms: Number(s.fechada_ms) || 0,
+      reabertos: Array.isArray(reabertos) ? reabertos.map(function (e) { return String(e).toLowerCase(); }) : [],
+    };
+  });
+}
+
+function lerFeitas_() {
+  abaMissoes_('MissoesFeitas');
+  return lerTabela_('MissoesFeitas').map(converterFeita_);
+}
+
+function converterFeita_(f) {
+  return {
+    id: String(f.id), sessao_id: String(f.sessao_id), missao_id: String(f.missao_id), email: String(f.email).toLowerCase(),
+    turma: String(f.turma), mes: String(f.mes), tipo: String(f.tipo), degrau: Number(f.degrau) || 1,
+    pontos: Number(f.pontos) || 0, detalhe: jsonObj_(f.detalhe_json),
+  };
+}
+
+/** Missões feitas por um aluno (busca pela planilha, sem ler a aba inteira). */
+function feitasDoAluno_(email) {
+  const aba = abaMissoes_('MissoesFeitas');
+  const n = aba.getLastRow() - 1;
+  if (n < 1) return [];
+  const col = COL_FEITAS.indexOf('email') + 1;
+  return aba.getRange(2, col, n, 1).createTextFinder(email).matchEntireCell(true).matchCase(false).findAll()
+    .map(function (c) {
+      const v = aba.getRange(c.getRow(), 1, 1, COL_FEITAS.length).getValues()[0];
+      const o = {};
+      COL_FEITAS.forEach(function (k, i) { o[k] = v[i]; });
+      return converterFeita_(o);
+    })
+    .filter(function (f) { return f.email === email; });
+}
+
+function gravarSessao_(s) {
+  const aba = abaMissoes_('Sessoes');
+  const linha = linhaDe_('Sessoes', {
+    id: s.id, missao_id: s.missao_id, turma: s.turma, serie: s.serie, mes: "'" + s.mes, status: s.status,
+    aberta_ms: s.aberta_ms, fechada_ms: s.fechada_ms || '', reabertos_json: JSON.stringify(s.reabertos || []),
+  });
+  if (s._linha) aba.getRange(s._linha, 1, 1, linha.length).setValues([linha]);
+  else aba.appendRow(linha);
+}
+
+// ============================================================
+// Banco de missões
+// ============================================================
+
+function buscarMissao_(id) {
+  const m = MISSOES_PADRAO.filter(function (x) { return x.id === id; })[0];
+  if (!m) throw new Error('Missão não encontrada.');
+  return m;
+}
+
+function degrauDoNivel_(nivel) {
+  return nivel === 'Avançado' ? 3 : nivel === 'Básico' || nivel === 'Intermediário' ? 2 : 1;
+}
+
+function temaDaMissao_(m, temas) {
+  return (temas || lerTemas_()).filter(function (t) { return t.serie === m.serie && t.titulo.toLowerCase() === m.tema.toLowerCase(); })[0] || null;
+}
+
+/** Monta a missão no degrau pedido, já com as palavras do tema (figura e tradução) para a tela. */
+function resolverMissao_(m, degrau, tema) {
+  const palavras = tema ? tema.palavras : [];
+  const porEn = {};
+  palavras.forEach(function (p) { porEn[p.en.toLowerCase()] = p; });
+  // Palavras de ouvir que saíram do tema são trocadas por outras do mesmo tema.
+  const usadas = {};
+  const ouvir = m.ouvir[degrau].map(function (en) {
+    let p = porEn[en.toLowerCase()];
+    if (!p) p = palavras.filter(function (x) { return !usadas[x.en]; })[0];
+    if (p) usadas[p.en] = true;
+    return p ? p.en : null;
+  }).filter(Boolean);
+  const sol = m.soletrar[degrau];
+  const solP = porEn[sol.en.toLowerCase()] || { en: sol.en, pt: '', figura: '' };
+  const hist = {};
+  Object.keys(m.historia).forEach(function (k) { hist[k] = m.historia[k][degrau]; });
+  return {
+    id: m.id, titulo: m.titulo, icone: m.icone, serie: m.serie, mes: m.mes, tema: m.tema, degrau: degrau,
+    historia: hist, palavras: palavras, ouvir: ouvir, ler: m.ler[degrau],
+    soletrar: { en: solP.en, pt: solP.pt, figura: solP.figura, extras: sol.extras || '' },
+    montar: m.montar[degrau],
+  };
+}
+
+// ============================================================
+// Nota do mês
+// ============================================================
+
+function idNotaMes_(mes) { return 'MIS-' + mes; }
+
+/** Recalcula a nota de missões do mês do aluno (média de tudo o que ele fez no mês). */
+function atualizarNotaMes_(email, turma, mes) {
+  const doMes = feitasDoAluno_(email).filter(function (f) { return f.mes === mes; });
+  if (!doMes.length) return;
+  const media = doMes.reduce(function (s, f) { return s + f.pontos; }, 0) / doMes.length;
+  gravarResposta_({ id: idNotaMes_(mes) }, email, turma, {
+    pontuacao: Math.round(media), total: 100, percentual: Math.round(media * 10) / 10,
+    detalhe: { missoes: doMes.length },
+  }, 'missoes');
+}
+
+/** Questionários + "questionários virtuais" das notas de missões (para relatórios e ficha do aluno). */
+function questionariosEMissoes_(respostas) {
+  const lista = lerQuestionarios_();
+  const vistos = {};
+  (respostas || lerRespostas_()).forEach(function (r) {
+    const id = r.questionario_id;
+    if (id.indexOf('MIS-') !== 0 || vistos[id]) return;
+    vistos[id] = true;
+    const mes = id.slice(4);
+    lista.push({ id: id, tipo: 'missoes', serie: '', mes: mes, titulo: 'Missões de ' + (NOMES_MESES[Number(mes.slice(5)) - 1] || mes), questoes: [], status: 'encerrado' });
+  });
+  return lista;
+}
+
+// ============================================================
+// Área do aluno
+// ============================================================
+
+function podeJogar_(s, email) {
+  return s.status === 'aberta' || s.reabertos.indexOf(email) !== -1;
+}
+
+/** Missões disponíveis agora para o aluno (aulas abertas ou reabertas para ele). */
+function missoesDoAluno_(email, turma) {
+  const sessoes = lerSessoes_().filter(function (s) { return s.turma === turma && podeJogar_(s, email); });
+  if (!sessoes.length) return [];
+  const feitas = feitasDoAluno_(email);
+  return sessoes.map(function (s) {
+    let m;
+    try { m = buscarMissao_(s.missao_id); } catch (e) { return null; }
+    const daSessao = feitas.filter(function (f) { return f.sessao_id === s.id; });
+    const comum = daSessao.filter(function (f) { return f.tipo === 'comum'; })[0];
+    const reforco = daSessao.filter(function (f) { return f.tipo === 'reforco'; })[0];
+    return {
+      sessao_id: s.id, missao_id: m.id, titulo: m.titulo, icone: m.icone,
+      comum: comum ? comum.pontos : null, reforco: reforco ? reforco.pontos : null,
+    };
+  }).filter(Boolean);
+}
+
+function sessaoDoAluno_(sessaoId, aluno) {
+  const s = lerSessoes_().filter(function (x) { return x.id === String(sessaoId); })[0];
+  if (!s || s.turma !== aluno.turma) throw new Error('Esta missão não é da sua turma.');
+  return s;
+}
+
+function degrauDoAluno_(email) {
+  const n = calcularNiveis_(lerConfig_())[email];
+  return degrauDoNivel_(n ? n.nivel : '');
+}
+
+function alunoAbrirMissao(sessaoId) {
+  const aluno = alunoAtual_();
+  const s = sessaoDoAluno_(sessaoId, aluno);
+  if (!podeJogar_(s, aluno.email)) throw new Error('Esta missão está fechada. Fale com o professor.');
+  const m = buscarMissao_(s.missao_id);
+  return { sessao_id: s.id, missao: resolverMissao_(m, degrauDoAluno_(aluno.email), temaDaMissao_(m)) };
+}
+
+/** Só letras (espaço, hífen e apóstrofo ficam fixos), de 2 a 12 letras. */
+function soletravelServ_(en) {
+  const l = String(en).replace(/[\s'’-]/g, '');
+  return /^[a-z]+$/i.test(l) && l.length >= 2 && l.length <= 12;
+}
+
+/**
+ * Mini-missão de reforço: 1 Listen & Click + 1 Spell it! com as palavras que a criança mais erra.
+ * Ordem de escolha: palavras erradas na missão comum → menor domínio nos jogos → palavras do tema da missão.
+ */
+function alunoAbrirReforco(sessaoId, errosComum) {
+  const aluno = alunoAtual_();
+  const s = sessaoDoAluno_(sessaoId, aluno);
+  if (!podeJogar_(s, aluno.email)) throw new Error('Esta missão está fechada. Fale com o professor.');
+  const m = buscarMissao_(s.missao_id);
+  const temas = lerTemas_().filter(function (t) { return t.serie === m.serie; });
+  const temaMissao = temaDaMissao_(m, temas);
+  const candidatos = [];
+  const visto = {};
+  const add = function (tema, p) {
+    if (!tema || !p || visto[p.en.toLowerCase()]) return;
+    visto[p.en.toLowerCase()] = true;
+    candidatos.push({ tema: tema, p: p });
+  };
+  if (temaMissao) {
+    (Array.isArray(errosComum) ? errosComum : []).slice(0, 10).forEach(function (en) {
+      add(temaMissao, temaMissao.palavras.filter(function (p) { return p.en.toLowerCase() === String(en).toLowerCase(); })[0]);
+    });
+  }
+  const fracas = [];
+  progressoDoAluno_(aluno.email).forEach(function (pr) {
+    const t = temas.filter(function (x) { return x.id === pr.tema_id && (x.status === 'liberado' || x === temaMissao); })[0];
+    if (!t) return;
+    t.palavras.forEach(function (p) {
+      if (!pr.dominio.hasOwnProperty(p.en)) return;
+      const v = Math.min(PONTOS_DOMINIO, Number(pr.dominio[p.en]) || 0);
+      if (v < PONTOS_DOMINIO) fracas.push({ tema: t, p: p, v: v });
+    });
+  });
+  fracas.sort(function (a, b) { return a.v - b.v; }).forEach(function (x) { add(x.tema, x.p); });
+  if (temaMissao) embaralhar_(temaMissao.palavras).forEach(function (p) { add(temaMissao, p); });
+  if (!candidatos.length) throw new Error('Não encontrei palavras para o reforço.');
+
+  const paraOuvir = candidatos.filter(function (c) { return c.tema.palavras.length >= 4; })[0] || candidatos[0];
+  const paraSoletrar = candidatos.filter(function (c) { return c !== paraOuvir && soletravelServ_(c.p.en); })[0] ||
+    candidatos.filter(function (c) { return soletravelServ_(c.p.en); })[0];
+  const degrau = degrauDoAluno_(aluno.email);
+  return {
+    sessao_id: s.id, degrau: degrau,
+    ouvir: { alvo: paraOuvir.p.en, palavras: paraOuvir.tema.palavras },
+    soletrar: paraSoletrar
+      ? { en: paraSoletrar.p.en, pt: paraSoletrar.p.pt, figura: paraSoletrar.p.figura, extras: degrau === 3 ? 'k' : '' }
+      : null,
+  };
+}
+
+/**
+ * Grava o resultado de uma missão (comum ou reforço). r = { id, sessao_id, tipo, degrau, pontos, detalhe, concluido_em }.
+ * Se a mesma criança mandar de novo (reenvio da fila), não grava duas vezes.
+ */
+function alunoSalvarMissao(r) {
+  const aluno = alunoAtual_();
+  const s = sessaoDoAluno_(r && r.sessao_id, aluno);
+  const tipo = r.tipo === 'reforco' ? 'reforco' : 'comum';
+  const jaFeita = feitasDoAluno_(aluno.email).some(function (f) { return f.sessao_id === s.id && f.tipo === tipo; });
+  if (jaFeita) return { ok: true, repetida: true };
+  const concluido = Number(r.concluido_em) || Date.now();
+  const dentroDoPrazo = podeJogar_(s, aluno.email) ||
+    (s.fechada_ms && concluido >= s.aberta_ms && concluido <= s.fechada_ms + TOLERANCIA_FECHAMENTO_MS);
+  if (!dentroDoPrazo) throw new Error('Esta missão foi encerrada pelo professor.');
+  const pontos = Math.max(0, Math.min(100, Math.round(Number(r.pontos) || 0)));
+  const detalhe = JSON.stringify(r.detalhe || {}).slice(0, 20000);
+  abaMissoes_('MissoesFeitas').appendRow(linhaDe_('MissoesFeitas', {
+    id: String(r.id || '').slice(0, 60) || ('mf' + Date.now()), sessao_id: s.id, missao_id: s.missao_id, email: aluno.email,
+    turma: aluno.turma, mes: "'" + s.mes, tipo: tipo, degrau: inteiro_(r.degrau, 1, 3), pontos: pontos,
+    detalhe_json: detalhe, feito_em: new Date(),
+  }));
+  atualizarNotaMes_(aluno.email, aluno.turma, s.mes);
+  return { ok: true, pontos: pontos };
+}
+
+// ============================================================
+// Painel do professor
+// ============================================================
+
+function profMissoesPainel(turma) {
+  exigirProfessor_();
+  validarTurma_(turma);
+  const serie = serieDaTurma_(turma);
+  const temas = lerTemas_();
+  const banco = MISSOES_PADRAO.filter(function (m) { return m.serie === serie; }).map(function (m) {
+    return { id: m.id, titulo: m.titulo, icone: m.icone, mes: m.mes, tema: m.tema, temaExiste: !!temaDaMissao_(m, temas) };
+  });
+  const feitas = lerFeitas_().filter(function (f) { return f.turma === turma; });
+  const nAlunos = lerTabela_('Alunos').filter(function (a) { return String(a.turma) === turma; }).length;
+  const sessoes = lerSessoes_().filter(function (s) { return s.turma === turma; })
+    .sort(function (a, b) { return b.aberta_ms - a.aberta_ms; })
+    .map(function (s) {
+      const m = MISSOES_PADRAO.filter(function (x) { return x.id === s.missao_id; })[0];
+      return {
+        id: s.id, missao_id: s.missao_id, titulo: m ? m.titulo : s.missao_id, icone: m ? m.icone : '🐶', mes: s.mes,
+        status: s.status, aberta_ms: s.aberta_ms, fechada_ms: s.fechada_ms, reabertos: s.reabertos.length,
+        concluidas: feitas.filter(function (f) { return f.sessao_id === s.id && f.tipo === 'comum'; }).length, alunos: nAlunos,
+      };
+    });
+  return { turma: turma, serie: serie, mesAtual: mesAtual_(), banco: banco, sessoes: sessoes };
+}
+
+/** Abre uma missão para a turma (fecha antes qualquer outra aula de missão aberta da mesma turma). */
+function profAbrirSessao(turma, missaoId) {
+  exigirProfessor_();
+  validarTurma_(turma);
+  const m = buscarMissao_(missaoId);
+  const serie = serieDaTurma_(turma);
+  if (m.serie !== serie) throw new Error('Esta missão é do ' + m.serie + ' ano.');
+  comTrava_(function () {
+    const agora = Date.now();
+    lerSessoes_().filter(function (s) { return s.turma === turma && s.status === 'aberta'; }).forEach(function (s) {
+      s.status = 'fechada'; s.fechada_ms = agora; gravarSessao_(s);
+    });
+    gravarSessao_({
+      id: 'S' + Utilities.getUuid().replace(/-/g, '').slice(0, 8), missao_id: m.id, turma: turma, serie: serie,
+      mes: mesAtual_(), status: 'aberta', aberta_ms: agora, fechada_ms: 0, reabertos: [],
+    });
+  });
+  return profMissoesPainel(turma);
+}
+
+function sessaoPorId_(id) {
+  const s = lerSessoes_().filter(function (x) { return x.id === String(id); })[0];
+  if (!s) throw new Error('Aula de missão não encontrada. Recarregue a página.');
+  return s;
+}
+
+function profFecharSessao(sessaoId) {
+  exigirProfessor_();
+  let turma;
+  comTrava_(function () {
+    const s = sessaoPorId_(sessaoId);
+    turma = s.turma;
+    s.status = 'fechada'; s.fechada_ms = Date.now(); s.reabertos = [];
+    gravarSessao_(s);
+  });
+  return profMissoesPainel(turma);
+}
+
+/** Reabre uma aula já fechada só para alguns alunos (faltaram ou não terminaram). emails vazio = encerra as reaberturas. */
+function profReabrirSessao(sessaoId, emails) {
+  exigirProfessor_();
+  let turma;
+  comTrava_(function () {
+    const s = sessaoPorId_(sessaoId);
+    turma = s.turma;
+    if (s.status === 'aberta') throw new Error('Esta aula ainda está aberta para todos.');
+    s.reabertos = (emails || []).map(function (e) { return String(e).toLowerCase(); });
+    gravarSessao_(s);
+  });
+  return profSessaoDetalhe(sessaoId);
+}
+
+/** Alunos da turma com o resultado de cada um nesta aula de missão e a nota do mês. */
+function profSessaoDetalhe(sessaoId) {
+  exigirProfessor_();
+  const s = sessaoPorId_(sessaoId);
+  const m = MISSOES_PADRAO.filter(function (x) { return x.id === s.missao_id; })[0];
+  const niveis = calcularNiveis_(lerConfig_());
+  const feitas = lerFeitas_().filter(function (f) { return f.turma === s.turma || f.sessao_id === s.id; });
+  const alunos = lerTabela_('Alunos').filter(function (a) { return String(a.turma) === s.turma; }).map(function (a) {
+    const email = String(a.email).toLowerCase();
+    const minhas = feitas.filter(function (f) { return f.email === email; });
+    const daAula = minhas.filter(function (f) { return f.sessao_id === s.id; });
+    const comum = daAula.filter(function (f) { return f.tipo === 'comum'; })[0];
+    const reforco = daAula.filter(function (f) { return f.tipo === 'reforco'; })[0];
+    const doMes = minhas.filter(function (f) { return f.mes === s.mes; });
+    const n = niveis[email];
+    return {
+      email: email, nome: String(a.nome), avatar: avatarValido_(String(a.avatar)),
+      degrau: comum ? comum.degrau : degrauDoNivel_(n ? n.nivel : ''),
+      comum: comum ? comum.pontos : null, reforco: reforco ? reforco.pontos : null,
+      mediaMes: doMes.length ? Math.round((doMes.reduce(function (x, f) { return x + f.pontos; }, 0) / doMes.length) * 10) / 10 : null,
+      reaberto: s.reabertos.indexOf(email) !== -1,
+    };
+  }).sort(function (a, b) { return a.nome.localeCompare(b.nome, 'pt-BR'); });
+  return {
+    sessao: { id: s.id, titulo: m ? m.titulo : s.missao_id, icone: m ? m.icone : '🐶', mes: s.mes, status: s.status,
+      aberta_ms: s.aberta_ms, fechada_ms: s.fechada_ms, turma: s.turma },
+    alunos: alunos,
+  };
+}
+
+/** Prévia para o professor: a missão resolvida no degrau escolhido (nada é gravado). */
+function profPreviaMissao(missaoId, degrau) {
+  exigirProfessor_();
+  const m = buscarMissao_(missaoId);
+  return resolverMissao_(m, inteiro_(degrau, 1, 3), temaDaMissao_(m));
+}
+````
+
 ### Arquivo: `Relatorios.gs`
 
 Relatórios, ficha do aluno e exportação para planilha. (249 linhas)
@@ -2233,7 +2933,7 @@ function profRelatorioGeral() {
   temas.forEach(function (t) { temasPorId[t.id] = t; });
   const jogos = resumoJogosPorAluno_(temasPorId);
   const alunos = lerTabela_('Alunos');
-  const questionarios = lerQuestionarios_();
+  const questionarios = questionariosEMissoes_();
   const mesDe = {};
   questionarios.forEach(function (q) { mesDe[q.id] = q.mes; });
   const respostas = lerRespostas_();
@@ -2324,7 +3024,7 @@ function profRelatorioAluno(email) {
   const n = calcularNiveis_(cfg)[email];
 
   const qPorId = {};
-  lerQuestionarios_().forEach(function (q) { qPorId[q.id] = q; });
+  questionariosEMissoes_().forEach(function (q) { qPorId[q.id] = q; });
   const avaliacoes = lerRespostas_().filter(function (r) { return r.email === email && qPorId[r.questionario_id]; })
     .map(function (r) {
       const q = qPorId[r.questionario_id];
@@ -2377,7 +3077,7 @@ function profExportarPlanilha() {
   const temasPorId = {};
   temas.forEach(function (t) { temasPorId[t.id] = t; });
   const jogos = resumoJogosPorAluno_(temasPorId);
-  const questionarios = lerQuestionarios_().sort(function (a, b) { return a.serie.localeCompare(b.serie) || a.mes.localeCompare(b.mes); });
+  const questionarios = questionariosEMissoes_().sort(function (a, b) { return a.serie.localeCompare(b.serie) || a.mes.localeCompare(b.mes); });
   const respostas = lerRespostas_();
   const progresso = lerProgresso_();
   const agora = Utilities.formatDate(new Date(), FUSO, 'dd/MM/yyyy HH:mm');
@@ -2409,7 +3109,7 @@ function profExportarPlanilha() {
       return [String(a.turma), String(a.nome), email, n ? n.nivel : '', n ? n.media : '', n ? n.avaliacoes : 0,
         j ? j.dominio : '', j ? j.estrelas : 0, j ? j.jogadas : 0, j ? Math.round(j.segundos / 60) : 0]
         .concat(questionarios.map(function (q) {
-          if (q.serie !== serie) return '';
+          if (q.serie !== serie && q.tipo !== 'missoes') return '';
           const r = respostas.filter(function (x) { return x.questionario_id === q.id && x.email === email; })[0];
           return r ? r.percentual : '';
         }));
@@ -2653,7 +3353,7 @@ Voz em inglês (speechSynthesis) do Chrome. (58 linhas)
 
 ### Arquivo: `Aluno.html`
 
-MODELO da tela da criança: só inclui arquivos, sem código. (157 linhas)
+MODELO da tela da criança: só inclui arquivos, sem código. (164 linhas)
 
 ````html
 <!DOCTYPE html>
@@ -2666,6 +3366,7 @@ MODELO da tela da criança: só inclui arquivos, sem código. (157 linhas)
   <?!= incluir('Estilo'); ?>
   <?!= incluir('Fala'); ?>
   <?!= incluir('JogosTela'); ?>
+  <?!= incluir('MissaoTela'); ?>
   <style>
     :root {
       --c1: #ff6b6b; --c2: #4dabf7; --c3: #51cf66; --c4: #fcc419; --c5: #b197fc; --c6: #ff922b;
@@ -2792,6 +3493,12 @@ MODELO da tela da criança: só inclui arquivos, sem código. (157 linhas)
     .placar-mini div { display: grid; grid-template-columns: 34px 40px 1fr auto; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 12px; background: #f8f9fa; font-weight: 800; }
     .placar-mini div.minha { background: #fff3bf; outline: 3px solid #ffd43b; }
     .placar-mini .em { font-size: 1.6rem; }
+    .missao-aviso { display: flex; align-items: center; gap: 16px; background: linear-gradient(135deg, #e7f5ff, #fff0e6); border: 3px solid #74c0fc;
+      border-radius: 22px; padding: 16px 18px; margin-bottom: 18px; box-shadow: 0 5px 0 #a5d8ff; flex-wrap: wrap; }
+    .missao-aviso .ic { font-size: 3rem; }
+    .missao-aviso .tx { flex: 1; min-width: 180px; }
+    .missao-aviso .tx strong { font-size: 1.25rem; font-weight: 900; display: block; }
+    .missao-aviso .feita { font-weight: 900; color: #2b8a3e; }
     .mensagem { background: #fff; border-radius: 22px; padding: 28px; text-align: center; box-shadow: 0 4px 0 #ffe8cc; }
     .mensagem .grande { font-size: 4rem; }
     dialog { border-radius: 22px; }
@@ -2817,7 +3524,7 @@ MODELO da tela da criança: só inclui arquivos, sem código. (157 linhas)
 
 ### Arquivo: `AlunoCorpo.html`
 
-Corpo e script da tela da criança. (469 linhas)
+Corpo e script da tela da criança. (535 linhas)
 
 ````html
 <!-- Corpo da tela da criança (marcação e script).
@@ -2855,6 +3562,7 @@ Corpo e script da tela da criança. (469 linhas)
 
     <!-- Início: temas -->
     <div id="inicio" hidden>
+      <div id="missoes"></div>
       <div id="quizzes"></div>
       <div id="equipe"></div>
       <h1>Choose a theme! 🎨</h1>
@@ -2885,6 +3593,9 @@ Corpo e script da tela da criança. (469 linhas)
 
     <!-- Avaliação -->
     <div id="quiz" hidden></div>
+
+    <!-- Missão do mês -->
+    <div id="missao" hidden></div>
   </main>
 
   <dialog id="confirmar">
@@ -2920,7 +3631,7 @@ Corpo e script da tela da criança. (469 linhas)
     }
 
     function mostrar(id) {
-      ['carregando', 'erro', 'cadastro', 'fechado', 'inicio', 'tema', 'jogo', 'quiz'].forEach((x) => ($(x).hidden = x !== id));
+      ['carregando', 'erro', 'cadastro', 'fechado', 'inicio', 'tema', 'jogo', 'quiz', 'missao'].forEach((x) => ($(x).hidden = x !== id));
       $('topo').hidden = !estado || !estado.aluno;
       window.scrollTo(0, 0);
     }
@@ -2938,6 +3649,7 @@ Corpo e script da tela da criança. (469 linhas)
       $('primeiro-nome').textContent = e.aluno.nome.split(' ')[0];
       $('minha-turma').textContent = e.aluno.turma;
       renderEstrelas();
+      renderMissoes();
       renderQuizzes();
       renderEquipe();
       renderTemas();
@@ -3151,6 +3863,65 @@ Corpo e script da tela da criança. (469 linhas)
         </div>`;
     }
 
+    // ---------- Missões do mês (com o Max) ----------
+    // A aula de missão é aberta e fechada pelo professor. Primeiro a missão comum, depois o reforço curto.
+    function renderMissoes() {
+      const lista = estado.missoes || [];
+      $('missoes').innerHTML = lista.map((m) => {
+        const feita = m.comum != null && m.reforco != null;
+        const acao = m.comum == null ? 'Começar ▶' : m.reforco == null ? '💪 Reforço ▶' : '';
+        return `<div class="missao-aviso">
+          <span class="ic">🐶</span>
+          <span class="tx"><strong>Max needs your help! ${esc(m.icone)} ${esc(m.titulo)}</strong>
+            <span class="sub-kids">${feita ? `<span class="feita">✅ Missão concluída · ⭐ ${m.comum} e ${m.reforco} pontos</span>`
+              : m.comum != null ? `Missão feita: ⭐ ${m.comum} pontos. Falta o reforço rápido!` : 'Missão do mês · vale nota · ~15 minutos'}</span></span>
+          ${acao ? `<button class="botao-grande" data-missao="${esc(m.sessao_id)}">${acao}</button>` : ''}
+        </div>`;
+      }).join('');
+    }
+
+    $('missoes').addEventListener('click', async (ev) => {
+      const b = ev.target.closest('[data-missao]');
+      if (!b) return;
+      const m = (estado.missoes || []).find((x) => x.sessao_id === b.dataset.missao);
+      b.disabled = true;
+      try {
+        if (m.comum == null) await jogarMissaoComum(m);
+        if (m.reforco == null) await jogarReforco(m, m.erros || []);
+      } catch (e) {
+        alert(e.message);
+      } finally {
+        b.disabled = false;
+        renderMissoes();
+        mostrar('inicio');
+      }
+    });
+
+    function salvarMissao(m, parte, res, status) {
+      guardarNaFila({ tipo: 'missao', id: 'm-' + m.sessao_id + '-' + parte, sessao_id: m.sessao_id, parte: parte,
+        degrau: res.degrau, pontos: res.pontos, detalhe: res.detalhe, concluido_em: Date.now() });
+      enviarFila((s) => status(s === 'ok' ? '✅ Salvo!' : '⏳ Sem conexão agora: vou salvar sozinho mais tarde.'));
+    }
+
+    async function jogarMissaoComum(m) {
+      const r = await chamar('alunoAbrirMissao', m.sessao_id);
+      mostrar('missao');
+      const res = await MissaoPlayer.jogar($('missao'), r.missao, {
+        botaoFim: 'Continuar ▶',
+        aoTerminar: (resultado, status) => { m.comum = resultado.pontos; m.erros = resultado.detalhe.erros; salvarMissao(m, 'comum', resultado, status); },
+      });
+      return res;
+    }
+
+    async function jogarReforco(m, erros) {
+      const spec = await chamar('alunoAbrirReforco', m.sessao_id, erros);
+      mostrar('missao');
+      await MissaoPlayer.reforco($('missao'), spec, {
+        botaoFim: 'Voltar ao início ▶',
+        aoTerminar: (resultado, status) => { m.reforco = resultado.pontos; salvarMissao(m, 'reforco', resultado, status); },
+      });
+    }
+
     // ---------- Avaliações (quiz e diagnóstico) ----------
     let quizAtual = null;
 
@@ -3265,6 +4036,8 @@ Corpo e script da tela da criança. (469 linhas)
         try {
           if (item.tipo === 'quiz') {
             await chamar('alunoResponderAvaliacao', item.qid, item.marcadas);
+          } else if (item.tipo === 'missao') {
+            await chamar('alunoSalvarMissao', { ...item, tipo: item.parte });
           } else {
             const r = await chamar('alunoSalvarJogada', item);
             estado.progresso = r.progresso;
@@ -3272,7 +4045,7 @@ Corpo e script da tela da criança. (469 linhas)
           gravarFila(lerFila().filter((x) => x.id !== item.id));
         } catch (e) {
           // Partida que nunca vai ser aceita (tema ocultado, por exemplo): descarta para não travar a fila.
-          if (/não está disponível|desconhecido|sem identificação|encerrada|Responda todas/i.test(e.message || '')) {
+          if (/não está disponível|desconhecido|sem identificação|encerrada|Responda todas|da sua turma/i.test(e.message || '')) {
             gravarFila(lerFila().filter((x) => x.id !== item.id));
             continue;
           }
@@ -4287,9 +5060,403 @@ Os 9 jogos do app. (989 linhas)
 </script>
 ````
 
+### Arquivo: `MissaoTela.html`
+
+Motor das missões (tela da criança e prévia do professor). (387 linhas)
+
+````html
+<style>
+  /* ---------- Missão do mês (Max) ---------- */
+  .mx { --mx-ink: #2b2f42; --mx-muted: #6c7086; --mx-line: #ffe8cc; --mx-accent: #e8590c; --mx-accent-shadow: #a33a05;
+    --mx-soft: #fff0e6; --mx-ok: #2f9e44; --mx-ok-soft: #ebfbee; --mx-bad: #e03131; --mx-bad-soft: #fff5f5; --mx-star: #fab005;
+    --mx-blue: #1864ab; --mx-blue-soft: #e7f5ff; --mx-lilac: #5f3dc4; --mx-lilac-soft: #f3f0ff;
+    font-family: Nunito, "Segoe UI", Roboto, Arial, sans-serif; color: var(--mx-ink); display: grid; gap: 16px; }
+  .mx-topo { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .mx-topo h1 { margin: 0; font-size: 1.5rem; font-weight: 900; flex: 1 1 220px; min-width: 0; }
+  .mx-trilha { display: flex; gap: 6px; }
+  .mx-trilha i { width: 16px; height: 16px; border-radius: 50%; background: var(--mx-line); display: block; }
+  .mx-trilha i.feito { background: var(--mx-ok); } .mx-trilha i.meio { background: var(--mx-star); } .mx-trilha i.zero { background: var(--mx-bad); }
+  .mx-trilha i.agora { outline: 3px solid var(--mx-accent); outline-offset: 2px; }
+  .mx-pontos { font-weight: 900; background: #fff; border: 3px solid var(--mx-star); border-radius: 99px; padding: 4px 14px; }
+  .mx-cena { background: #fff; border-radius: 22px; box-shadow: 0 5px 0 var(--mx-line); padding: 20px 18px; display: grid; gap: 14px; }
+  .mx-max { display: flex; gap: 14px; align-items: flex-start; }
+  .mx-cao { font-size: 4rem; line-height: 1; flex: none; animation: mx-balanca 2.4s ease-in-out infinite; transform-origin: 50% 90%; }
+  @keyframes mx-balanca { 50% { transform: rotate(-6deg); } }
+  .mx-balao { position: relative; background: var(--mx-soft); border-radius: 18px; padding: 12px 16px; min-width: 0; flex: 1; }
+  .mx-balao::before { content: ""; position: absolute; left: -10px; top: 18px; border: 10px solid transparent; border-right-color: var(--mx-soft); border-left: 0; }
+  .mx-balao .mx-en { font-size: 1.2rem; font-weight: 800; margin: 0; }
+  .mx-balao .mx-pt { margin: 6px 0 0; color: var(--mx-muted); font-weight: 700; font-size: .95rem; }
+  .mx-ferr { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .mx-mini { font: inherit; font-weight: 800; font-size: .9rem; border: 2px solid var(--mx-line); background: #fff; color: var(--mx-ink); border-radius: 99px; padding: 4px 12px; cursor: pointer; }
+  .mx-tit { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .mx-tit h2 { margin: 0; font-size: 1.15rem; font-weight: 900; }
+  .mx-cmd { font-weight: 800; color: var(--mx-muted); margin: 0; }
+  .mx-bt { font: inherit; border: 0; border-radius: 16px; padding: 13px 22px; font-size: 1.1rem; font-weight: 900; cursor: pointer; background: var(--mx-accent); color: #fff; box-shadow: 0 4px 0 var(--mx-accent-shadow); justify-self: center; }
+  .mx-bt:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--mx-accent-shadow); }
+  .mx-bt.claro { background: #fff; color: var(--mx-ink); box-shadow: 0 4px 0 var(--mx-line); border: 2px solid var(--mx-line); }
+  .mx-som { width: 76px; height: 76px; border-radius: 50%; font-size: 2.1rem; padding: 0; }
+  .mx-som.peq { width: 54px; height: 54px; font-size: 1.4rem; }
+  .mx-linha { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .mx-ops { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mx-ops.n3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .mx-op { font: inherit; background: #fff; border: 4px solid var(--mx-line); border-radius: 20px; min-height: 120px; cursor: pointer; display: grid; place-items: center; gap: 4px; padding: 8px; color: var(--mx-ink); box-shadow: 0 4px 0 var(--mx-line); }
+  .mx-op .fig { font-size: 3.2rem; line-height: 1.1; }
+  .mx-op .fig.txt { font-size: 1.3rem; font-weight: 900; color: var(--mx-lilac); }
+  .mx-op .fig.multi { font-size: 2.3rem; letter-spacing: 2px; }
+  .mx-op .leg { font-size: 1.05rem; font-weight: 900; line-height: 1.15; }
+  .mx-op .leg small { display: block; font-size: .85rem; font-weight: 700; color: var(--mx-muted); }
+  .mx-op svg { width: 100%; max-width: 150px; height: auto; }
+  .mx-op.certa { border-color: var(--mx-ok); background: var(--mx-ok-soft); }
+  .mx-op.errada { border-color: var(--mx-bad); background: var(--mx-bad-soft); opacity: .55; animation: mx-treme .4s; }
+  .mx-op.mostrar { border-color: var(--mx-ok); border-style: dashed; }
+  @keyframes mx-treme { 25%, 75% { transform: translateX(-7px); } 50% { transform: translateX(7px); } }
+  .mx-frase { text-align: center; font-size: 1.4rem; font-weight: 900; background: var(--mx-soft); border-radius: 16px; padding: 10px 14px; margin: 0; }
+  .mx-frase small { display: block; font-size: .95rem; color: var(--mx-muted); font-weight: 700; }
+  .mx-chave { position: relative; text-decoration: underline dotted 2px; text-underline-offset: 4px; text-decoration-color: var(--mx-accent); cursor: help; border-radius: 4px; }
+  .mx-chave:hover, .mx-chave:focus { background: #ffe8cc; outline: none; }
+  .mx-chave::after { content: attr(data-pt); position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%); background: var(--mx-ink); color: #fff;
+    font-size: .85rem; font-weight: 800; white-space: nowrap; padding: 4px 10px; border-radius: 8px; opacity: 0; pointer-events: none; transition: opacity .15s; z-index: 5; }
+  .mx-chave:hover::after, .mx-chave:focus::after { opacity: 1; }
+  .mx-casas { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .mx-casa { width: 50px; height: 60px; border-bottom: 5px solid var(--mx-muted); font-size: 2rem; font-weight: 900; display: grid; place-items: center; }
+  .mx-casa.cheia { border-color: var(--mx-ok); color: var(--mx-ok); }
+  .mx-casa.proxima { border-color: var(--mx-accent); }
+  .mx-casa.fantasma { color: #ead9c6; }
+  .mx-casa.fixa { border-color: transparent; width: 22px; color: var(--mx-muted); }
+  .mx-pecas { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+  .mx-peca { font: inherit; min-width: 58px; height: 58px; padding: 0 14px; border-radius: 16px; border: 3px solid var(--mx-lilac); background: var(--mx-lilac-soft); color: var(--mx-lilac); font-size: 1.5rem; font-weight: 900; cursor: pointer; }
+  .mx-peca.bloco { border-color: var(--mx-blue); background: var(--mx-blue-soft); color: var(--mx-blue); font-size: 1.2rem; }
+  .mx-peca.errada { animation: mx-treme .4s; border-color: var(--mx-bad); color: var(--mx-bad); background: var(--mx-bad-soft); }
+  .mx-peca.dica { outline: 4px solid var(--mx-star); }
+  .mx-peca:disabled { visibility: hidden; }
+  .mx-montada { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; min-height: 58px; border-bottom: 4px solid var(--mx-muted); padding-bottom: 10px; }
+  .mx-montada span { background: var(--mx-ok-soft); color: var(--mx-ok); border-radius: 12px; padding: 8px 12px; font-weight: 900; font-size: 1.2rem; }
+  .mx-ret { text-align: center; font-weight: 900; min-height: 1.6em; margin: 0; }
+  .mx-ret.bom { color: var(--mx-ok); } .mx-ret.ruim { color: var(--mx-bad); }
+  .mx-fim { text-align: center; }
+  .mx-grande { font-size: 3.2rem; font-weight: 900; margin: 0; }
+  .mx-estrelas { font-size: 3rem; letter-spacing: 6px; }
+  .mx-estrelas span { opacity: .2; filter: grayscale(1); } .mx-estrelas span.ganha { opacity: 1; filter: none; }
+  .mx-tab { width: 100%; border-collapse: collapse; font-size: .95rem; }
+  .mx-tab td { padding: 6px 4px; border-bottom: 1px solid var(--mx-line); text-align: left; }
+  .mx-tab td:last-child { text-align: right; font-weight: 900; }
+  .mx-explica { font-size: .9rem; color: var(--mx-muted); font-weight: 700; margin: 0; }
+  @media (prefers-reduced-motion: reduce) { .mx-cao, .mx-op.errada, .mx-peca.errada { animation: none; } }
+  @media (max-width: 480px) { .mx-ops.n3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .mx-casa { width: 40px; height: 52px; font-size: 1.6rem; } .mx-cao { font-size: 3rem; } }
+</style>
+
+<script>
+  /**
+   * Motor das Missões do mês. Usado na tela da criança e na prévia do professor.
+   * Pontos: cada desafio vale 25 (dividido entre as rodadas). Acerto de primeira = cheio; 2ª tentativa = metade;
+   * depois a resposta aparece e vale 0. Spell it! e Build it!: sem erro = cheio, até 2 erros = metade, mais = 0.
+   * Degraus: 1 = 2 opções + inglês e português; 2 = 3 opções + inglês (português no botão); 3 = 4 opções + palavras-chave.
+   */
+  const MissaoPlayer = (function () {
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const misturar = (a) => { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
+    const espera = (ms) => new Promise((ok) => setTimeout(ok, ms));
+    const puro = (s) => String(s || '').replace(/\[\[([^|\]]+)\|[^\]]+\]\]/g, (m, w) => w);
+    // Fala e Som são constantes globais de outros arquivos (não ficam em window): por isso o typeof.
+    const som = (n) => { try { if (typeof Som !== 'undefined' && Som[n]) Som[n](); } catch (e) { /* sem som */ } };
+    const falar = (t, lento) => (typeof Fala !== 'undefined' ? Fala.iniciar().then(() => Fala.falar(puro(t), lento)) : Promise.resolve());
+    const NOMES = ['Listen & Click', 'Read & Choose', 'Spell it!', 'Build it!'];
+
+    let d = 1, el = null, est = null, atual = null;
+
+    function comChaves(s) {
+      if (d !== 3) return esc(puro(s));
+      return esc(s).replace(/\[\[([^|\]]+)\|([^\]]+)\]\]/g, (m, w, t) => '<span class="mx-chave" tabindex="0" data-pt="' + t + '">' + w + '</span>');
+    }
+    function palavra(en) { return (atual.palavras || []).find((p) => p.en.toLowerCase() === String(en).toLowerCase()) || { en: en, pt: '', figura: '' }; }
+    function legenda(p) { return '<span class="leg">' + esc(p.en) + (d === 1 && p.pt ? '<small>' + esc(p.pt) + '</small>' : '') + '</span>'; }
+    function figura(p) { return p.figura ? '<span class="fig">' + esc(p.figura) + '</span>' : '<span class="fig txt">' + esc(p.pt) + '</span>'; }
+
+    function cabecalho(titulo, i, total) {
+      const r = est.resultados;
+      return '<div class="mx-topo"><h1>' + esc(titulo) + '</h1><div class="mx-trilha">' +
+        Array.from({ length: total }, (_, k) => '<i class="' + (r[k] == null ? '' : r[k] >= 0.99 ? 'feito' : r[k] > 0 ? 'meio' : 'zero') + (k === i ? ' agora' : '') + '"></i>').join('') +
+        '</div><span class="mx-pontos">⭐ ' + Math.round(est.pontos) + ' / 100</span></div>';
+    }
+    function fala(par) {
+      const en = par[0], pt = par[1];
+      const ptHtml = d === 1 && pt ? '<p class="mx-pt">' + esc(pt) + '</p>' : d === 2 && pt ? '<p class="mx-pt" hidden>' + esc(pt) + '</p>' : '';
+      return '<div class="mx-max"><span class="mx-cao" aria-hidden="true">🐶</span><div class="mx-balao"><p class="mx-en">' + comChaves(en) + '</p>' + ptHtml +
+        '<div class="mx-ferr"><button class="mx-mini" type="button" data-mx-falar="' + esc(puro(en)) + '">🔊 Ouvir</button>' +
+        (d === 2 && pt ? '<button class="mx-mini" type="button" data-mx-pt>🇧🇷 Ver em português</button>' : '') + '</div></div></div>';
+    }
+    function ligarAjudas() {
+      el.onclick = (ev) => {
+        const f = ev.target.closest('[data-mx-falar]');
+        if (f) falar(f.dataset.mxFalar);
+        const v = ev.target.closest('[data-mx-pt]');
+        if (v) { const p = v.closest('.mx-balao').querySelector('.mx-pt'); if (p) p.hidden = !p.hidden; }
+      };
+    }
+    const pontuar = (valor, erros) => (erros === 0 ? valor : erros === 1 ? valor / 2 : 0);
+
+    function cena(par, botao) {
+      return new Promise((ok) => {
+        el.innerHTML = cabecalho(atual.titulo, est.passo, 4) + '<section class="mx-cena">' + fala(par) +
+          '<button class="mx-bt" type="button" data-mx-seguir>' + botao + '</button></section>';
+        el.querySelector('[data-mx-seguir]').addEventListener('click', ok);
+        if (typeof Fala !== 'undefined') Fala.iniciar();
+      });
+    }
+
+    function botoesSom(texto, grande) {
+      return '<div class="mx-linha"><button class="mx-bt ' + (grande ? 'mx-som' : 'claro mx-som peq') + '" type="button" data-mx-ouvir aria-label="Ouvir">🔊</button>' +
+        '<button class="mx-bt claro mx-som peq" type="button" data-mx-devagar aria-label="Ouvir devagar">🐢</button></div>';
+    }
+    function ligarSom(texto) {
+      el.querySelector('[data-mx-ouvir]').onclick = () => falar(texto);
+      el.querySelector('[data-mx-devagar]').onclick = () => falar(texto, true);
+    }
+
+    // Listen & Click: rodadas com palavras do tema; opções = degrau + 1.
+    async function ouvir(lista, palavras, valorTotal, titulo, passo, total) {
+      const valor = valorTotal / lista.length;
+      let ganho = 0;
+      for (let r = 0; r < lista.length; r++) {
+        const alvo = palavras.find((p) => p.en === lista[r]) || { en: lista[r], pt: '', figura: '' };
+        const outras = misturar(palavras.filter((p) => p.en !== alvo.en && (p.figura || p.pt) !== (alvo.figura || alvo.pt))).slice(0, d);
+        const ops = misturar([alvo].concat(outras));
+        ganho += await new Promise((pronto) => {
+          el.innerHTML = cabecalho(titulo, passo, total) + '<section class="mx-cena">' +
+            '<div class="mx-tit"><h2>👂 Listen & Click</h2><span class="mx-explica">' + (r + 1) + ' de ' + lista.length + '</span></div>' +
+            '<p class="mx-cmd">Listen and click. · Ouça e toque na figura.</p>' + botoesSom(alvo.en, true) +
+            '<div class="mx-ops' + (ops.length === 3 ? ' n3' : '') + '">' +
+            ops.map((p, k) => '<button class="mx-op" type="button" data-k="' + k + '">' + figura(p) + legenda(p) + '</button>').join('') +
+            '</div><p class="mx-ret" data-mx-ret></p></section>';
+          ligarSom(alvo.en);
+          let erros = 0, fechado = false;
+          el.querySelector('.mx-ops').addEventListener('click', async (ev) => {
+            const b = ev.target.closest('.mx-op');
+            if (!b || fechado || b.classList.contains('errada')) return;
+            const ret = el.querySelector('[data-mx-ret]');
+            if (ops[Number(b.dataset.k)] === alvo) {
+              fechado = true; b.classList.add('certa'); som('acerto');
+              ret.className = 'mx-ret bom'; ret.textContent = erros ? 'Good! 👍' : 'Excellent! 🌟';
+              await falar(alvo.en); await espera(450); pronto(pontuar(valor, erros));
+            } else {
+              erros++; b.classList.add('errada'); som('erro'); est.erros.push(alvo.en);
+              ret.className = 'mx-ret ruim';
+              if (erros >= 2) {
+                fechado = true; el.querySelector('[data-k="' + ops.indexOf(alvo) + '"]').classList.add('mostrar');
+                ret.textContent = 'This one! · É esta.'; await falar(alvo.en); await espera(1300); pronto(0);
+              } else { ret.textContent = 'Try again! · Tente de novo.'; falar(alvo.en); }
+            }
+          });
+          setTimeout(() => falar(alvo.en), 350);
+        });
+      }
+      return ganho;
+    }
+
+    function monstro(m, cor) {
+      const r = m.grande ? 9 : 5;
+      const xs = m.olhos === 1 ? [50] : m.olhos === 2 ? [38, 62] : [30, 50, 70];
+      const olhos = xs.map((x) => '<circle cx="' + x + '" cy="46" r="' + r + '" fill="#fff" stroke="#1d1d2b" stroke-width="2"/><circle cx="' + x + '" cy="47" r="' + (r / 2.4) + '" fill="#1d1d2b"/>').join('');
+      const bracos = m.bracos === 4
+        ? '<path d="M18 62 L4 52 M18 76 L4 84 M82 62 L96 52 M82 76 L96 84" stroke="#1d1d2b" stroke-width="4" stroke-linecap="round"/>'
+        : '<path d="M18 68 L4 60 M82 68 L96 60" stroke="#1d1d2b" stroke-width="4" stroke-linecap="round"/>';
+      return '<svg viewBox="0 0 100 110" role="img" aria-label="monster">' + bracos +
+        '<rect x="18" y="24" width="64" height="72" rx="30" fill="' + cor + '" stroke="#1d1d2b" stroke-width="3"/>' +
+        '<path d="M30 26 L36 12 L42 26 M58 26 L64 12 L70 26" fill="' + cor + '" stroke="#1d1d2b" stroke-width="3" stroke-linejoin="round"/>' + olhos +
+        '<path d="M38 76 Q50 86 62 76" fill="none" stroke="#1d1d2b" stroke-width="3" stroke-linecap="round"/>' +
+        '<path d="M34 96 L34 106 M66 96 L66 106" stroke="#1d1d2b" stroke-width="4" stroke-linecap="round"/></svg>';
+    }
+
+    // Read & Choose: a 1ª opção do banco é a certa; aqui são embaralhadas.
+    function ler() {
+      const q = atual.ler;
+      const cores = misturar(['#74c0fc', '#b197fc', '#8ce99a', '#ffa8a8']);
+      const ops = misturar(q.opcoes.map((o, i) => ({ o: o, ok: i === 0 })));
+      return new Promise((pronto) => {
+        el.innerHTML = cabecalho(atual.titulo, 1, 4) + '<section class="mx-cena">' +
+          '<div class="mx-tit"><h2>📖 Read & Choose</h2></div><p class="mx-cmd">Read and choose. · Leia e escolha.</p>' +
+          '<p class="mx-frase">“' + comChaves(q.en) + '”' + (d === 1 && q.pt ? '<small>' + esc(q.pt) + '</small>' : '') + '</p>' +
+          (d === 2 && q.pt ? '<div class="mx-linha"><button class="mx-mini" type="button" data-mx-ptler>🇧🇷 Ver em português</button></div><p class="mx-explica" data-mx-ptler-txt hidden style="text-align:center">' + esc(q.pt) + '</p>' : '') +
+          '<div class="mx-linha"><button class="mx-mini" type="button" data-mx-falar="' + esc(puro(q.en)) + '">🔊 Ouvir a frase</button></div>' +
+          '<div class="mx-ops' + (ops.length === 3 ? ' n3' : '') + '">' + ops.map((x, i) => '<button class="mx-op" type="button" data-i="' + i + '">' +
+            (q.monstros ? monstro(x.o, cores[i]) : '<span class="fig' + ([...String(x.o)].length > 2 ? ' multi' : '') + '">' + esc(x.o) + '</span>') + '</button>').join('') +
+          '</div><p class="mx-ret" data-mx-ret></p></section>';
+        const bt = el.querySelector('[data-mx-ptler]');
+        if (bt) bt.onclick = () => { const t = el.querySelector('[data-mx-ptler-txt]'); t.hidden = !t.hidden; };
+        let erros = 0, fechado = false;
+        el.querySelector('.mx-ops').addEventListener('click', async (ev) => {
+          const b = ev.target.closest('.mx-op');
+          if (!b || fechado || b.classList.contains('errada')) return;
+          const ret = el.querySelector('[data-mx-ret]');
+          if (ops[Number(b.dataset.i)].ok) {
+            fechado = true; b.classList.add('certa'); som('acerto');
+            ret.className = 'mx-ret bom'; ret.textContent = erros ? 'Good! 👍' : 'Excellent! 🌟';
+            await falar(q.en); await espera(450); pronto(pontuar(25, erros));
+          } else {
+            erros++; b.classList.add('errada'); som('erro'); ret.className = 'mx-ret ruim';
+            if (erros >= 2) {
+              fechado = true; el.querySelector('[data-i="' + ops.findIndex((x) => x.ok) + '"]').classList.add('mostrar');
+              ret.textContent = 'This one! · É esta.'; await espera(1500); pronto(0);
+            } else ret.textContent = 'Read again! · Leia de novo.';
+          }
+        });
+      });
+    }
+
+    // Spell it!: letras embaralhadas (degrau 3 com letras extras); degrau 1 mostra as letras-guia apagadas.
+    function soletrar(cfg, valor, titulo, passo, total) {
+      const chars = [...cfg.en];
+      const letras = chars.filter((c) => /[a-z]/i.test(c));
+      const pecas = misturar(letras.concat([...(cfg.extras || '')]).map((c) => c.toLowerCase()));
+      return new Promise((pronto) => {
+        el.innerHTML = cabecalho(titulo, passo, total) + '<section class="mx-cena">' +
+          '<div class="mx-tit"><h2>🔤 Spell it!</h2></div><p class="mx-cmd">Spell the word. · Toque nas letras na ordem certa.</p>' +
+          '<div class="mx-linha"><span style="font-size:4rem" aria-hidden="true">' + esc(cfg.figura || '🔤') + '</span>' +
+          '<button class="mx-bt claro mx-som peq" type="button" data-mx-ouvir aria-label="Ouvir">🔊</button><button class="mx-bt claro mx-som peq" type="button" data-mx-devagar aria-label="Ouvir devagar">🐢</button></div>' +
+          (d === 1 && cfg.pt ? '<p class="mx-explica" style="text-align:center">' + esc(cfg.pt) + '</p>' : '') +
+          '<div class="mx-casas">' + chars.map((c) => /[a-z]/i.test(c)
+            ? '<div class="mx-casa' + (d === 1 ? ' fantasma' : '') + '" data-c>' + (d === 1 ? esc(c.toUpperCase()) : '') + '</div>'
+            : '<div class="mx-casa fixa">' + (c === ' ' ? '' : esc(c)) + '</div>').join('') + '</div>' +
+          '<div class="mx-pecas">' + pecas.map((c, j) => '<button class="mx-peca" type="button" data-j="' + j + '">' + esc(c.toUpperCase()) + '</button>').join('') + '</div>' +
+          '<p class="mx-ret" data-mx-ret></p></section>';
+        ligarSom(cfg.en);
+        setTimeout(() => falar(cfg.en), 350);
+        const casas = [...el.querySelectorAll('[data-c]')];
+        let pos = 0, erros = 0;
+        const marcar = () => casas.forEach((c, k) => c.classList.toggle('proxima', k === pos));
+        marcar();
+        el.querySelector('.mx-pecas').addEventListener('click', async (ev) => {
+          const b = ev.target.closest('.mx-peca');
+          if (!b || b.disabled || pos >= letras.length) return;
+          const certa = letras[pos].toLowerCase();
+          if (pecas[Number(b.dataset.j)] === certa) {
+            casas[pos].textContent = letras[pos].toUpperCase(); casas[pos].classList.remove('fantasma'); casas[pos].classList.add('cheia');
+            b.disabled = true; el.querySelectorAll('.mx-peca.dica').forEach((x) => x.classList.remove('dica'));
+            pos++; marcar();
+            if (pos === letras.length) {
+              som('acerto');
+              const ret = el.querySelector('[data-mx-ret]'); ret.className = 'mx-ret bom'; ret.textContent = erros ? 'Good! 👍' : 'Excellent! 🌟';
+              await falar(cfg.en); await espera(450);
+              if (erros) est.erros.push(cfg.en);
+              pronto(erros === 0 ? valor : erros <= 2 ? valor / 2 : 0);
+            }
+          } else {
+            erros++; som('erro'); b.classList.remove('errada'); void b.offsetWidth; b.classList.add('errada');
+            if (erros >= 3) {
+              const dica = [...el.querySelectorAll('.mx-peca:not(:disabled)')].find((x) => pecas[Number(x.dataset.j)] === certa);
+              if (dica) dica.classList.add('dica');
+            }
+          }
+        });
+      });
+    }
+
+    // Build it!: blocos comparados pelo texto (palavras repetidas funcionam em qualquer ordem).
+    function montar() {
+      const cfg = atual.montar, frase = cfg.blocos.join(' ');
+      const blocos = misturar(cfg.blocos.slice());
+      return new Promise((pronto) => {
+        el.innerHTML = cabecalho(atual.titulo, 3, 4) + '<section class="mx-cena">' +
+          '<div class="mx-tit"><h2>🧱 Build it!</h2></div><p class="mx-cmd">Build the sentence. · Toque nos blocos na ordem certa.</p>' +
+          botoesSom(frase, false) + (d < 3 && cfg.pt ? '<p class="mx-explica" style="text-align:center">🇧🇷 ' + esc(cfg.pt) + '</p>' : '') +
+          '<div class="mx-montada" data-mx-montada></div>' +
+          '<div class="mx-pecas">' + blocos.map((t, j) => '<button class="mx-peca bloco" type="button" data-j="' + j + '">' + esc(t) + '</button>').join('') + '</div>' +
+          '<p class="mx-ret" data-mx-ret></p></section>';
+        ligarSom(frase);
+        setTimeout(() => falar(frase), 350);
+        let pos = 0, erros = 0;
+        el.querySelector('.mx-pecas').addEventListener('click', async (ev) => {
+          const b = ev.target.closest('.mx-peca');
+          if (!b || b.disabled) return;
+          if (blocos[Number(b.dataset.j)] === cfg.blocos[pos]) {
+            b.disabled = true;
+            el.querySelector('[data-mx-montada]').insertAdjacentHTML('beforeend', '<span>' + esc(cfg.blocos[pos]) + '</span>');
+            el.querySelectorAll('.mx-peca.dica').forEach((x) => x.classList.remove('dica'));
+            pos++;
+            if (pos === cfg.blocos.length) {
+              som('acerto');
+              const ret = el.querySelector('[data-mx-ret]'); ret.className = 'mx-ret bom'; ret.textContent = erros ? 'Good! 👍' : 'Excellent! 🌟';
+              await falar(frase); await espera(450); pronto(erros === 0 ? 25 : erros <= 2 ? 12.5 : 0);
+            }
+          } else {
+            erros++; som('erro'); b.classList.remove('errada'); void b.offsetWidth; b.classList.add('errada');
+            if (erros >= 3) {
+              const dica = [...el.querySelectorAll('.mx-peca:not(:disabled)')].find((x) => blocos[Number(x.dataset.j)] === cfg.blocos[pos]);
+              if (dica) dica.classList.add('dica');
+            }
+          }
+        });
+      });
+    }
+
+    function registrar(ganho, valor) { est.resultados[est.passo] = ganho / valor; est.pontos += ganho; est.passo++; }
+
+    /**
+     * Joga a missão comum. opcoes = { botaoFim, aoTerminar(resultado) }.
+     * resultado = { pontos, degrau, detalhe: { desafios: [pontos de cada desafio], erros: [palavras erradas] } }.
+     */
+    async function jogar(alvo, missao, opcoes) {
+      el = alvo; atual = missao; d = missao.degrau;
+      est = { pontos: 0, resultados: [], passo: 0, erros: [] };
+      ligarAjudas();
+      const h = missao.historia;
+      await cena(h.intro, "Let's go! ▶");
+      registrar(await ouvir(missao.ouvir, missao.palavras, 25, missao.titulo, 0, 4), 25);
+      await cena(h.c2, 'Next ▶');
+      registrar(await ler(), 25);
+      await cena(h.c3, 'Next ▶');
+      registrar(await soletrar(missao.soletrar, 25, missao.titulo, 2, 4), 25);
+      await cena(h.c4, 'Next ▶');
+      registrar(await montar(), 25);
+      const pontos = Math.round(est.pontos);
+      const estrelas = pontos >= 90 ? 3 : pontos >= 70 ? 2 : 1;
+      el.innerHTML = cabecalho(missao.titulo, -1, 4) + '<section class="mx-cena mx-fim">' + fala(h.fim) +
+        '<div class="mx-estrelas">' + [1, 2, 3].map((n) => '<span class="' + (n <= estrelas ? 'ganha' : '') + '">⭐</span>').join('') + '</div>' +
+        '<p class="mx-grande">' + pontos + '<small style="font-size:1.2rem;color:#6c7086"> / 100</small></p>' +
+        '<table class="mx-tab"><tbody>' + NOMES.map((n, i) => '<tr><td>' + n + '</td><td>' + Math.round((est.resultados[i] || 0) * 25) + ' / 25</td></tr>').join('') + '</tbody></table>' +
+        '<p class="mx-explica" data-mx-status></p>' +
+        '<button class="mx-bt" type="button" data-mx-fim>' + (opcoes.botaoFim || 'OK ▶') + '</button></section>';
+      som('vitoria');
+      falar(h.fim[0]);
+      const resultado = { pontos: pontos, degrau: d, detalhe: { desafios: est.resultados.map((r) => Math.round(r * 25)), erros: est.erros.slice(0, 20) } };
+      return new Promise((ok) => {
+        if (opcoes.aoTerminar) opcoes.aoTerminar(resultado, (txt) => { const s = el.querySelector('[data-mx-status]'); if (s) s.textContent = txt; });
+        el.querySelector('[data-mx-fim]').addEventListener('click', () => ok(resultado));
+      });
+    }
+
+    /** Mini-missão de reforço: 1 Listen & Click + 1 Spell it! (50 pontos cada). */
+    async function reforco(alvo, spec, opcoes) {
+      el = alvo; d = spec.degrau;
+      atual = { titulo: '💪 Reforço', palavras: spec.ouvir.palavras };
+      est = { pontos: 0, resultados: [], passo: 0, erros: [] };
+      ligarAjudas();
+      await cena(['Super! Now a quick practice with your tricky words!', 'Muito bem! Agora um treino rápido com as suas palavras difíceis!'], "Let's go! ▶");
+      const total = spec.soletrar ? 2 : 1;
+      const valor = 100 / total;
+      registrar(await ouvir([spec.ouvir.alvo], spec.ouvir.palavras, valor, '💪 Reforço', 0, total), valor);
+      if (spec.soletrar) registrar(await soletrar(spec.soletrar, valor, '💪 Reforço', 1, total), valor);
+      const pontos = Math.round(est.pontos);
+      el.innerHTML = cabecalho('💪 Reforço', -1, total) + '<section class="mx-cena mx-fim">' +
+        fala(['You are getting better every day!', 'Você está melhorando a cada dia!']) +
+        '<p class="mx-grande">' + pontos + '<small style="font-size:1.2rem;color:#6c7086"> / 100</small></p>' +
+        '<p class="mx-explica" data-mx-status></p><button class="mx-bt" type="button" data-mx-fim>' + (opcoes.botaoFim || 'OK ▶') + '</button></section>';
+      som('vitoria');
+      const resultado = { pontos: pontos, degrau: d, detalhe: { palavras: [spec.ouvir.alvo].concat(spec.soletrar ? [spec.soletrar.en] : []), erros: est.erros.slice(0, 10) } };
+      return new Promise((ok) => {
+        if (opcoes.aoTerminar) opcoes.aoTerminar(resultado, (txt) => { const s = el.querySelector('[data-mx-status]'); if (s) s.textContent = txt; });
+        el.querySelector('[data-mx-fim]').addEventListener('click', () => ok(resultado));
+      });
+    }
+
+    return { jogar: jogar, reforco: reforco };
+  })();
+</script>
+````
+
 ### Arquivo: `Professor.html`
 
-Painel do professor (modelo) com abas Turmas, Alunos, Configurações. (472 linhas)
+Painel do professor (modelo) com abas Turmas, Alunos, Configurações. (476 linhas)
 
 ````html
 <!DOCTYPE html>
@@ -4322,6 +5489,7 @@ Painel do professor (modelo) com abas Turmas, Alunos, Configurações. (472 linh
     <button data-aba="alunos">Alunos</button>
     <button data-aba="temas">Temas</button>
     <button data-aba="progresso">Progresso</button>
+    <button data-aba="missoes">Missões</button>
     <button data-aba="avaliacoes">Avaliações</button>
     <button data-aba="equipes">Equipes</button>
     <button data-aba="relatorios">Relatórios</button>
@@ -4368,6 +5536,8 @@ Painel do professor (modelo) com abas Turmas, Alunos, Configurações. (472 linh
     <?!= incluir('ProfAvaliacoes'); ?>
     <?!= incluir('ProfEquipes'); ?>
     <?!= incluir('ProfRelatorios'); ?>
+    <?!= incluir('MissaoTela'); ?>
+    <?!= incluir('ProfMissoes'); ?>
 
     <!-- Teste do Chromebook -->
     <section id="aba-teste" class="pilha" hidden>
@@ -4753,6 +5923,7 @@ Painel do professor (modelo) com abas Turmas, Alunos, Configurações. (472 linh
         configurarAvaliacoes();
         configurarEquipes();
         configurarRelatorios();
+        configurarMissoes();
         renderTudo();
         Fala.iniciar();
         $('carregando').hidden = true;
@@ -6176,7 +7347,7 @@ Aba Relatórios. (214 linhas)
       </div>
       <div class="cartao"><h3>Evolução nas avaliações</h3>${graficoAvaliacoes(f.avaliacoes, f.faixas)}
         ${f.avaliacoes.length ? `<div class="tabela-rolagem"><table><thead><tr><th>Avaliação</th><th>Mês</th><th>Acertos</th><th>%</th><th>Forma</th></tr></thead><tbody>
-          ${f.avaliacoes.map((x) => `<tr><td>${esc(x.titulo)}</td><td>${mesCurto(x.mes)}</td><td>${x.pontuacao}/${x.total}</td><td><strong>${pctBr(x.percentual)}</strong></td><td class="suave pequeno">${x.origem === 'online' ? 'online' : 'impressa'}</td></tr>`).join('')}
+          ${f.avaliacoes.map((x) => `<tr><td>${esc(x.titulo)}</td><td>${mesCurto(x.mes)}</td><td>${x.pontuacao}/${x.total}</td><td><strong>${pctBr(x.percentual)}</strong></td><td class="suave pequeno">${x.origem === 'online' ? 'online' : x.origem === 'missoes' ? 'missões' : 'impressa'}</td></tr>`).join('')}
         </tbody></table></div>` : ''}</div>
       <div class="cartao"><h3>Domínio nos temas (jogos)</h3>
         ${f.temas.length ? f.temas.map((t) => `<div class="tema-linha"><span><strong>${esc(t.titulo)}</strong> <span class="suave pequeno">${esc(t.titulo_pt)}</span></span>
@@ -6228,6 +7399,175 @@ Aba Relatórios. (214 linhas)
       $('rel-exportado').hidden = false;
       $('rel-exportado').innerHTML = `<span>✅ Planilha criada no seu Drive:</span> <a href="${esc(url)}" target="_blank" rel="noopener">abrir relatório</a>`;
     }));
+  }
+</script>
+````
+
+### Arquivo: `ProfMissoes.html`
+
+Aba Missões (abrir/fechar aula, reabrir, prévia). (162 linhas)
+
+````html
+<!-- Missões do mês -->
+<section id="aba-missoes" class="pilha" hidden>
+  <style>
+    .ms-aula { border: 2px solid var(--borda); border-radius: var(--raio); padding: 16px; background: #fff; }
+    .ms-aula.aberta { border-color: #2f9e44; background: #f4fbf5; }
+    .ms-estado { display: inline-block; font-size: .8rem; font-weight: 700; padding: 2px 10px; border-radius: 99px; }
+    .ms-estado.aberta { background: #d3f9d8; color: #2b8a3e; }
+    .ms-estado.fechada { background: #e9ecef; color: #495057; }
+    .ms-estado.reaberta { background: #fff3bf; color: #a05a00; }
+    .ms-banco { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+    .ms-cartao { border: 1px solid var(--borda); border-radius: var(--raio); padding: 12px 14px; background: #fff; display: grid; gap: 8px; }
+    .ms-cartao .ic { font-size: 1.8rem; }
+    .ms-pts { font-weight: 700; }
+    .ms-pts.baixo { color: var(--perigo); }
+    #ms-previa-area { background: #fff9f2; border-radius: var(--raio); padding: 14px; }
+  </style>
+
+  <div class="linha">
+    <select id="ms-turma"></select>
+    <button class="btn" id="ms-atualizar">↻ Atualizar</button>
+    <span class="espaco"></span>
+    <span class="suave pequeno">Abra a missão na aula com Chromebook e feche no fim. Para quem faltou, reabra só para essas crianças.</span>
+  </div>
+
+  <div id="ms-conteudo"><div class="cartao vazio">Escolha a turma.</div></div>
+
+  <!-- Detalhe de uma aula -->
+  <div id="ms-detalhe" class="cartao" hidden></div>
+
+  <!-- Banco e prévia -->
+  <div class="cartao">
+    <h3>Banco de missões <span class="suave pequeno" id="ms-banco-serie"></span></h3>
+    <p class="suave pequeno" style="margin-top:0">Cada missão tem 3 degraus. A criança recebe o degrau do nível dela: Iniciante ou sem avaliação = ★, Básico/Intermediário = ★★, Avançado = ★★★. Use a prévia para jogar como a criança (nada é gravado).</p>
+    <div class="ms-banco" id="ms-banco"></div>
+  </div>
+  <div id="ms-previa" class="cartao" hidden>
+    <div class="linha" style="margin-bottom:10px"><h3 style="margin:0" id="ms-previa-tit">Prévia</h3><span class="espaco"></span>
+      <button class="btn" type="button" id="ms-previa-fechar">Fechar prévia</button></div>
+    <div id="ms-previa-area"></div>
+  </div>
+</section>
+
+<script>
+  let msPainel = null, msDetalhe = null;
+  const MS_MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  const msMes = (m) => (m && m.length === 7 ? MS_MESES[Number(m.slice(5)) - 1] + '/' + m.slice(2, 4) : m);
+  const msHora = (ms) => (ms ? new Date(ms).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '');
+  const msPts = (v) => (v == null ? '<span class="suave">—</span>' : `<span class="ms-pts ${v < 50 ? 'baixo' : ''}">${v}</span>`);
+
+  async function msCarregar() {
+    const turma = $('ms-turma').value;
+    if (!turma) return;
+    msPainel = await chamar('profMissoesPainel', turma);
+    msRender();
+  }
+
+  function msRender() {
+    const p = msPainel;
+    const aberta = p.sessoes.find((s) => s.status === 'aberta');
+    const doMes = p.banco.filter((m) => m.mes === p.mesAtual);
+    const opcoes = p.banco.map((m) => `<option value="${esc(m.id)}" ${doMes[0] && doMes[0].id === m.id ? 'selected' : ''}>${esc(m.icone)} ${esc(m.titulo)} · ${esc(m.tema)} (${msMes(m.mes)})</option>`).join('');
+    $('ms-conteudo').innerHTML = `
+      <div class="ms-aula ${aberta ? 'aberta' : ''}">
+        ${aberta ? `
+          <div class="linha"><span class="ms-estado aberta">● Aberta agora</span><strong>${esc(aberta.icone)} ${esc(aberta.titulo)}</strong>
+            <span class="suave pequeno">desde ${msHora(aberta.aberta_ms)} · ${aberta.concluidas}/${aberta.alunos} concluíram</span><span class="espaco"></span>
+            <button class="btn" data-ms-ver="${esc(aberta.id)}">Ver alunos</button>
+            <button class="btn primario" data-ms-fechar="${esc(aberta.id)}">Fechar aula</button></div>`
+        : `<div class="linha"><strong>Nenhuma missão aberta na ${esc(p.turma)}.</strong></div>`}
+        <div class="linha" style="margin-top:12px">
+          <select id="ms-escolha" style="flex:1;min-width:240px">${opcoes || '<option value="">Nenhuma missão para esta série</option>'}</select>
+          <button class="btn ${aberta ? '' : 'primario'}" id="ms-abrir" ${opcoes ? '' : 'disabled'}>▶ Abrir missão nesta aula</button>
+        </div>
+        ${aberta ? '<p class="suave pequeno" style="margin-bottom:0">Abrir outra missão fecha a que está aberta.</p>' : ''}
+      </div>
+      <div class="cartao" style="margin-top:16px">
+        <h3>Aulas de missão da ${esc(p.turma)}</h3>
+        ${p.sessoes.length ? `<div class="tabela-rolagem"><table><thead><tr><th>Missão</th><th>Mês</th><th>Aberta em</th><th>Situação</th><th>Concluíram</th><th></th></tr></thead><tbody>
+          ${p.sessoes.map((s) => `<tr><td>${esc(s.icone)} ${esc(s.titulo)}</td><td>${msMes(s.mes)}</td><td class="suave pequeno">${msHora(s.aberta_ms)}</td>
+            <td><span class="ms-estado ${s.status === 'aberta' ? 'aberta' : s.reabertos ? 'reaberta' : 'fechada'}">${s.status === 'aberta' ? 'Aberta' : s.reabertos ? 'Reaberta para ' + s.reabertos : 'Fechada'}</span></td>
+            <td>${s.concluidas}/${s.alunos}</td><td class="acoes"><button class="btn mini" data-ms-ver="${esc(s.id)}">Ver alunos</button></td></tr>`).join('')}
+          </tbody></table></div>` : '<p class="vazio">Nenhuma missão aberta ainda nesta turma.</p>'}
+      </div>`;
+    $('ms-banco-serie').textContent = '· ' + p.serie + ' ano';
+    $('ms-banco').innerHTML = p.banco.map((m) => `
+      <div class="ms-cartao"><div class="linha"><span class="ic">${esc(m.icone)}</span><div style="flex:1;min-width:0"><strong>${esc(m.titulo)}</strong>
+        <div class="suave pequeno">${esc(m.tema)} · ${msMes(m.mes)}${m.temaExiste ? '' : ' · <span style="color:var(--perigo)">tema não encontrado</span>'}</div></div></div>
+        <div class="linha">${[1, 2, 3].map((dg) => `<button class="btn mini" data-ms-previa="${esc(m.id)}" data-degrau="${dg}">▶ Prévia ${'★'.repeat(dg)}</button>`).join('')}</div></div>`).join('');
+  }
+
+  async function msVer(id) {
+    msDetalhe = await chamar('profSessaoDetalhe', id);
+    msRenderDetalhe();
+  }
+
+  function msRenderDetalhe() {
+    const d = msDetalhe, s = d.sessao;
+    const podeReabrir = s.status !== 'aberta';
+    $('ms-detalhe').hidden = false;
+    $('ms-detalhe').innerHTML = `
+      <div class="linha"><h3 style="margin:0">${esc(s.icone)} ${esc(s.titulo)} · ${esc(s.turma)}</h3>
+        <span class="ms-estado ${s.status}">${s.status === 'aberta' ? 'Aberta' : 'Fechada'}</span><span class="espaco"></span>
+        <button class="btn mini" id="ms-det-atualizar">↻ Atualizar</button></div>
+      <p class="suave pequeno">Missão e reforço valem de 0 a 100. A <strong>nota do mês</strong> é a média de todas as missões feitas no mês e entra no nível como um quiz. Quem não fez nada fica sem nota.</p>
+      <div class="tabela-rolagem"><table><thead><tr>${podeReabrir ? '<th></th>' : ''}<th></th><th>Aluno</th><th>Degrau</th><th>Missão</th><th>Reforço</th><th>Nota do mês</th></tr></thead><tbody>
+        ${d.alunos.map((a) => {
+          const falta = a.comum == null || a.reforco == null;
+          return `<tr>${podeReabrir ? `<td>${falta ? `<input type="checkbox" data-ms-reabrir="${esc(a.email)}" ${a.reaberto ? 'checked' : ''} style="width:auto">` : ''}</td>` : ''}
+            <td class="avatar">${esc(a.avatar)}</td><td>${esc(a.nome)}${a.reaberto ? ' <span class="ms-estado reaberta">reaberta</span>' : ''}</td>
+            <td>${'★'.repeat(a.degrau)}</td><td>${msPts(a.comum)}</td><td>${msPts(a.reforco)}</td><td>${a.mediaMes == null ? '<span class="suave">—</span>' : a.mediaMes}</td></tr>`;
+        }).join('')}</tbody></table></div>
+      ${podeReabrir ? `<div class="linha" style="margin-top:12px">
+        <button class="btn mini" id="ms-marcar-faltas">Marcar todos que não terminaram</button><span class="espaco"></span>
+        <button class="btn" id="ms-encerrar">Fechar para todos</button>
+        <button class="btn primario" id="ms-reabrir">Reabrir para os marcados</button></div>` : ''}`;
+    $('ms-det-atualizar').onclick = (ev) => comBotao(ev.target, () => msVer(s.id));
+    if (podeReabrir) {
+      $('ms-marcar-faltas').onclick = () => document.querySelectorAll('[data-ms-reabrir]').forEach((c) => (c.checked = true));
+      $('ms-reabrir').onclick = (ev) => {
+        const emails = [...document.querySelectorAll('[data-ms-reabrir]:checked')].map((c) => c.dataset.msReabrir);
+        if (!emails.length) { avisar('Marque as crianças que vão fazer a missão.', true); return; }
+        comBotao(ev.target, async () => { msDetalhe = await chamar('profReabrirSessao', s.id, emails); msRenderDetalhe(); await msCarregar(); avisar('Missão reaberta para ' + emails.length + ' criança(s).'); });
+      };
+      $('ms-encerrar').onclick = (ev) => comBotao(ev.target, async () => { msDetalhe = await chamar('profReabrirSessao', s.id, []); msRenderDetalhe(); await msCarregar(); avisar('Missão fechada para todos.'); });
+    }
+    $('ms-detalhe').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  async function msPrevia(id, degrau) {
+    const missao = await chamar('profPreviaMissao', id, degrau);
+    $('ms-previa').hidden = false;
+    $('ms-previa-tit').textContent = 'Prévia · ' + missao.titulo + ' · ' + '★'.repeat(degrau);
+    $('ms-previa').scrollIntoView({ behavior: 'smooth' });
+    await MissaoPlayer.jogar($('ms-previa-area'), missao, { botaoFim: 'Ver o reforço ▶', aoTerminar: (r, status) => status('Prévia: nada foi gravado.') });
+    const erros = missao.ouvir.slice(0, 1);
+    await MissaoPlayer.reforco($('ms-previa-area'), {
+      degrau: degrau,
+      ouvir: { alvo: erros[0], palavras: missao.palavras },
+      soletrar: { en: missao.soletrar.en, pt: missao.soletrar.pt, figura: missao.soletrar.figura, extras: degrau === 3 ? 'k' : '' },
+    }, { botaoFim: 'Fechar prévia', aoTerminar: (r, status) => status('No sistema, o reforço usa as palavras que cada criança mais erra.') });
+    $('ms-previa').hidden = true;
+  }
+
+  function configurarMissoes() {
+    $('ms-turma').innerHTML = '<option value="">Escolha a turma…</option>' + opcoesTurma(false);
+    $('ms-turma').addEventListener('change', () => { $('ms-detalhe').hidden = true; comBotao($('ms-atualizar'), msCarregar); });
+    $('ms-atualizar').addEventListener('click', (ev) => comBotao(ev.target, msCarregar));
+    $('ms-previa-fechar').addEventListener('click', () => { $('ms-previa').hidden = true; if (typeof Fala !== 'undefined' && Fala.disponivel()) speechSynthesis.cancel(); });
+    document.getElementById('aba-missoes').addEventListener('click', (ev) => {
+      const b = ev.target.closest('button');
+      if (!b) return;
+      if (b.id === 'ms-abrir') {
+        const id = $('ms-escolha').value;
+        if (!id) return;
+        comBotao(b, async () => { msPainel = await chamar('profAbrirSessao', msPainel.turma, id); msRender(); avisar('Missão aberta! As crianças já veem o card do Max na tela inicial (peça para recarregar a página).'); });
+      }
+      if (b.dataset.msFechar) comBotao(b, async () => { msPainel = await chamar('profFecharSessao', b.dataset.msFechar); msRender(); avisar('Aula fechada.'); if (msDetalhe) msVer(b.dataset.msFechar); });
+      if (b.dataset.msVer) comBotao(b, () => msVer(b.dataset.msVer));
+      if (b.dataset.msPrevia) comBotao(b, () => msPrevia(b.dataset.msPrevia, Number(b.dataset.degrau)));
+    });
   }
 </script>
 ````
@@ -6341,6 +7681,7 @@ Roda **gratuitamente** no Google Workspace da escola, com Google Apps Script e G
 | 4 | Equipes de até 5 alunos (níveis misturados) e placar mensal por equipes | ✅ entregue |
 | 5 | Mais jogos: Find it! (caça-palavras), Color it!, Build it! (frases), Spelling Bee e Repeat after me | ✅ entregue |
 | + | Speak! (pronúncia com microfone): retirado, porque o reconhecimento de voz falhava muito com as crianças | ❌ removido |
+| M1 | Missões do mês com o Max: história + 4 desafios em 3 degraus, aula aberta/fechada pelo professor, reabertura para quem faltou, reforço individual e nota mensal no nível | ✅ entregue |
 | 6 | Relatórios: comparativo das turmas, palavras difíceis, ficha do aluno (impressão) e exportação para planilha | ✅ entregue |
 
 ## Estrutura
@@ -6354,6 +7695,8 @@ Roda **gratuitamente** no Google Workspace da escola, com Google Apps Script e G
 | `JogosTela.html` | Os 9 jogos (Listen & Click, Memory, Match it!, Spell it!, Find it!, Color it!, Build it!, Spelling Bee, Repeat after me) |
 | `Avaliacoes.gs` | Diagnóstico e quizzes: montagem das questões, correção, lançamento de impressos e níveis |
 | `Equipes.gs` | Equipes mensais e placar |
+| `MissoesPadrao.gs` / `Missoes.gs` | Banco de missões e regras (aulas, reforço, nota do mês) |
+| `MissaoTela.html` / `ProfMissoes.html` | Tela da missão (criança e prévia) e aba Missões do professor |
 | `Relatorios.gs` / `ProfRelatorios.html` | Relatórios, ficha do aluno e exportação |
 | `Professor.html` / `ProfTemas.html` / `ProfProgresso.html` / `ProfAvaliacoes.html` / `ProfEquipes.html` | Painel do professor e abas de Temas, Progresso, Avaliações e Equipes |
 | `Aluno.html` / `AlunoCorpo.html` | Tela da criança (o modelo `Aluno` só inclui arquivos; todo o código fica em `AlunoCorpo`) |
@@ -6376,6 +7719,48 @@ Lindomar Andrade Gertrudes, professor de Língua Inglesa.
 # English Kids App — Guia de instalação
 
 Faça tudo com a sua **conta institucional** (@edu.joinville.sc.gov.br).
+
+---
+
+# Missões do mês com o Max (atualização)
+
+## A. Atualizar o código
+No editor do Apps Script (**Extensões > Apps Script**, na planilha):
+
+| Arquivo no editor | O que fazer |
+|---|---|
+| `MissoesPadrao` | **novo:** clique em **+ > Script**, dê o nome `MissoesPadrao` e cole **MissoesPadrao.gs** |
+| `Missoes` | **novo:** clique em **+ > Script**, dê o nome `Missoes` e cole **Missoes.gs** |
+| `MissaoTela` | **novo:** clique em **+ > HTML**, dê o nome `MissaoTela` e cole **MissaoTela.html** |
+| `ProfMissoes` | **novo:** clique em **+ > HTML**, dê o nome `ProfMissoes` e cole **ProfMissoes.html** |
+| `Codigo`, `Relatorios` | apague tudo e cole as novas versões (.gs) |
+| `Aluno`, `AlunoCorpo`, `Professor`, `ProfRelatorios` | apague tudo e cole as novas versões (.html) |
+
+Depois faça o seguinte:
+1. Salve (💾). Execute **instalar**: ela cria as abas **Sessoes** e **MissoesFeitas** (se você esquecer, o app cria sozinho na primeira missão).
+2. Publique a nova versão: **Implantar > Gerenciar implantações > ✏️ > Versão: Nova versão > Implantar**.
+
+## B. Na aula com Chromebook
+1. Abra a aba **Missões**, escolha a turma e a missão do mês e clique em **▶ Abrir missão nesta aula**.
+2. As crianças recarregam o app e veem o card azul **🐶 Max needs your help!** na tela inicial.
+3. Cada criança faz a **missão** (cerca de 15 minutos, 4 desafios, de 0 a 100) e, logo depois, o **reforço** (cerca de 5 minutos, 2 desafios com as palavras que ela mais erra, de 0 a 100).
+4. No fim da aula, clique em **Fechar aula**. Quem terminou nos últimos instantes e estava sem internet ainda tem 10 minutos para o resultado chegar.
+
+## C. Quem faltou ou não terminou
+1. Na lista **Aulas de missão**, clique em **Ver alunos**.
+2. Marque as crianças (o botão **Marcar todos que não terminaram** ajuda) e clique em **Reabrir para os marcados**. Só elas voltam a ver a missão.
+3. Depois que fizerem, clique em **Fechar para todos**.
+
+## D. Nota e degraus
+- **Nota do mês** = média de todas as missões e reforços feitos no mês. Ela entra no **nível** com o mesmo peso de um quiz. Quem não fez nenhuma missão no mês fica **sem nota** (não zero). Vale só a 1ª vez de cada missão.
+- **Pontos de cada desafio:** acertou de primeira vale o desafio inteiro; na 2ª tentativa, metade; depois disso a resposta aparece e vale 0.
+- **Degrau pelo nível da criança:**
+  - ★ (Iniciante ou sem avaliação): 2 opções, nome da figura em inglês e português, falas do Max curtas e com tradução.
+  - ★★ (Básico/Intermediário): 3 opções, nome em inglês, português só no botão 🇧🇷.
+  - ★★★ (Avançado): 4 opções, nome em inglês, falas maiores com **palavras-chave sublinhadas** (passar o mouse ou tocar mostra a tradução) e letras extras no Spell it!.
+- **Prévia:** no **Banco de missões**, os botões **▶ Prévia ★/★★/★★★** deixam você jogar como a criança, sem gravar nada.
+- **Missões prontas:** outubro e novembro para o 3º (My pets, Toys), 4º (My body, Food and drinks) e 5º ano (The weather, Seasons and days).
+- **Relatórios:** a nota aparece como **"Missões de outubro"** na ficha do aluno, no comparativo das turmas e na exportação.
 
 ---
 

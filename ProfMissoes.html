@@ -1,0 +1,162 @@
+<!-- Missões do mês -->
+<section id="aba-missoes" class="pilha" hidden>
+  <style>
+    .ms-aula { border: 2px solid var(--borda); border-radius: var(--raio); padding: 16px; background: #fff; }
+    .ms-aula.aberta { border-color: #2f9e44; background: #f4fbf5; }
+    .ms-estado { display: inline-block; font-size: .8rem; font-weight: 700; padding: 2px 10px; border-radius: 99px; }
+    .ms-estado.aberta { background: #d3f9d8; color: #2b8a3e; }
+    .ms-estado.fechada { background: #e9ecef; color: #495057; }
+    .ms-estado.reaberta { background: #fff3bf; color: #a05a00; }
+    .ms-banco { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+    .ms-cartao { border: 1px solid var(--borda); border-radius: var(--raio); padding: 12px 14px; background: #fff; display: grid; gap: 8px; }
+    .ms-cartao .ic { font-size: 1.8rem; }
+    .ms-pts { font-weight: 700; }
+    .ms-pts.baixo { color: var(--perigo); }
+    #ms-previa-area { background: #fff9f2; border-radius: var(--raio); padding: 14px; }
+  </style>
+
+  <div class="linha">
+    <select id="ms-turma"></select>
+    <button class="btn" id="ms-atualizar">↻ Atualizar</button>
+    <span class="espaco"></span>
+    <span class="suave pequeno">Abra a missão na aula com Chromebook e feche no fim. Para quem faltou, reabra só para essas crianças.</span>
+  </div>
+
+  <div id="ms-conteudo"><div class="cartao vazio">Escolha a turma.</div></div>
+
+  <!-- Detalhe de uma aula -->
+  <div id="ms-detalhe" class="cartao" hidden></div>
+
+  <!-- Banco e prévia -->
+  <div class="cartao">
+    <h3>Banco de missões <span class="suave pequeno" id="ms-banco-serie"></span></h3>
+    <p class="suave pequeno" style="margin-top:0">Cada missão tem 3 degraus. A criança recebe o degrau do nível dela: Iniciante ou sem avaliação = ★, Básico/Intermediário = ★★, Avançado = ★★★. Use a prévia para jogar como a criança (nada é gravado).</p>
+    <div class="ms-banco" id="ms-banco"></div>
+  </div>
+  <div id="ms-previa" class="cartao" hidden>
+    <div class="linha" style="margin-bottom:10px"><h3 style="margin:0" id="ms-previa-tit">Prévia</h3><span class="espaco"></span>
+      <button class="btn" type="button" id="ms-previa-fechar">Fechar prévia</button></div>
+    <div id="ms-previa-area"></div>
+  </div>
+</section>
+
+<script>
+  let msPainel = null, msDetalhe = null;
+  const MS_MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  const msMes = (m) => (m && m.length === 7 ? MS_MESES[Number(m.slice(5)) - 1] + '/' + m.slice(2, 4) : m);
+  const msHora = (ms) => (ms ? new Date(ms).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '');
+  const msPts = (v) => (v == null ? '<span class="suave">—</span>' : `<span class="ms-pts ${v < 50 ? 'baixo' : ''}">${v}</span>`);
+
+  async function msCarregar() {
+    const turma = $('ms-turma').value;
+    if (!turma) return;
+    msPainel = await chamar('profMissoesPainel', turma);
+    msRender();
+  }
+
+  function msRender() {
+    const p = msPainel;
+    const aberta = p.sessoes.find((s) => s.status === 'aberta');
+    const doMes = p.banco.filter((m) => m.mes === p.mesAtual);
+    const opcoes = p.banco.map((m) => `<option value="${esc(m.id)}" ${doMes[0] && doMes[0].id === m.id ? 'selected' : ''}>${esc(m.icone)} ${esc(m.titulo)} · ${esc(m.tema)} (${msMes(m.mes)})</option>`).join('');
+    $('ms-conteudo').innerHTML = `
+      <div class="ms-aula ${aberta ? 'aberta' : ''}">
+        ${aberta ? `
+          <div class="linha"><span class="ms-estado aberta">● Aberta agora</span><strong>${esc(aberta.icone)} ${esc(aberta.titulo)}</strong>
+            <span class="suave pequeno">desde ${msHora(aberta.aberta_ms)} · ${aberta.concluidas}/${aberta.alunos} concluíram</span><span class="espaco"></span>
+            <button class="btn" data-ms-ver="${esc(aberta.id)}">Ver alunos</button>
+            <button class="btn primario" data-ms-fechar="${esc(aberta.id)}">Fechar aula</button></div>`
+        : `<div class="linha"><strong>Nenhuma missão aberta na ${esc(p.turma)}.</strong></div>`}
+        <div class="linha" style="margin-top:12px">
+          <select id="ms-escolha" style="flex:1;min-width:240px">${opcoes || '<option value="">Nenhuma missão para esta série</option>'}</select>
+          <button class="btn ${aberta ? '' : 'primario'}" id="ms-abrir" ${opcoes ? '' : 'disabled'}>▶ Abrir missão nesta aula</button>
+        </div>
+        ${aberta ? '<p class="suave pequeno" style="margin-bottom:0">Abrir outra missão fecha a que está aberta.</p>' : ''}
+      </div>
+      <div class="cartao" style="margin-top:16px">
+        <h3>Aulas de missão da ${esc(p.turma)}</h3>
+        ${p.sessoes.length ? `<div class="tabela-rolagem"><table><thead><tr><th>Missão</th><th>Mês</th><th>Aberta em</th><th>Situação</th><th>Concluíram</th><th></th></tr></thead><tbody>
+          ${p.sessoes.map((s) => `<tr><td>${esc(s.icone)} ${esc(s.titulo)}</td><td>${msMes(s.mes)}</td><td class="suave pequeno">${msHora(s.aberta_ms)}</td>
+            <td><span class="ms-estado ${s.status === 'aberta' ? 'aberta' : s.reabertos ? 'reaberta' : 'fechada'}">${s.status === 'aberta' ? 'Aberta' : s.reabertos ? 'Reaberta para ' + s.reabertos : 'Fechada'}</span></td>
+            <td>${s.concluidas}/${s.alunos}</td><td class="acoes"><button class="btn mini" data-ms-ver="${esc(s.id)}">Ver alunos</button></td></tr>`).join('')}
+          </tbody></table></div>` : '<p class="vazio">Nenhuma missão aberta ainda nesta turma.</p>'}
+      </div>`;
+    $('ms-banco-serie').textContent = '· ' + p.serie + ' ano';
+    $('ms-banco').innerHTML = p.banco.map((m) => `
+      <div class="ms-cartao"><div class="linha"><span class="ic">${esc(m.icone)}</span><div style="flex:1;min-width:0"><strong>${esc(m.titulo)}</strong>
+        <div class="suave pequeno">${esc(m.tema)} · ${msMes(m.mes)}${m.temaExiste ? '' : ' · <span style="color:var(--perigo)">tema não encontrado</span>'}</div></div></div>
+        <div class="linha">${[1, 2, 3].map((dg) => `<button class="btn mini" data-ms-previa="${esc(m.id)}" data-degrau="${dg}">▶ Prévia ${'★'.repeat(dg)}</button>`).join('')}</div></div>`).join('');
+  }
+
+  async function msVer(id) {
+    msDetalhe = await chamar('profSessaoDetalhe', id);
+    msRenderDetalhe();
+  }
+
+  function msRenderDetalhe() {
+    const d = msDetalhe, s = d.sessao;
+    const podeReabrir = s.status !== 'aberta';
+    $('ms-detalhe').hidden = false;
+    $('ms-detalhe').innerHTML = `
+      <div class="linha"><h3 style="margin:0">${esc(s.icone)} ${esc(s.titulo)} · ${esc(s.turma)}</h3>
+        <span class="ms-estado ${s.status}">${s.status === 'aberta' ? 'Aberta' : 'Fechada'}</span><span class="espaco"></span>
+        <button class="btn mini" id="ms-det-atualizar">↻ Atualizar</button></div>
+      <p class="suave pequeno">Missão e reforço valem de 0 a 100. A <strong>nota do mês</strong> é a média de todas as missões feitas no mês e entra no nível como um quiz. Quem não fez nada fica sem nota.</p>
+      <div class="tabela-rolagem"><table><thead><tr>${podeReabrir ? '<th></th>' : ''}<th></th><th>Aluno</th><th>Degrau</th><th>Missão</th><th>Reforço</th><th>Nota do mês</th></tr></thead><tbody>
+        ${d.alunos.map((a) => {
+          const falta = a.comum == null || a.reforco == null;
+          return `<tr>${podeReabrir ? `<td>${falta ? `<input type="checkbox" data-ms-reabrir="${esc(a.email)}" ${a.reaberto ? 'checked' : ''} style="width:auto">` : ''}</td>` : ''}
+            <td class="avatar">${esc(a.avatar)}</td><td>${esc(a.nome)}${a.reaberto ? ' <span class="ms-estado reaberta">reaberta</span>' : ''}</td>
+            <td>${'★'.repeat(a.degrau)}</td><td>${msPts(a.comum)}</td><td>${msPts(a.reforco)}</td><td>${a.mediaMes == null ? '<span class="suave">—</span>' : a.mediaMes}</td></tr>`;
+        }).join('')}</tbody></table></div>
+      ${podeReabrir ? `<div class="linha" style="margin-top:12px">
+        <button class="btn mini" id="ms-marcar-faltas">Marcar todos que não terminaram</button><span class="espaco"></span>
+        <button class="btn" id="ms-encerrar">Fechar para todos</button>
+        <button class="btn primario" id="ms-reabrir">Reabrir para os marcados</button></div>` : ''}`;
+    $('ms-det-atualizar').onclick = (ev) => comBotao(ev.target, () => msVer(s.id));
+    if (podeReabrir) {
+      $('ms-marcar-faltas').onclick = () => document.querySelectorAll('[data-ms-reabrir]').forEach((c) => (c.checked = true));
+      $('ms-reabrir').onclick = (ev) => {
+        const emails = [...document.querySelectorAll('[data-ms-reabrir]:checked')].map((c) => c.dataset.msReabrir);
+        if (!emails.length) { avisar('Marque as crianças que vão fazer a missão.', true); return; }
+        comBotao(ev.target, async () => { msDetalhe = await chamar('profReabrirSessao', s.id, emails); msRenderDetalhe(); await msCarregar(); avisar('Missão reaberta para ' + emails.length + ' criança(s).'); });
+      };
+      $('ms-encerrar').onclick = (ev) => comBotao(ev.target, async () => { msDetalhe = await chamar('profReabrirSessao', s.id, []); msRenderDetalhe(); await msCarregar(); avisar('Missão fechada para todos.'); });
+    }
+    $('ms-detalhe').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  async function msPrevia(id, degrau) {
+    const missao = await chamar('profPreviaMissao', id, degrau);
+    $('ms-previa').hidden = false;
+    $('ms-previa-tit').textContent = 'Prévia · ' + missao.titulo + ' · ' + '★'.repeat(degrau);
+    $('ms-previa').scrollIntoView({ behavior: 'smooth' });
+    await MissaoPlayer.jogar($('ms-previa-area'), missao, { botaoFim: 'Ver o reforço ▶', aoTerminar: (r, status) => status('Prévia: nada foi gravado.') });
+    const erros = missao.ouvir.slice(0, 1);
+    await MissaoPlayer.reforco($('ms-previa-area'), {
+      degrau: degrau,
+      ouvir: { alvo: erros[0], palavras: missao.palavras },
+      soletrar: { en: missao.soletrar.en, pt: missao.soletrar.pt, figura: missao.soletrar.figura, extras: degrau === 3 ? 'k' : '' },
+    }, { botaoFim: 'Fechar prévia', aoTerminar: (r, status) => status('No sistema, o reforço usa as palavras que cada criança mais erra.') });
+    $('ms-previa').hidden = true;
+  }
+
+  function configurarMissoes() {
+    $('ms-turma').innerHTML = '<option value="">Escolha a turma…</option>' + opcoesTurma(false);
+    $('ms-turma').addEventListener('change', () => { $('ms-detalhe').hidden = true; comBotao($('ms-atualizar'), msCarregar); });
+    $('ms-atualizar').addEventListener('click', (ev) => comBotao(ev.target, msCarregar));
+    $('ms-previa-fechar').addEventListener('click', () => { $('ms-previa').hidden = true; if (typeof Fala !== 'undefined' && Fala.disponivel()) speechSynthesis.cancel(); });
+    document.getElementById('aba-missoes').addEventListener('click', (ev) => {
+      const b = ev.target.closest('button');
+      if (!b) return;
+      if (b.id === 'ms-abrir') {
+        const id = $('ms-escolha').value;
+        if (!id) return;
+        comBotao(b, async () => { msPainel = await chamar('profAbrirSessao', msPainel.turma, id); msRender(); avisar('Missão aberta! As crianças já veem o card do Max na tela inicial (peça para recarregar a página).'); });
+      }
+      if (b.dataset.msFechar) comBotao(b, async () => { msPainel = await chamar('profFecharSessao', b.dataset.msFechar); msRender(); avisar('Aula fechada.'); if (msDetalhe) msVer(b.dataset.msFechar); });
+      if (b.dataset.msVer) comBotao(b, () => msVer(b.dataset.msVer));
+      if (b.dataset.msPrevia) comBotao(b, () => msPrevia(b.dataset.msPrevia, Number(b.dataset.degrau)));
+    });
+  }
+</script>

@@ -4,6 +4,48 @@ Faça tudo com a sua **conta institucional** (@edu.joinville.sc.gov.br).
 
 ---
 
+# Missões do mês com o Max (atualização)
+
+## A. Atualizar o código
+No editor do Apps Script (**Extensões > Apps Script**, na planilha):
+
+| Arquivo no editor | O que fazer |
+|---|---|
+| `MissoesPadrao` | **novo:** clique em **+ > Script**, dê o nome `MissoesPadrao` e cole **MissoesPadrao.gs** |
+| `Missoes` | **novo:** clique em **+ > Script**, dê o nome `Missoes` e cole **Missoes.gs** |
+| `MissaoTela` | **novo:** clique em **+ > HTML**, dê o nome `MissaoTela` e cole **MissaoTela.html** |
+| `ProfMissoes` | **novo:** clique em **+ > HTML**, dê o nome `ProfMissoes` e cole **ProfMissoes.html** |
+| `Codigo`, `Relatorios` | apague tudo e cole as novas versões (.gs) |
+| `Aluno`, `AlunoCorpo`, `Professor`, `ProfRelatorios` | apague tudo e cole as novas versões (.html) |
+
+Depois faça o seguinte:
+1. Salve (💾). Execute **instalar**: ela cria as abas **Sessoes** e **MissoesFeitas** (se você esquecer, o app cria sozinho na primeira missão).
+2. Publique a nova versão: **Implantar > Gerenciar implantações > ✏️ > Versão: Nova versão > Implantar**.
+
+## B. Na aula com Chromebook
+1. Abra a aba **Missões**, escolha a turma e a missão do mês e clique em **▶ Abrir missão nesta aula**.
+2. As crianças recarregam o app e veem o card azul **🐶 Max needs your help!** na tela inicial.
+3. Cada criança faz a **missão** (cerca de 15 minutos, 4 desafios, de 0 a 100) e, logo depois, o **reforço** (cerca de 5 minutos, 2 desafios com as palavras que ela mais erra, de 0 a 100).
+4. No fim da aula, clique em **Fechar aula**. Quem terminou nos últimos instantes e estava sem internet ainda tem 10 minutos para o resultado chegar.
+
+## C. Quem faltou ou não terminou
+1. Na lista **Aulas de missão**, clique em **Ver alunos**.
+2. Marque as crianças (o botão **Marcar todos que não terminaram** ajuda) e clique em **Reabrir para os marcados**. Só elas voltam a ver a missão.
+3. Depois que fizerem, clique em **Fechar para todos**.
+
+## D. Nota e degraus
+- **Nota do mês** = média de todas as missões e reforços feitos no mês. Ela entra no **nível** com o mesmo peso de um quiz. Quem não fez nenhuma missão no mês fica **sem nota** (não zero). Vale só a 1ª vez de cada missão.
+- **Pontos de cada desafio:** acertou de primeira vale o desafio inteiro; na 2ª tentativa, metade; depois disso a resposta aparece e vale 0.
+- **Degrau pelo nível da criança:**
+  - ★ (Iniciante ou sem avaliação): 2 opções, nome da figura em inglês e português, falas do Max curtas e com tradução.
+  - ★★ (Básico/Intermediário): 3 opções, nome em inglês, português só no botão 🇧🇷.
+  - ★★★ (Avançado): 4 opções, nome em inglês, falas maiores com **palavras-chave sublinhadas** (passar o mouse ou tocar mostra a tradução) e letras extras no Spell it!.
+- **Prévia:** no **Banco de missões**, os botões **▶ Prévia ★/★★/★★★** deixam você jogar como a criança, sem gravar nada.
+- **Missões prontas:** outubro e novembro para o 3º (My pets, Toys), 4º (My body, Food and drinks) e 5º ano (The weather, Seasons and days).
+- **Relatórios:** a nota aparece como **"Missões de outubro"** na ficha do aluno, no comparativo das turmas e na exportação.
+
+---
+
 # Remoção do Speak! (atualização)
 
 O jogo **Speak!** foi retirado: o reconhecimento de voz falhava muito em entender a fala das crianças. A pronúncia continua sendo praticada no **🗣️ Repeat after me**.

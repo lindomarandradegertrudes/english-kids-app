@@ -16,6 +16,7 @@ Roda **gratuitamente** no Google Workspace da escola, com Google Apps Script e G
 | 4 | Equipes de até 5 alunos (níveis misturados) e placar mensal por equipes | ✅ entregue |
 | 5 | Mais jogos: Find it! (caça-palavras), Color it!, Build it! (frases), Spelling Bee e Repeat after me | ✅ entregue |
 | + | Speak! (pronúncia com microfone): retirado, porque o reconhecimento de voz falhava muito com as crianças | ❌ removido |
+| M1 | Missões do mês com o Max: história + 4 desafios em 3 degraus, aula aberta/fechada pelo professor, reabertura para quem faltou, reforço individual e nota mensal no nível | ✅ entregue |
 | 6 | Relatórios: comparativo das turmas, palavras difíceis, ficha do aluno (impressão) e exportação para planilha | ✅ entregue |
 
 ## Estrutura
@@ -29,6 +30,8 @@ Roda **gratuitamente** no Google Workspace da escola, com Google Apps Script e G
 | `JogosTela.html` | Os 9 jogos (Listen & Click, Memory, Match it!, Spell it!, Find it!, Color it!, Build it!, Spelling Bee, Repeat after me) |
 | `Avaliacoes.gs` | Diagnóstico e quizzes: montagem das questões, correção, lançamento de impressos e níveis |
 | `Equipes.gs` | Equipes mensais e placar |
+| `MissoesPadrao.gs` / `Missoes.gs` | Banco de missões e regras (aulas, reforço, nota do mês) |
+| `MissaoTela.html` / `ProfMissoes.html` | Tela da missão (criança e prévia) e aba Missões do professor |
 | `Relatorios.gs` / `ProfRelatorios.html` | Relatórios, ficha do aluno e exportação |
 | `Professor.html` / `ProfTemas.html` / `ProfProgresso.html` / `ProfAvaliacoes.html` / `ProfEquipes.html` | Painel do professor e abas de Temas, Progresso, Avaliações e Equipes |
 | `Aluno.html` / `AlunoCorpo.html` | Tela da criança (o modelo `Aluno` só inclui arquivos; todo o código fica em `AlunoCorpo`) |

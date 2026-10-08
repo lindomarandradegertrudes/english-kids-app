@@ -28,6 +28,7 @@
     <button data-aba="alunos">Alunos</button>
     <button data-aba="temas">Temas</button>
     <button data-aba="progresso">Progresso</button>
+    <button data-aba="missoes">Missões</button>
     <button data-aba="avaliacoes">Avaliações</button>
     <button data-aba="equipes">Equipes</button>
     <button data-aba="relatorios">Relatórios</button>
@@ -74,6 +75,8 @@
     <?!= incluir('ProfAvaliacoes'); ?>
     <?!= incluir('ProfEquipes'); ?>
     <?!= incluir('ProfRelatorios'); ?>
+    <?!= incluir('MissaoTela'); ?>
+    <?!= incluir('ProfMissoes'); ?>
 
     <!-- Teste do Chromebook -->
     <section id="aba-teste" class="pilha" hidden>
@@ -459,6 +462,7 @@
         configurarAvaliacoes();
         configurarEquipes();
         configurarRelatorios();
+        configurarMissoes();
         renderTudo();
         Fala.iniciar();
         $('carregando').hidden = true;

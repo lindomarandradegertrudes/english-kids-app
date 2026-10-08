@@ -19,6 +19,8 @@ const CABECALHOS = {
   Questionarios: ['id', 'tipo', 'serie', 'mes', 'titulo', 'temas_json', 'questoes_json', 'status', 'criado_em'],
   Respostas: ['questionario_id', 'email', 'turma', 'pontuacao', 'total', 'percentual', 'detalhe_json', 'origem', 'respondido_em'],
   Equipes: ['mes', 'turma', 'equipe', 'email', 'nome', 'nivel', 'media', 'aplicado_em'],
+  Sessoes: ['id', 'missao_id', 'turma', 'serie', 'mes', 'status', 'aberta_ms', 'fechada_ms', 'reabertos_json'],
+  MissoesFeitas: ['id', 'sessao_id', 'missao_id', 'email', 'turma', 'mes', 'tipo', 'degrau', 'pontos', 'detalhe_json', 'feito_em'],
 };
 
 const CONFIG_PADRAO = [
@@ -261,7 +263,13 @@ function alunoObterEstado() {
     urlApp: ScriptApp.getService().getUrl(),
     avaliacoes: aluno ? avaliacoesPendentes_(email, serie) : [],
     equipe: aluno ? equipeSegura_(email, String(aluno.turma)) : null,
+    missoes: aluno ? missoesSeguras_(email, String(aluno.turma)) : [],
   };
+}
+
+/** As missões são um extra da tela inicial: se der erro, o resto da tela abre normalmente. */
+function missoesSeguras_(email, turma) {
+  try { return missoesDoAluno_(email, turma); } catch (e) { return []; }
 }
 
 /** A equipe é um extra da tela inicial: se der erro, a criança continua jogando normalmente. */

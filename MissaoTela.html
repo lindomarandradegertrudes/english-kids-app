@@ -1,0 +1,387 @@
+<style>
+  /* ---------- Missão do mês (Max) ---------- */
+  .mx { --mx-ink: #2b2f42; --mx-muted: #6c7086; --mx-line: #ffe8cc; --mx-accent: #e8590c; --mx-accent-shadow: #a33a05;
+    --mx-soft: #fff0e6; --mx-ok: #2f9e44; --mx-ok-soft: #ebfbee; --mx-bad: #e03131; --mx-bad-soft: #fff5f5; --mx-star: #fab005;
+    --mx-blue: #1864ab; --mx-blue-soft: #e7f5ff; --mx-lilac: #5f3dc4; --mx-lilac-soft: #f3f0ff;
+    font-family: Nunito, "Segoe UI", Roboto, Arial, sans-serif; color: var(--mx-ink); display: grid; gap: 16px; }
+  .mx-topo { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .mx-topo h1 { margin: 0; font-size: 1.5rem; font-weight: 900; flex: 1 1 220px; min-width: 0; }
+  .mx-trilha { display: flex; gap: 6px; }
+  .mx-trilha i { width: 16px; height: 16px; border-radius: 50%; background: var(--mx-line); display: block; }
+  .mx-trilha i.feito { background: var(--mx-ok); } .mx-trilha i.meio { background: var(--mx-star); } .mx-trilha i.zero { background: var(--mx-bad); }
+  .mx-trilha i.agora { outline: 3px solid var(--mx-accent); outline-offset: 2px; }
+  .mx-pontos { font-weight: 900; background: #fff; border: 3px solid var(--mx-star); border-radius: 99px; padding: 4px 14px; }
+  .mx-cena { background: #fff; border-radius: 22px; box-shadow: 0 5px 0 var(--mx-line); padding: 20px 18px; display: grid; gap: 14px; }
+  .mx-max { display: flex; gap: 14px; align-items: flex-start; }
+  .mx-cao { font-size: 4rem; line-height: 1; flex: none; animation: mx-balanca 2.4s ease-in-out infinite; transform-origin: 50% 90%; }
+  @keyframes mx-balanca { 50% { transform: rotate(-6deg); } }
+  .mx-balao { position: relative; background: var(--mx-soft); border-radius: 18px; padding: 12px 16px; min-width: 0; flex: 1; }
+  .mx-balao::before { content: ""; position: absolute; left: -10px; top: 18px; border: 10px solid transparent; border-right-color: var(--mx-soft); border-left: 0; }
+  .mx-balao .mx-en { font-size: 1.2rem; font-weight: 800; margin: 0; }
+  .mx-balao .mx-pt { margin: 6px 0 0; color: var(--mx-muted); font-weight: 700; font-size: .95rem; }
+  .mx-ferr { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .mx-mini { font: inherit; font-weight: 800; font-size: .9rem; border: 2px solid var(--mx-line); background: #fff; color: var(--mx-ink); border-radius: 99px; padding: 4px 12px; cursor: pointer; }
+  .mx-tit { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .mx-tit h2 { margin: 0; font-size: 1.15rem; font-weight: 900; }
+  .mx-cmd { font-weight: 800; color: var(--mx-muted); margin: 0; }
+  .mx-bt { font: inherit; border: 0; border-radius: 16px; padding: 13px 22px; font-size: 1.1rem; font-weight: 900; cursor: pointer; background: var(--mx-accent); color: #fff; box-shadow: 0 4px 0 var(--mx-accent-shadow); justify-self: center; }
+  .mx-bt:active { transform: translateY(3px); box-shadow: 0 1px 0 var(--mx-accent-shadow); }
+  .mx-bt.claro { background: #fff; color: var(--mx-ink); box-shadow: 0 4px 0 var(--mx-line); border: 2px solid var(--mx-line); }
+  .mx-som { width: 76px; height: 76px; border-radius: 50%; font-size: 2.1rem; padding: 0; }
+  .mx-som.peq { width: 54px; height: 54px; font-size: 1.4rem; }
+  .mx-linha { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .mx-ops { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mx-ops.n3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .mx-op { font: inherit; background: #fff; border: 4px solid var(--mx-line); border-radius: 20px; min-height: 120px; cursor: pointer; display: grid; place-items: center; gap: 4px; padding: 8px; color: var(--mx-ink); box-shadow: 0 4px 0 var(--mx-line); }
+  .mx-op .fig { font-size: 3.2rem; line-height: 1.1; }
+  .mx-op .fig.txt { font-size: 1.3rem; font-weight: 900; color: var(--mx-lilac); }
+  .mx-op .fig.multi { font-size: 2.3rem; letter-spacing: 2px; }
+  .mx-op .leg { font-size: 1.05rem; font-weight: 900; line-height: 1.15; }
+  .mx-op .leg small { display: block; font-size: .85rem; font-weight: 700; color: var(--mx-muted); }
+  .mx-op svg { width: 100%; max-width: 150px; height: auto; }
+  .mx-op.certa { border-color: var(--mx-ok); background: var(--mx-ok-soft); }
+  .mx-op.errada { border-color: var(--mx-bad); background: var(--mx-bad-soft); opacity: .55; animation: mx-treme .4s; }
+  .mx-op.mostrar { border-color: var(--mx-ok); border-style: dashed; }
+  @keyframes mx-treme { 25%, 75% { transform: translateX(-7px); } 50% { transform: translateX(7px); } }
+  .mx-frase { text-align: center; font-size: 1.4rem; font-weight: 900; background: var(--mx-soft); border-radius: 16px; padding: 10px 14px; margin: 0; }
+  .mx-frase small { display: block; font-size: .95rem; color: var(--mx-muted); font-weight: 700; }
+  .mx-chave { position: relative; text-decoration: underline dotted 2px; text-underline-offset: 4px; text-decoration-color: var(--mx-accent); cursor: help; border-radius: 4px; }
+  .mx-chave:hover, .mx-chave:focus { background: #ffe8cc; outline: none; }
+  .mx-chave::after { content: attr(data-pt); position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%); background: var(--mx-ink); color: #fff;
+    font-size: .85rem; font-weight: 800; white-space: nowrap; padding: 4px 10px; border-radius: 8px; opacity: 0; pointer-events: none; transition: opacity .15s; z-index: 5; }
+  .mx-chave:hover::after, .mx-chave:focus::after { opacity: 1; }
+  .mx-casas { display: flex; justify-content: center; gap: 8px; flex-wrap: wrap; }
+  .mx-casa { width: 50px; height: 60px; border-bottom: 5px solid var(--mx-muted); font-size: 2rem; font-weight: 900; display: grid; place-items: center; }
+  .mx-casa.cheia { border-color: var(--mx-ok); color: var(--mx-ok); }
+  .mx-casa.proxima { border-color: var(--mx-accent); }
+  .mx-casa.fantasma { color: #ead9c6; }
+  .mx-casa.fixa { border-color: transparent; width: 22px; color: var(--mx-muted); }
+  .mx-pecas { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+  .mx-peca { font: inherit; min-width: 58px; height: 58px; padding: 0 14px; border-radius: 16px; border: 3px solid var(--mx-lilac); background: var(--mx-lilac-soft); color: var(--mx-lilac); font-size: 1.5rem; font-weight: 900; cursor: pointer; }
+  .mx-peca.bloco { border-color: var(--mx-blue); background: var(--mx-blue-soft); color: var(--mx-blue); font-size: 1.2rem; }
+  .mx-peca.errada { animation: mx-treme .4s; border-color: var(--mx-bad); color: var(--mx-bad); background: var(--mx-bad-soft); }
+  .mx-peca.dica { outline: 4px solid var(--mx-star); }
+  .mx-peca:disabled { visibility: hidden; }
+  .mx-montada { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; min-height: 58px; border-bottom: 4px solid var(--mx-muted); padding-bottom: 10px; }
+  .mx-montada span { background: var(--mx-ok-soft); color: var(--mx-ok); border-radius: 12px; padding: 8px 12px; font-weight: 900; font-size: 1.2rem; }
+  .mx-ret { text-align: center; font-weight: 900; min-height: 1.6em; margin: 0; }
+  .mx-ret.bom { color: var(--mx-ok); } .mx-ret.ruim { color: var(--mx-bad); }
+  .mx-fim { text-align: center; }
+  .mx-grande { font-size: 3.2rem; font-weight: 900; margin: 0; }
+  .mx-estrelas { font-size: 3rem; letter-spacing: 6px; }
+  .mx-estrelas span { opacity: .2; filter: grayscale(1); } .mx-estrelas span.ganha { opacity: 1; filter: none; }
+  .mx-tab { width: 100%; border-collapse: collapse; font-size: .95rem; }
+  .mx-tab td { padding: 6px 4px; border-bottom: 1px solid var(--mx-line); text-align: left; }
+  .mx-tab td:last-child { text-align: right; font-weight: 900; }
+  .mx-explica { font-size: .9rem; color: var(--mx-muted); font-weight: 700; margin: 0; }
+  @media (prefers-reduced-motion: reduce) { .mx-cao, .mx-op.errada, .mx-peca.errada { animation: none; } }
+  @media (max-width: 480px) { .mx-ops.n3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .mx-casa { width: 40px; height: 52px; font-size: 1.6rem; } .mx-cao { font-size: 3rem; } }
+</style>
+
+<script>
+  /**
+   * Motor das Missões do mês. Usado na tela da criança e na prévia do professor.
+   * Pontos: cada desafio vale 25 (dividido entre as rodadas). Acerto de primeira = cheio; 2ª tentativa = metade;
+   * depois a resposta aparece e vale 0. Spell it! e Build it!: sem erro = cheio, até 2 erros = metade, mais = 0.
+   * Degraus: 1 = 2 opções + inglês e português; 2 = 3 opções + inglês (português no botão); 3 = 4 opções + palavras-chave.
+   */
+  const MissaoPlayer = (function () {
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const misturar = (a) => { const b = a.slice(); for (let i = b.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [b[i], b[j]] = [b[j], b[i]]; } return b; };
+    const espera = (ms) => new Promise((ok) => setTimeout(ok, ms));
+    const puro = (s) => String(s || '').replace(/\[\[([^|\]]+)\|[^\]]+\]\]/g, (m, w) => w);
+    // Fala e Som são constantes globais de outros arquivos (não ficam em window): por isso o typeof.
+    const som = (n) => { try { if (typeof Som !== 'undefined' && Som[n]) Som[n](); } catch (e) { /* sem som */ } };
+    const falar = (t, lento) => (typeof Fala !== 'undefined' ? Fala.iniciar().then(() => Fala.falar(puro(t), lento)) : Promise.resolve());
+    const NOMES = ['Listen & Click', 'Read & Choose', 'Spell it!', 'Build it!'];
+
+    let d = 1, el = null, est = null, atual = null;
+
+    function comChaves(s) {
+      if (d !== 3) return esc(puro(s));
+      return esc(s).replace(/\[\[([^|\]]+)\|([^\]]+)\]\]/g, (m, w, t) => '<span class="mx-chave" tabindex="0" data-pt="' + t + '">' + w + '</span>');
+    }
+    function palavra(en) { return (atual.palavras || []).find((p) => p.en.toLowerCase() === String(en).toLowerCase()) || { en: en, pt: '', figura: '' }; }
+    function legenda(p) { return '<span class="leg">' + esc(p.en) + (d === 1 && p.pt ? '<small>' + esc(p.pt) + '</small>' : '') + '</span>'; }
+    function figura(p) { return p.figura ? '<span class="fig">' + esc(p.figura) + '</span>' : '<span class="fig txt">' + esc(p.pt) + '</span>'; }
+
+    function cabecalho(titulo, i, total) {
+      const r = est.resultados;
+      return '<div class="mx-topo"><h1>' + esc(titulo) + '</h1><div class="mx-trilha">' +
+        Array.from({ length: total }, (_, k) => '<i class="' + (r[k] == null ? '' : r[k] >= 0.99 ? 'feito' : r[k] > 0 ? 'meio' : 'zero') + (k === i ? ' agora' : '') + '"></i>').join('') +
+        '</div><span class="mx-pontos">⭐ ' + Math.round(est.pontos) + ' / 100</span></div>';
+    }
+    function fala(par) {
+      const en = par[0], pt = par[1];
+      const ptHtml = d === 1 && pt ? '<p class="mx-pt">' + esc(pt) + '</p>' : d === 2 && pt ? '<p class="mx-pt" hidden>' + esc(pt) + '</p>' : '';
+      return '<div class="mx-max"><span class="mx-cao" aria-hidden="true">🐶</span><div class="mx-balao"><p class="mx-en">' + comChaves(en) + '</p>' + ptHtml +
+        '<div class="mx-ferr"><button class="mx-mini" type="button" data-mx-falar="' + esc(puro(en)) + '">🔊 Ouvir</button>' +
+        (d === 2 && pt ? '<button class="mx-mini" type="button" data-mx-pt>🇧🇷 Ver em português</button>' : '') + '</div></div></div>';
+    }
+    function ligarAjudas() {
+      el.onclick = (ev) => {
+        const f = ev.target.closest('[data-mx-falar]');
+        if (f) falar(f.dataset.mxFalar);
+        const v = ev.target.closest('[data-mx-pt]');
+        if (v) { const p = v.closest('.mx-balao').querySelector('.mx-pt'); if (p) p.hidden = !p.hidden; }
+      };
+    }
+    const pontuar = (valor, erros) => (erros === 0 ? valor : erros === 1 ? valor / 2 : 0);
+
+    function cena(par, botao) {
+      return new Promise((ok) => {
+        el.innerHTML = cabecalho(atual.titulo, est.passo, 4) + '<section class="mx-cena">' + fala(par) +
+          '<button class="mx-bt" type="button" data-mx-seguir>' + botao + '</button></section>';
+        el.querySelector('[data-mx-seguir]').addEventListener('click', ok);
+        if (typeof Fala !== 'undefined') Fala.iniciar();
+      });
+    }
+
+    function botoesSom(texto, grande) {
+      return '<div class="mx-linha"><button class="mx-bt ' + (grande ? 'mx-som' : 'claro mx-som peq') + '" type="button" data-mx-ouvir aria-label="Ouvir">🔊</button>' +
+        '<button class="mx-bt claro mx-som peq" type="button" data-mx-devagar aria-label="Ouvir devagar">🐢</button></div>';
+    }
+    function ligarSom(texto) {
+      el.querySelector('[data-mx-ouvir]').onclick = () => falar(texto);
+      el.querySelector('[data-mx-devagar]').onclick = () => falar(texto, true);
+    }
+
+    // Listen & Click: rodadas com palavras do tema; opções = degrau + 1.
+    async function ouvir(lista, palavras, valorTotal, titulo, passo, total) {
+      const valor = valorTotal / lista.length;
+      let ganho = 0;
+      for (let r = 0; r < lista.length; r++) {
+        const alvo = palavras.find((p) => p.en === lista[r]) || { en: lista[r], pt: '', figura: '' };
+        const outras = misturar(palavras.filter((p) => p.en !== alvo.en && (p.figura || p.pt) !== (alvo.figura || alvo.pt))).slice(0, d);
+        const ops = misturar([alvo].concat(outras));
+        ganho += await new Promise((pronto) => {
+          el.innerHTML = cabecalho(titulo, passo, total) + '<section class="mx-cena">' +
+            '<div class="mx-tit"><h2>👂 Listen & Click</h2><span class="mx-explica">' + (r + 1) + ' de ' + lista.length + '</span></div>' +
+            '<p class="mx-cmd">Listen and click. · Ouça e toque na figura.</p>' + botoesSom(alvo.en, true) +
+            '<div class="mx-ops' + (ops.length === 3 ? ' n3' : '') + '">' +
+            ops.map((p, k) => '<button class="mx-op" type="button" data-k="' + k + '">' + figura(p) + legenda(p) + '</button>').join('') +
+            '</div><p class="mx-ret" data-mx-ret></p></section>';
+          ligarSom(alvo.en);
+          let erros = 0, fechado = false;
+          el.querySelector('.mx-ops').addEventListener('click', async (ev) => {
+            const b = ev.target.closest('.mx-op');
+            if (!b || fechado || b.classList.contains('errada')) return;
+            const ret = el.querySelector('[data-mx-ret]');
+            if (ops[Number(b.dataset.k)] === alvo) {
+              fechado = true; b.classList.add('certa'); som('acerto');
+              ret.className = 'mx-ret bom'; ret.textContent = erros ? 'Good! 👍' : 'Excellent! 🌟';
+              await falar(alvo.en); await espera(450); pronto(pontuar(valor, erros));
+            } else {
+              erros++; b.classList.add('errada'); som('erro'); est.erros.push(alvo.en);
+              ret.className = 'mx-ret ruim';
+              if (erros >= 2) {
+                fechado = true; el.querySelector('[data-k="' + ops.indexOf(alvo) + '"]').classList.add('mostrar');
+                ret.textContent = 'This one! · É esta.'; await falar(alvo.en); await espera(1300); pronto(0);
+              } else { ret.textContent = 'Try again! · Tente de novo.'; falar(alvo.en); }
+            }
+          });
+          setTimeout(() => falar(alvo.en), 350);
+        });
+      }
+      return ganho;
+    }
+
+    function monstro(m, cor) {
+      const r = m.grande ? 9 : 5;
+      const xs = m.olhos === 1 ? [50] : m.olhos === 2 ? [38, 62] : [30, 50, 70];
+      const olhos = xs.map((x) => '<circle cx="' + x + '" cy="46" r="' + r + '" fill="#fff" stroke="#1d1d2b" stroke-width="2"/><circle cx="' + x + '" cy="47" r="' + (r / 2.4) + '" fill="#1d1d2b"/>').join('');
+      const bracos = m.bracos === 4
+        ? '<path d="M18 62 L4 52 M18 76 L4 84 M82 62 L96 52 M82 76 L96 84" stroke="#1d1d2b" stroke-width="4" stroke-linecap="round"/>'
+        : '<path d="M18 68 L4 60 M82 68 L96 60" stroke="#1d1d2b" stroke-width="4" stroke-linecap="round"/>';
+      return '<svg viewBox="0 0 100 110" role="img" aria-label="monster">' + bracos +
+        '<rect x="18" y="24" width="64" height="72" rx="30" fill="' + cor + '" stroke="#1d1d2b" stroke-width="3"/>' +
+        '<path d="M30 26 L36 12 L42 26 M58 26 L64 12 L70 26" fill="' + cor + '" stroke="#1d1d2b" stroke-width="3" stroke-linejoin="round"/>' + olhos +
+        '<path d="M38 76 Q50 86 62 76" fill="none" stroke="#1d1d2b" stroke-width="3" stroke-linecap="round"/>' +
+        '<path d="M34 96 L34 106 M66 96 L66 106" stroke="#1d1d2b" stroke-width="4" stroke-linecap="round"/></svg>';
+    }
+
+    // Read & Choose: a 1ª opção do banco é a certa; aqui são embaralhadas.
+    function ler() {
+      const q = atual.ler;
+      const cores = misturar(['#74c0fc', '#b197fc', '#8ce99a', '#ffa8a8']);
+      const ops = misturar(q.opcoes.map((o, i) => ({ o: o, ok: i === 0 })));
+      return new Promise((pronto) => {
+        el.innerHTML = cabecalho(atual.titulo, 1, 4) + '<section class="mx-cena">' +
+          '<div class="mx-tit"><h2>📖 Read & Choose</h2></div><p class="mx-cmd">Read and choose. · Leia e escolha.</p>' +
+          '<p class="mx-frase">“' + comChaves(q.en) + '”' + (d === 1 && q.pt ? '<small>' + esc(q.pt) + '</small>' : '') + '</p>' +
+          (d === 2 && q.pt ? '<div class="mx-linha"><button class="mx-mini" type="button" data-mx-ptler>🇧🇷 Ver em português</button></div><p class="mx-explica" data-mx-ptler-txt hidden style="text-align:center">' + esc(q.pt) + '</p>' : '') +
+          '<div class="mx-linha"><button class="mx-mini" type="button" data-mx-falar="' + esc(puro(q.en)) + '">🔊 Ouvir a frase</button></div>' +
+          '<div class="mx-ops' + (ops.length === 3 ? ' n3' : '') + '">' + ops.map((x, i) => '<button class="mx-op" type="button" data-i="' + i + '">' +
+            (q.monstros ? monstro(x.o, cores[i]) : '<span class="fig' + ([...String(x.o)].length > 2 ? ' multi' : '') + '">' + esc(x.o) + '</span>') + '</button>').join('') +
+          '</div><p class="mx-ret" data-mx-ret></p></section>';
+        const bt = el.querySelector('[data-mx-ptler]');
+        if (bt) bt.onclick = () => { const t = el.querySelector('[data-mx-ptler-txt]'); t.hidden = !t.hidden; };
+        let erros = 0, fechado = false;
+        el.querySelector('.mx-ops').addEventListener('click', async (ev) => {
+          const b = ev.target.closest('.mx-op');
+          if (!b || fechado || b.classList.contains('errada')) return;
+          const ret = el.querySelector('[data-mx-ret]');
+          if (ops[Number(b.dataset.i)].ok) {
+            fechado = true; b.classList.add('certa'); som('acerto');
+            ret.className = 'mx-ret bom'; ret.textContent = erros ? 'Good! 👍' : 'Excellent! 🌟';
+            await falar(q.en); await espera(450); pronto(pontuar(25, erros));
+          } else {
+            erros++; b.classList.add('errada'); som('erro'); ret.className = 'mx-ret ruim';
+            if (erros >= 2) {
+              fechado = true; el.querySelector('[data-i="' + ops.findIndex((x) => x.ok) + '"]').classList.add('mostrar');
+              ret.textContent = 'This one! · É esta.'; await espera(1500); pronto(0);
+            } else ret.textContent = 'Read again! · Leia de novo.';
+          }
+        });
+      });
+    }
+
+    // Spell it!: letras embaralhadas (degrau 3 com letras extras); degrau 1 mostra as letras-guia apagadas.
+    function soletrar(cfg, valor, titulo, passo, total) {
+      const chars = [...cfg.en];
+      const letras = chars.filter((c) => /[a-z]/i.test(c));
+      const pecas = misturar(letras.concat([...(cfg.extras || '')]).map((c) => c.toLowerCase()));
+      return new Promise((pronto) => {
+        el.innerHTML = cabecalho(titulo, passo, total) + '<section class="mx-cena">' +
+          '<div class="mx-tit"><h2>🔤 Spell it!</h2></div><p class="mx-cmd">Spell the word. · Toque nas letras na ordem certa.</p>' +
+          '<div class="mx-linha"><span style="font-size:4rem" aria-hidden="true">' + esc(cfg.figura || '🔤') + '</span>' +
+          '<button class="mx-bt claro mx-som peq" type="button" data-mx-ouvir aria-label="Ouvir">🔊</button><button class="mx-bt claro mx-som peq" type="button" data-mx-devagar aria-label="Ouvir devagar">🐢</button></div>' +
+          (d === 1 && cfg.pt ? '<p class="mx-explica" style="text-align:center">' + esc(cfg.pt) + '</p>' : '') +
+          '<div class="mx-casas">' + chars.map((c) => /[a-z]/i.test(c)
+            ? '<div class="mx-casa' + (d === 1 ? ' fantasma' : '') + '" data-c>' + (d === 1 ? esc(c.toUpperCase()) : '') + '</div>'
+            : '<div class="mx-casa fixa">' + (c === ' ' ? '' : esc(c)) + '</div>').join('') + '</div>' +
+          '<div class="mx-pecas">' + pecas.map((c, j) => '<button class="mx-peca" type="button" data-j="' + j + '">' + esc(c.toUpperCase()) + '</button>').join('') + '</div>' +
+          '<p class="mx-ret" data-mx-ret></p></section>';
+        ligarSom(cfg.en);
+        setTimeout(() => falar(cfg.en), 350);
+        const casas = [...el.querySelectorAll('[data-c]')];
+        let pos = 0, erros = 0;
+        const marcar = () => casas.forEach((c, k) => c.classList.toggle('proxima', k === pos));
+        marcar();
+        el.querySelector('.mx-pecas').addEventListener('click', async (ev) => {
+          const b = ev.target.closest('.mx-peca');
+          if (!b || b.disabled || pos >= letras.length) return;
+          const certa = letras[pos].toLowerCase();
+          if (pecas[Number(b.dataset.j)] === certa) {
+            casas[pos].textContent = letras[pos].toUpperCase(); casas[pos].classList.remove('fantasma'); casas[pos].classList.add('cheia');
+            b.disabled = true; el.querySelectorAll('.mx-peca.dica').forEach((x) => x.classList.remove('dica'));
+            pos++; marcar();
+            if (pos === letras.length) {
+              som('acerto');
+              const ret = el.querySelector('[data-mx-ret]'); ret.className = 'mx-ret bom'; ret.textContent = erros ? 'Good! 👍' : 'Excellent! 🌟';
+              await falar(cfg.en); await espera(450);
+              if (erros) est.erros.push(cfg.en);
+              pronto(erros === 0 ? valor : erros <= 2 ? valor / 2 : 0);
+            }
+          } else {
+            erros++; som('erro'); b.classList.remove('errada'); void b.offsetWidth; b.classList.add('errada');
+            if (erros >= 3) {
+              const dica = [...el.querySelectorAll('.mx-peca:not(:disabled)')].find((x) => pecas[Number(x.dataset.j)] === certa);
+              if (dica) dica.classList.add('dica');
+            }
+          }
+        });
+      });
+    }
+
+    // Build it!: blocos comparados pelo texto (palavras repetidas funcionam em qualquer ordem).
+    function montar() {
+      const cfg = atual.montar, frase = cfg.blocos.join(' ');
+      const blocos = misturar(cfg.blocos.slice());
+      return new Promise((pronto) => {
+        el.innerHTML = cabecalho(atual.titulo, 3, 4) + '<section class="mx-cena">' +
+          '<div class="mx-tit"><h2>🧱 Build it!</h2></div><p class="mx-cmd">Build the sentence. · Toque nos blocos na ordem certa.</p>' +
+          botoesSom(frase, false) + (d < 3 && cfg.pt ? '<p class="mx-explica" style="text-align:center">🇧🇷 ' + esc(cfg.pt) + '</p>' : '') +
+          '<div class="mx-montada" data-mx-montada></div>' +
+          '<div class="mx-pecas">' + blocos.map((t, j) => '<button class="mx-peca bloco" type="button" data-j="' + j + '">' + esc(t) + '</button>').join('') + '</div>' +
+          '<p class="mx-ret" data-mx-ret></p></section>';
+        ligarSom(frase);
+        setTimeout(() => falar(frase), 350);
+        let pos = 0, erros = 0;
+        el.querySelector('.mx-pecas').addEventListener('click', async (ev) => {
+          const b = ev.target.closest('.mx-peca');
+          if (!b || b.disabled) return;
+          if (blocos[Number(b.dataset.j)] === cfg.blocos[pos]) {
+            b.disabled = true;
+            el.querySelector('[data-mx-montada]').insertAdjacentHTML('beforeend', '<span>' + esc(cfg.blocos[pos]) + '</span>');
+            el.querySelectorAll('.mx-peca.dica').forEach((x) => x.classList.remove('dica'));
+            pos++;
+            if (pos === cfg.blocos.length) {
+              som('acerto');
+              const ret = el.querySelector('[data-mx-ret]'); ret.className = 'mx-ret bom'; ret.textContent = erros ? 'Good! 👍' : 'Excellent! 🌟';
+              await falar(frase); await espera(450); pronto(erros === 0 ? 25 : erros <= 2 ? 12.5 : 0);
+            }
+          } else {
+            erros++; som('erro'); b.classList.remove('errada'); void b.offsetWidth; b.classList.add('errada');
+            if (erros >= 3) {
+              const dica = [...el.querySelectorAll('.mx-peca:not(:disabled)')].find((x) => blocos[Number(x.dataset.j)] === cfg.blocos[pos]);
+              if (dica) dica.classList.add('dica');
+            }
+          }
+        });
+      });
+    }
+
+    function registrar(ganho, valor) { est.resultados[est.passo] = ganho / valor; est.pontos += ganho; est.passo++; }
+
+    /**
+     * Joga a missão comum. opcoes = { botaoFim, aoTerminar(resultado) }.
+     * resultado = { pontos, degrau, detalhe: { desafios: [pontos de cada desafio], erros: [palavras erradas] } }.
+     */
+    async function jogar(alvo, missao, opcoes) {
+      el = alvo; atual = missao; d = missao.degrau;
+      est = { pontos: 0, resultados: [], passo: 0, erros: [] };
+      ligarAjudas();
+      const h = missao.historia;
+      await cena(h.intro, "Let's go! ▶");
+      registrar(await ouvir(missao.ouvir, missao.palavras, 25, missao.titulo, 0, 4), 25);
+      await cena(h.c2, 'Next ▶');
+      registrar(await ler(), 25);
+      await cena(h.c3, 'Next ▶');
+      registrar(await soletrar(missao.soletrar, 25, missao.titulo, 2, 4), 25);
+      await cena(h.c4, 'Next ▶');
+      registrar(await montar(), 25);
+      const pontos = Math.round(est.pontos);
+      const estrelas = pontos >= 90 ? 3 : pontos >= 70 ? 2 : 1;
+      el.innerHTML = cabecalho(missao.titulo, -1, 4) + '<section class="mx-cena mx-fim">' + fala(h.fim) +
+        '<div class="mx-estrelas">' + [1, 2, 3].map((n) => '<span class="' + (n <= estrelas ? 'ganha' : '') + '">⭐</span>').join('') + '</div>' +
+        '<p class="mx-grande">' + pontos + '<small style="font-size:1.2rem;color:#6c7086"> / 100</small></p>' +
+        '<table class="mx-tab"><tbody>' + NOMES.map((n, i) => '<tr><td>' + n + '</td><td>' + Math.round((est.resultados[i] || 0) * 25) + ' / 25</td></tr>').join('') + '</tbody></table>' +
+        '<p class="mx-explica" data-mx-status></p>' +
+        '<button class="mx-bt" type="button" data-mx-fim>' + (opcoes.botaoFim || 'OK ▶') + '</button></section>';
+      som('vitoria');
+      falar(h.fim[0]);
+      const resultado = { pontos: pontos, degrau: d, detalhe: { desafios: est.resultados.map((r) => Math.round(r * 25)), erros: est.erros.slice(0, 20) } };
+      return new Promise((ok) => {
+        if (opcoes.aoTerminar) opcoes.aoTerminar(resultado, (txt) => { const s = el.querySelector('[data-mx-status]'); if (s) s.textContent = txt; });
+        el.querySelector('[data-mx-fim]').addEventListener('click', () => ok(resultado));
+      });
+    }
+
+    /** Mini-missão de reforço: 1 Listen & Click + 1 Spell it! (50 pontos cada). */
+    async function reforco(alvo, spec, opcoes) {
+      el = alvo; d = spec.degrau;
+      atual = { titulo: '💪 Reforço', palavras: spec.ouvir.palavras };
+      est = { pontos: 0, resultados: [], passo: 0, erros: [] };
+      ligarAjudas();
+      await cena(['Super! Now a quick practice with your tricky words!', 'Muito bem! Agora um treino rápido com as suas palavras difíceis!'], "Let's go! ▶");
+      const total = spec.soletrar ? 2 : 1;
+      const valor = 100 / total;
+      registrar(await ouvir([spec.ouvir.alvo], spec.ouvir.palavras, valor, '💪 Reforço', 0, total), valor);
+      if (spec.soletrar) registrar(await soletrar(spec.soletrar, valor, '💪 Reforço', 1, total), valor);
+      const pontos = Math.round(est.pontos);
+      el.innerHTML = cabecalho('💪 Reforço', -1, total) + '<section class="mx-cena mx-fim">' +
+        fala(['You are getting better every day!', 'Você está melhorando a cada dia!']) +
+        '<p class="mx-grande">' + pontos + '<small style="font-size:1.2rem;color:#6c7086"> / 100</small></p>' +
+        '<p class="mx-explica" data-mx-status></p><button class="mx-bt" type="button" data-mx-fim>' + (opcoes.botaoFim || 'OK ▶') + '</button></section>';
+      som('vitoria');
+      const resultado = { pontos: pontos, degrau: d, detalhe: { palavras: [spec.ouvir.alvo].concat(spec.soletrar ? [spec.soletrar.en] : []), erros: est.erros.slice(0, 10) } };
+      return new Promise((ok) => {
+        if (opcoes.aoTerminar) opcoes.aoTerminar(resultado, (txt) => { const s = el.querySelector('[data-mx-status]'); if (s) s.textContent = txt; });
+        el.querySelector('[data-mx-fim]').addEventListener('click', () => ok(resultado));
+      });
+    }
+
+    return { jogar: jogar, reforco: reforco };
+  })();
+</script>

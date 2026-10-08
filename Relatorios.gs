@@ -33,7 +33,7 @@ function profRelatorioGeral() {
   temas.forEach(function (t) { temasPorId[t.id] = t; });
   const jogos = resumoJogosPorAluno_(temasPorId);
   const alunos = lerTabela_('Alunos');
-  const questionarios = lerQuestionarios_();
+  const questionarios = questionariosEMissoes_();
   const mesDe = {};
   questionarios.forEach(function (q) { mesDe[q.id] = q.mes; });
   const respostas = lerRespostas_();
@@ -124,7 +124,7 @@ function profRelatorioAluno(email) {
   const n = calcularNiveis_(cfg)[email];
 
   const qPorId = {};
-  lerQuestionarios_().forEach(function (q) { qPorId[q.id] = q; });
+  questionariosEMissoes_().forEach(function (q) { qPorId[q.id] = q; });
   const avaliacoes = lerRespostas_().filter(function (r) { return r.email === email && qPorId[r.questionario_id]; })
     .map(function (r) {
       const q = qPorId[r.questionario_id];
@@ -177,7 +177,7 @@ function profExportarPlanilha() {
   const temasPorId = {};
   temas.forEach(function (t) { temasPorId[t.id] = t; });
   const jogos = resumoJogosPorAluno_(temasPorId);
-  const questionarios = lerQuestionarios_().sort(function (a, b) { return a.serie.localeCompare(b.serie) || a.mes.localeCompare(b.mes); });
+  const questionarios = questionariosEMissoes_().sort(function (a, b) { return a.serie.localeCompare(b.serie) || a.mes.localeCompare(b.mes); });
   const respostas = lerRespostas_();
   const progresso = lerProgresso_();
   const agora = Utilities.formatDate(new Date(), FUSO, 'dd/MM/yyyy HH:mm');
@@ -209,7 +209,7 @@ function profExportarPlanilha() {
       return [String(a.turma), String(a.nome), email, n ? n.nivel : '', n ? n.media : '', n ? n.avaliacoes : 0,
         j ? j.dominio : '', j ? j.estrelas : 0, j ? j.jogadas : 0, j ? Math.round(j.segundos / 60) : 0]
         .concat(questionarios.map(function (q) {
-          if (q.serie !== serie) return '';
+          if (q.serie !== serie && q.tipo !== 'missoes') return '';
           const r = respostas.filter(function (x) { return x.questionario_id === q.id && x.email === email; })[0];
           return r ? r.percentual : '';
         }));

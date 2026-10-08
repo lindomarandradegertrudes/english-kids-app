@@ -158,7 +158,7 @@
       </div>
       <div class="cartao"><h3>Evolução nas avaliações</h3>${graficoAvaliacoes(f.avaliacoes, f.faixas)}
         ${f.avaliacoes.length ? `<div class="tabela-rolagem"><table><thead><tr><th>Avaliação</th><th>Mês</th><th>Acertos</th><th>%</th><th>Forma</th></tr></thead><tbody>
-          ${f.avaliacoes.map((x) => `<tr><td>${esc(x.titulo)}</td><td>${mesCurto(x.mes)}</td><td>${x.pontuacao}/${x.total}</td><td><strong>${pctBr(x.percentual)}</strong></td><td class="suave pequeno">${x.origem === 'online' ? 'online' : 'impressa'}</td></tr>`).join('')}
+          ${f.avaliacoes.map((x) => `<tr><td>${esc(x.titulo)}</td><td>${mesCurto(x.mes)}</td><td>${x.pontuacao}/${x.total}</td><td><strong>${pctBr(x.percentual)}</strong></td><td class="suave pequeno">${x.origem === 'online' ? 'online' : x.origem === 'missoes' ? 'missões' : 'impressa'}</td></tr>`).join('')}
         </tbody></table></div>` : ''}</div>
       <div class="cartao"><h3>Domínio nos temas (jogos)</h3>
         ${f.temas.length ? f.temas.map((t) => `<div class="tema-linha"><span><strong>${esc(t.titulo)}</strong> <span class="suave pequeno">${esc(t.titulo_pt)}</span></span>

@@ -33,6 +33,7 @@
 
     <!-- Início: temas -->
     <div id="inicio" hidden>
+      <div id="missoes"></div>
       <div id="quizzes"></div>
       <div id="equipe"></div>
       <h1>Choose a theme! 🎨</h1>
@@ -63,6 +64,9 @@
 
     <!-- Avaliação -->
     <div id="quiz" hidden></div>
+
+    <!-- Missão do mês -->
+    <div id="missao" hidden></div>
   </main>
 
   <dialog id="confirmar">
@@ -98,7 +102,7 @@
     }
 
     function mostrar(id) {
-      ['carregando', 'erro', 'cadastro', 'fechado', 'inicio', 'tema', 'jogo', 'quiz'].forEach((x) => ($(x).hidden = x !== id));
+      ['carregando', 'erro', 'cadastro', 'fechado', 'inicio', 'tema', 'jogo', 'quiz', 'missao'].forEach((x) => ($(x).hidden = x !== id));
       $('topo').hidden = !estado || !estado.aluno;
       window.scrollTo(0, 0);
     }
@@ -116,6 +120,7 @@
       $('primeiro-nome').textContent = e.aluno.nome.split(' ')[0];
       $('minha-turma').textContent = e.aluno.turma;
       renderEstrelas();
+      renderMissoes();
       renderQuizzes();
       renderEquipe();
       renderTemas();
@@ -329,6 +334,65 @@
         </div>`;
     }
 
+    // ---------- Missões do mês (com o Max) ----------
+    // A aula de missão é aberta e fechada pelo professor. Primeiro a missão comum, depois o reforço curto.
+    function renderMissoes() {
+      const lista = estado.missoes || [];
+      $('missoes').innerHTML = lista.map((m) => {
+        const feita = m.comum != null && m.reforco != null;
+        const acao = m.comum == null ? 'Começar ▶' : m.reforco == null ? '💪 Reforço ▶' : '';
+        return `<div class="missao-aviso">
+          <span class="ic">🐶</span>
+          <span class="tx"><strong>Max needs your help! ${esc(m.icone)} ${esc(m.titulo)}</strong>
+            <span class="sub-kids">${feita ? `<span class="feita">✅ Missão concluída · ⭐ ${m.comum} e ${m.reforco} pontos</span>`
+              : m.comum != null ? `Missão feita: ⭐ ${m.comum} pontos. Falta o reforço rápido!` : 'Missão do mês · vale nota · ~15 minutos'}</span></span>
+          ${acao ? `<button class="botao-grande" data-missao="${esc(m.sessao_id)}">${acao}</button>` : ''}
+        </div>`;
+      }).join('');
+    }
+
+    $('missoes').addEventListener('click', async (ev) => {
+      const b = ev.target.closest('[data-missao]');
+      if (!b) return;
+      const m = (estado.missoes || []).find((x) => x.sessao_id === b.dataset.missao);
+      b.disabled = true;
+      try {
+        if (m.comum == null) await jogarMissaoComum(m);
+        if (m.reforco == null) await jogarReforco(m, m.erros || []);
+      } catch (e) {
+        alert(e.message);
+      } finally {
+        b.disabled = false;
+        renderMissoes();
+        mostrar('inicio');
+      }
+    });
+
+    function salvarMissao(m, parte, res, status) {
+      guardarNaFila({ tipo: 'missao', id: 'm-' + m.sessao_id + '-' + parte, sessao_id: m.sessao_id, parte: parte,
+        degrau: res.degrau, pontos: res.pontos, detalhe: res.detalhe, concluido_em: Date.now() });
+      enviarFila((s) => status(s === 'ok' ? '✅ Salvo!' : '⏳ Sem conexão agora: vou salvar sozinho mais tarde.'));
+    }
+
+    async function jogarMissaoComum(m) {
+      const r = await chamar('alunoAbrirMissao', m.sessao_id);
+      mostrar('missao');
+      const res = await MissaoPlayer.jogar($('missao'), r.missao, {
+        botaoFim: 'Continuar ▶',
+        aoTerminar: (resultado, status) => { m.comum = resultado.pontos; m.erros = resultado.detalhe.erros; salvarMissao(m, 'comum', resultado, status); },
+      });
+      return res;
+    }
+
+    async function jogarReforco(m, erros) {
+      const spec = await chamar('alunoAbrirReforco', m.sessao_id, erros);
+      mostrar('missao');
+      await MissaoPlayer.reforco($('missao'), spec, {
+        botaoFim: 'Voltar ao início ▶',
+        aoTerminar: (resultado, status) => { m.reforco = resultado.pontos; salvarMissao(m, 'reforco', resultado, status); },
+      });
+    }
+
     // ---------- Avaliações (quiz e diagnóstico) ----------
     let quizAtual = null;
 
@@ -443,6 +507,8 @@
         try {
           if (item.tipo === 'quiz') {
             await chamar('alunoResponderAvaliacao', item.qid, item.marcadas);
+          } else if (item.tipo === 'missao') {
+            await chamar('alunoSalvarMissao', { ...item, tipo: item.parte });
           } else {
             const r = await chamar('alunoSalvarJogada', item);
             estado.progresso = r.progresso;
@@ -450,7 +516,7 @@
           gravarFila(lerFila().filter((x) => x.id !== item.id));
         } catch (e) {
           // Partida que nunca vai ser aceita (tema ocultado, por exemplo): descarta para não travar a fila.
-          if (/não está disponível|desconhecido|sem identificação|encerrada|Responda todas/i.test(e.message || '')) {
+          if (/não está disponível|desconhecido|sem identificação|encerrada|Responda todas|da sua turma/i.test(e.message || '')) {
             gravarFila(lerFila().filter((x) => x.id !== item.id));
             continue;
           }
