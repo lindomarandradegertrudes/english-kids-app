@@ -12,7 +12,7 @@ const AVATARES = ['🐶', '🐱', '🦊', '🐼', '🐸', '🦁', '🐵', '🐰'
 const CABECALHOS = {
   Config: ['chave', 'valor', 'descricao'],
   Turmas: ['turma', 'serie'],
-  Alunos: ['email', 'nome', 'turma', 'avatar', 'cadastrado_em', 'atualizado_em', 'visual_json'],
+  Alunos: ['email', 'nome', 'turma', 'avatar', 'cadastrado_em', 'atualizado_em', 'visual_json', 'teste'],
   Temas: ['id', 'serie', 'trimestre', 'mes', 'titulo', 'titulo_pt', 'conteudo', 'palavras_json', 'frases_json', 'status', 'criado_em', 'atualizado_em'],
   Progresso: ['email', 'turma', 'tema_id', 'dominio_json', 'estrelas_json', 'jogadas', 'segundos', 'atualizado_em'],
   Jogadas: ['id', 'email', 'turma', 'tema_id', 'jogo', 'acertos', 'total', 'estrelas', 'segundos', 'palavras_json', 'jogado_em'],
@@ -21,6 +21,8 @@ const CABECALHOS = {
   Equipes: ['mes', 'turma', 'equipe', 'email', 'nome', 'nivel', 'media', 'aplicado_em'],
   Sessoes: ['id', 'missao_id', 'turma', 'serie', 'mes', 'status', 'aberta_ms', 'fechada_ms', 'reabertos_json'],
   MissoesFeitas: ['id', 'sessao_id', 'missao_id', 'email', 'turma', 'mes', 'tipo', 'degrau', 'pontos', 'detalhe_json', 'feito_em'],
+  Projetos: ['id', 'serie', 'mes', 'titulo', 'instrucoes', 'tema_id', 'criterios_json', 'vale_nota', 'status', 'criado_em'],
+  Entregas: ['id', 'projeto_id', 'email', 'turma', 'arquivo_id', 'autoavaliacao', 'enviado_em', 'faces_json', 'recado', 'nota', 'avaliado_em'],
 };
 
 const CONFIG_PADRAO = [
@@ -80,6 +82,8 @@ function instalar() {
   cfg.autoResizeColumns(1, 3);
 
   if (ss.getSheetByName('Temas').getLastRow() < 2) semearTemas_(true);
+  // Pasta das fotos dos miniprojetos (também faz o Google pedir a permissão do Drive).
+  pastaProjetos_();
 
   ['Página1', 'Planilha1', 'Sheet1'].forEach(function (n) {
     const a = ss.getSheetByName(n);
@@ -110,8 +114,11 @@ function aba_(nome) {
   return planilha_().getSheetByName(nome);
 }
 
-/** Lê uma aba como lista de objetos. Datas viram texto (google.script.run não transporta Date). */
-function lerTabela_(nome) {
+/**
+ * Lê uma aba como lista de objetos. Datas viram texto (google.script.run não transporta Date).
+ * Na aba Alunos, o "aluno teste" do professor fica de fora, a não ser que incluirTeste seja true.
+ */
+function lerTabela_(nome, incluirTeste) {
   const valores = aba_(nome).getDataRange().getValues();
   const cab = valores.shift();
   return valores
@@ -123,7 +130,8 @@ function lerTabela_(nome) {
       });
       return obj;
     })
-    .filter(function (o) { return cab.some(function (c) { return o[c] !== ''; }); });
+    .filter(function (o) { return cab.some(function (c) { return o[c] !== ''; }); })
+    .filter(function (o) { return nome !== 'Alunos' || incluirTeste || String(o.teste) !== 'SIM'; });
 }
 
 function linhaDe_(nome, obj) {
@@ -179,7 +187,7 @@ function exigirProfessor_() {
 function validarAluno_(email, cfg) {
   if (!email) throw new Error('Não foi possível identificar sua conta. Entre com a sua conta Google da escola.');
   const dominio = String(cfg.dominio || '').replace(/^@/, '').toLowerCase().trim();
-  if (dominio && !email.endsWith('@' + dominio)) {
+  if (dominio && !email.endsWith('@' + dominio) && !ehProfessor_(email, cfg)) {
     throw new Error('Use a sua conta Google da escola (@' + dominio + '). Você entrou como ' + email + '.');
   }
 }
@@ -191,7 +199,9 @@ function validarAluno_(email, cfg) {
 function doGet(e) {
   try {
     const email = usuarioAtual_();
-    const pagina = ehProfessor_(email) ? 'Professor' : 'Aluno';
+    // ?aluno=1: o professor abre a tela da criança como "aluno teste".
+    const comoAluno = e && e.parameter && e.parameter.aluno;
+    const pagina = ehProfessor_(email) && !comoAluno ? 'Professor' : 'Aluno';
     const t = HtmlService.createTemplateFromFile(pagina);
     t.email = email;
     return t.evaluate()
@@ -245,7 +255,8 @@ function alunoObterEstado() {
   const email = usuarioAtual_();
   const cfg = lerConfig_();
   validarAluno_(email, cfg);
-  const aluno = lerTabela_('Alunos').filter(function (a) { return String(a.email).toLowerCase() === email; })[0];
+  const aluno = lerTabela_('Alunos', true).filter(function (a) { return String(a.email).toLowerCase() === email; })[0];
+  if (!aluno && ehProfessor_(email, cfg)) throw new Error('Para ver o app como criança, abra o painel do professor e use "Ver o app como aluno" (aba Turmas).');
   const serie = aluno ? serieDaTurma_(String(aluno.turma)) : '';
   const temas = aluno ? temasDoAluno_(serie) : [];
   const progresso = aluno ? resumoProgressoAluno_(email, temas) : null;
@@ -264,6 +275,9 @@ function alunoObterEstado() {
     equipe: aluno ? equipeSegura_(email, String(aluno.turma)) : null,
     missoes: aluno ? missoesSeguras_(email, String(aluno.turma)) : [],
     narrativa: aluno ? narrativaSegura_(email, serie, progresso, aluno) : null,
+    rotina: aluno ? rotinaSegura_(email, temas, progresso, aluno) : null,
+    projetos: aluno ? projetosSeguros_(email, serie) : [],
+    teste: !!(aluno && String(aluno.teste) === 'SIM'),
   };
 }
 
@@ -281,6 +295,7 @@ function alunoCadastrar(nome, turma, avatar) {
   const email = usuarioAtual_();
   const cfg = lerConfig_();
   validarAluno_(email, cfg);
+  if (ehProfessor_(email, cfg)) throw new Error('Professor: use "Ver o app como aluno" na aba Turmas do painel.');
   const estado = alunoObterEstado();
   if (!estado.cadastroAberto) throw new Error('O cadastro está fechado. Fale com o professor.');
   nome = formatarNome_(nome);
@@ -302,16 +317,16 @@ function alunoCadastrar(nome, turma, avatar) {
 function alunoAtual_() {
   const email = usuarioAtual_();
   validarAluno_(email, lerConfig_());
-  const aluno = lerTabela_('Alunos').filter(function (a) { return String(a.email).toLowerCase() === email; })[0];
+  const aluno = lerTabela_('Alunos', true).filter(function (a) { return String(a.email).toLowerCase() === email; })[0];
   if (!aluno) throw new Error('Cadastro não encontrado. Recarregue a página.');
-  return { email: email, turma: String(aluno.turma) };
+  return { email: email, turma: String(aluno.turma), nome: String(aluno.nome), teste: String(aluno.teste) === 'SIM', linha: aluno };
 }
 
 function alunoTrocarAvatar(avatar) {
   const email = usuarioAtual_();
   validarAluno_(email, lerConfig_());
   comTrava_(function () {
-    const aluno = lerTabela_('Alunos').filter(function (a) { return String(a.email).toLowerCase() === email; })[0];
+    const aluno = lerTabela_('Alunos', true).filter(function (a) { return String(a.email).toLowerCase() === email; })[0];
     if (!aluno) throw new Error('Cadastro não encontrado. Recarregue a página.');
     aba_('Alunos').getRange(aluno._linha, CABECALHOS.Alunos.indexOf('avatar') + 1).setValue(avatarValido_(avatar));
   });
@@ -424,7 +439,7 @@ function profSalvarAluno(dados) {
     const cadastro = aba.getRange(atual._linha, CABECALHOS.Alunos.indexOf('cadastrado_em') + 1).getValue();
     aba.getRange(atual._linha, 1, 1, CABECALHOS.Alunos.length).setValues([linhaDe_('Alunos', {
       email: email, nome: nome, turma: dados.turma, avatar: avatarValido_(dados.avatar || String(atual.avatar)),
-      cadastrado_em: cadastro, atualizado_em: new Date(), visual_json: String(atual.visual_json || ''),
+      cadastrado_em: cadastro, atualizado_em: new Date(), visual_json: String(atual.visual_json || ''), teste: String(atual.teste || ''),
     })]);
     if (email !== original) trocarEmailNoHistorico_(original, email);
   });

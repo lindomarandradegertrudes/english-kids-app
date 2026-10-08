@@ -4,6 +4,53 @@ Faça tudo com a sua **conta institucional** (@edu.joinville.sc.gov.br).
 
 ---
 
+# Etapa 4: rotina — tarefas do dia, miniprojetos e aluno teste (atualização)
+
+## A. Atualizar o código
+No editor do Apps Script (**Extensões > Apps Script**, na planilha):
+
+| Arquivo no editor | O que fazer |
+|---|---|
+| `Rotina` | **novo:** **+ > Script**, nome `Rotina`, cole **Rotina.gs** |
+| `Projetos` | **novo:** **+ > Script**, nome `Projetos`, cole **Projetos.gs** |
+| `RotinaTela` | **novo:** **+ > HTML**, nome `RotinaTela`, cole **RotinaTela.html** |
+| `ProfProjetos` | **novo:** **+ > HTML**, nome `ProfProjetos`, cole **ProfProjetos.html** |
+| `Codigo`, `Jogos`, `Narrativa`, `Missoes`, `Avaliacoes` | apague tudo e cole as novas versões (.gs) |
+| `Aluno`, `AlunoCorpo`, `NarrativaTela`, `Professor`, `ProfRelatorios` | apague tudo e cole as novas versões (.html) |
+
+Depois faça o seguinte:
+1. Salve (💾) e execute **instalar**. Desta vez o Google vai pedir uma **permissão nova, do Google Drive**: é para guardar as fotos dos miniprojetos. Autorize.
+   - A função cria as abas **Projetos** e **Entregas**, a coluna **teste** na aba Alunos e a pasta **English Kids App – Projetos** no seu Drive.
+2. Publique a nova versão: **Implantar > Gerenciar implantações > ✏️ > Versão: Nova versão > Implantar**.
+
+## B. Tarefas do dia (criança)
+- Na tela inicial aparece o cartão **📋 Today's tasks**, com 3 tarefas curtas:
+  1. 🏝️ Jogar um jogo na **ilha mais nova** (o tema liberado mais recente).
+  2. 💪 Fazer o **Meu reforço**. Se a criança ainda não tem palavras fracas, vira ✏️ "jogar um jogo de escrever" (Spell it!, Spelling Bee ou Build it!).
+  3. ⭐ Ganhar as **3 estrelas** em um jogo.
+- O app confere sozinho com as partidas do dia. Quem faz as 3 ganha um **dia completo** (🌞).
+- Dias completos dão medalhas novas: 🌞 1 dia → 🧸 ursinho na casinha; 📅 5 dias → 🌸 flor; 🗓️ 15 dias → 🎓 capelo.
+
+## C. Miniprojetos (aba Projetos)
+1. Clique em **+ Novo miniprojeto**: título, série, mês, instruções para a criança e até 4 critérios. Marque **Vale nota** se quiser que entre no nível.
+2. As crianças da série veem o cartão **🎨 Mini project** e fazem o trabalho no papel. Depois tocam em **📷 Enviar foto**, tiram a foto com o Chromebook (ou escolhem uma já tirada), dizem como acham que ficou (😀 🙂 😐) e enviam.
+   - A foto é reduzida antes de enviar, para não pesar na internet.
+   - Ela vai para a pasta **English Kids App – Projetos** do seu Drive, com o nome "turma – aluno – projeto".
+3. Para avaliar, clique em **Avaliar**, escolha a turma e marque uma carinha por critério: 😀 = 100, 🙂 = 70, 😐 = 40. A nota é a média.
+   - Você pode escrever um recado curto, que a criança vê junto com as carinhas.
+   - Quem fez no papel e não enviou foto também pode ser avaliado.
+4. Se o projeto vale nota, ela entra no nível como um quiz e aparece na ficha do aluno como **"Miniprojeto: …"**.
+5. O botão **Encerrar** fecha o envio de fotos. **Excluir** só funciona enquanto ninguém enviou foto nem foi avaliado.
+6. O primeiro miniprojeto entregue dá a medalha 🎨, com tintas para a casinha.
+
+## D. Ver o app como aluno (aba Turmas)
+1. No cartão **👀 Ver o app como aluno**, escolha a turma e clique em **Preparar aluno teste**.
+2. Clique em **Abrir a tela do aluno ↗**. Abre a tela da criança com a sua conta, como "Aluno Teste" daquela turma, com uma faixa amarela avisando que é o modo teste.
+3. Dá para jogar, fazer as missões abertas da turma, responder quizzes e enviar fotos. Nada disso aparece em listas, relatórios, equipes, habilidades nem na contagem das missões.
+4. Para mudar de turma, escolha outra e clique em **Preparar** de novo. **Zerar aluno teste** apaga tudo o que ele fez, inclusive as fotos.
+
+---
+
 # Tamanho das equipes escolhido na hora (atualização)
 
 ## A. Atualizar o código

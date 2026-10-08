@@ -29,15 +29,26 @@ const MARCOS = [
     premio: { tipo: 'acessorio', slot: 'cabeca', id: 'cartola', icone: '🎩', nome: 'Cartola' } },
   { id: 'estrelas100', icone: '🏆', nome: '100 estrelas', en: '100 stars!', meta: 100, medida: 'estrelas',
     premio: { tipo: 'acessorio', slot: 'cabeca', id: 'coroa', icone: '👑', nome: 'Coroa' } },
+  { id: 'dia1', icone: '🌞', nome: 'Um dia com as 3 tarefas', en: 'Great day!', meta: 1, medida: 'dias',
+    premio: { tipo: 'item', id: 'urso', icone: '🧸', nome: 'Ursinho' } },
+  { id: 'dias5', icone: '📅', nome: '5 dias com as 3 tarefas', en: '5 great days!', meta: 5, medida: 'dias',
+    premio: { tipo: 'acessorio', slot: 'cabeca', id: 'flor', icone: '🌸', nome: 'Flor' } },
+  { id: 'dias15', icone: '🗓️', nome: '15 dias com as 3 tarefas', en: '15 great days!', meta: 15, medida: 'dias',
+    premio: { tipo: 'acessorio', slot: 'cabeca', id: 'capelo', icone: '🎓', nome: 'Capelo' } },
+  { id: 'projeto1', icone: '🎨', nome: 'Primeiro miniprojeto entregue', en: 'First project!', meta: 1, medida: 'projetos',
+    premio: { tipo: 'item', id: 'tintas', icone: '🎨', nome: 'Tintas' } },
 ];
 
 function lerVisual_(texto) {
   const v = jsonObj_(texto);
-  return { cabeca: String(v.cabeca || ''), rosto: String(v.rosto || ''), tutorial: v.tutorial === true };
+  return {
+    cabeca: String(v.cabeca || ''), rosto: String(v.rosto || ''), tutorial: v.tutorial === true,
+    dias: Math.max(0, Math.floor(Number(v.dias) || 0)), ultimoDia: String(v.ultimoDia || ''),
+  };
 }
 
 /** Números que medem o caminho da criança (vindos dos jogos e das missões). */
-function estatisticasAluno_(email, progresso) {
+function estatisticasAluno_(email, progresso, alunoLinha) {
   const porTema = (progresso && progresso.porTema) || {};
   const temas = Object.keys(porTema).map(function (k) { return porTema[k]; });
   let feitas = [];
@@ -51,6 +62,8 @@ function estatisticasAluno_(email, progresso) {
     missoes: comuns.length,
     missoes90: comuns.filter(function (f) { return f.pontos >= 90; }).length,
     reforcos: feitas.filter(function (f) { return f.tipo === 'reforco'; }).length,
+    dias: lerVisual_(alunoLinha ? alunoLinha.visual_json : '').dias,
+    projetos: projetosEntregues_(email),
   };
 }
 
@@ -80,7 +93,7 @@ function mapaDaSerie_(serie, temas) {
  */
 function narrativaSegura_(email, serie, progresso, alunoLinha) {
   try {
-    const stats = estatisticasAluno_(email, progresso);
+    const stats = estatisticasAluno_(email, progresso, alunoLinha);
     const visual = lerVisual_(alunoLinha ? alunoLinha.visual_json : '');
     const ganhos = acessoriosGanhos_(stats);
     if (visual.cabeca && ganhos[visual.cabeca] !== 'cabeca') visual.cabeca = '';
@@ -101,11 +114,11 @@ function acessoriosGanhos_(stats) {
 /** Salva os acessórios escolhidos e/ou o tutorial concluído. Só aceita acessórios já ganhos. */
 function alunoSalvarVisual(novo) {
   const aluno = alunoAtual_();
-  const linha = lerTabela_('Alunos').filter(function (a) { return String(a.email).toLowerCase() === aluno.email; })[0];
+  const linha = aluno.linha;
   if (!linha) throw new Error('Cadastro não encontrado. Recarregue a página.');
   const atual = lerVisual_(linha.visual_json);
   const temas = temasDoAluno_(serieDaTurma_(aluno.turma));
-  const ganhos = acessoriosGanhos_(estatisticasAluno_(aluno.email, resumoProgressoAluno_(aluno.email, temas)));
+  const ganhos = acessoriosGanhos_(estatisticasAluno_(aluno.email, resumoProgressoAluno_(aluno.email, temas), linha));
   ['cabeca', 'rosto'].forEach(function (slot) {
     if (!novo || !novo.hasOwnProperty(slot)) return;
     const id = String(novo[slot] || '');

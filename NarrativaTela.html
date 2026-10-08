@@ -59,6 +59,7 @@
   .nv-item.vazio { font-size: 1.3rem; font-weight: 900; color: #c9a27a; border: 3px dashed #e0c3a4; border-radius: 14px; width: 54px; height: 54px; display: flex; align-items: center; justify-content: center; }
   .nv-i-balao { left: 24%; top: 6%; } .nv-i-quadro { left: 60%; top: 9%; } .nv-i-livros { right: 9%; top: 23%; }
   .nv-i-planta { left: 7%; bottom: 7%; } .nv-i-osso { right: 26%; bottom: 7%; }
+  .nv-i-urso { left: 24%; bottom: 7%; } .nv-i-tintas { right: 8%; bottom: 7%; }
   .nv-secao { background: #fff; border-radius: 22px; padding: 16px 18px; margin-top: 16px; box-shadow: 0 4px 0 #ffe8cc; }
   .nv-secao h2 { margin: 0 0 4px; }
   .nv-linha-acs { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; align-items: center; }
@@ -118,6 +119,7 @@
         s.temasJogados = Math.max(Number(s.temasJogados) || 0, temas.filter((x) => x.jogadas > 0).length);
         s.temasDominados = Math.max(Number(s.temasDominados) || 0, temas.filter((x) => x.dominio >= 90).length);
       }
+      if (estado.rotina) s.dias = Math.max(Number(s.dias) || 0, Number(estado.rotina.dias) || 0);
       return s;
     }
 

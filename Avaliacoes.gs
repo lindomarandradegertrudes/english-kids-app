@@ -389,7 +389,9 @@ function profResultadosAvaliacao(id) {
         } : null,
       };
     });
-  const comDetalhe = respostas.filter(function (r) { return Array.isArray(r.detalhe.acertos); });
+  const daSerie = {};
+  alunos.forEach(function (a) { daSerie[a.email] = true; });
+  const comDetalhe = respostas.filter(function (r) { return Array.isArray(r.detalhe.acertos) && daSerie[r.email]; });
   const porQuestao = q.questoes.map(function (questao, i) {
     return {
       numero: i + 1, tipo: questao.tipo, palavra: questao.palavra, tema: questao.tema,

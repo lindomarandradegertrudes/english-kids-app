@@ -129,7 +129,7 @@ function alunoSalvarJogada(j) {
   const abaJ = aba_('Jogadas');
   if (abaJ.getLastRow() > 1) {
     const repetida = abaJ.getRange(2, 1, abaJ.getLastRow() - 1, 1).createTextFinder(id).matchEntireCell(true).findNext();
-    if (repetida) return { tema_id: tema.id, progresso: resumoProgressoAluno_(aluno.email, temasDoAluno_(serie)) };
+    if (repetida) return respostaJogada_(aluno, tema.id, temasDoAluno_(serie));
   }
 
   const linhas = progressoDoAluno_(aluno.email).filter(function (p) { return p.tema_id === tema.id; });
@@ -159,7 +159,13 @@ function alunoSalvarJogada(j) {
     palavras_json: JSON.stringify(palavras), jogado_em: agora,
   }));
 
-  return { tema_id: tema.id, progresso: resumoProgressoAluno_(aluno.email, temasDoAluno_(serie)) };
+  return respostaJogada_(aluno, tema.id, temasDoAluno_(serie));
+}
+
+/** Resposta de alunoSalvarJogada: progresso atualizado e tarefas do dia (soma o dia completo, se for o caso). */
+function respostaJogada_(aluno, temaId, temas) {
+  const progresso = resumoProgressoAluno_(aluno.email, temas);
+  return { tema_id: temaId, progresso: progresso, rotina: rotinaSegura_(aluno.email, temas, progresso, aluno.linha) };
 }
 
 // ============================================================

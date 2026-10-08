@@ -34,9 +34,12 @@
     <!-- Início: mapa de aventura (ou a grade de temas, se o mapa não vier) -->
     <div id="inicio" hidden>
       <div id="aviso-voz" class="aviso-voz" hidden>🔇 A voz em inglês não está funcionando neste computador. Confira o volume e avise o professor.</div>
+      <div id="teste-aviso"></div>
       <div id="missoes"></div>
       <div id="quizzes"></div>
+      <div id="tarefas"></div>
       <div id="meu-reforco"></div>
+      <div id="projetos"></div>
       <div id="equipe"></div>
       <div id="mapa-cab"></div>
       <div id="temas"></div>
@@ -124,6 +127,7 @@
       renderQuizzes();
       renderEquipe();
       renderTemas();
+      Rotina.render();
       mostrar('inicio');
       enviarFila();
       Fala.iniciar().then(() => { $('aviso-voz').hidden = Fala.disponivel() && speechSynthesis.getVoices().length > 0; });
@@ -367,7 +371,7 @@
         const ids = Object.keys(grupos);
         ids.forEach((tid, k) => {
           const pal = grupos[tid];
-          guardarNaFila({ id: res.id + 'r' + k, tema_id: tid, jogo: res.jogo, palavras: pal, reforco: true,
+          guardarNaFila({ id: 'rf' + res.id + k, tema_id: tid, jogo: res.jogo, palavras: pal, reforco: true,
             acertos: Object.values(pal).filter((x) => x.a).length, total: Object.keys(pal).length,
             estrelas: res.estrelas, segundos: Math.round(res.segundos / ids.length) });
         });
@@ -573,6 +577,7 @@
           } else {
             const r = await chamar('alunoSalvarJogada', item);
             estado.progresso = r.progresso;
+            if (r.rotina) estado.rotina = r.rotina;
           }
           gravarFila(lerFila().filter((x) => x.id !== item.id));
         } catch (e) {
@@ -587,6 +592,7 @@
       }
       enviando = false;
       renderEstrelas();
+      Rotina.renderTarefas();
       Narrativa.verificar();
       if (avisar) avisar(falhou ? 'pendente' : 'ok');
       // Tenta de novo em até ~1 minuto, com um sorteio para os alunos não tentarem todos juntos.

@@ -1,0 +1,224 @@
+<!-- Miniprojetos: criar, abrir/encerrar, ver as fotos e avaliar com 3 carinhas -->
+<section id="aba-projetos" class="pilha" hidden>
+  <style>
+    .pj-alunos { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+    .pj-aluno { display: grid; gap: 8px; }
+    .pj-aluno .cab { display: flex; align-items: center; gap: 8px; }
+    .pj-aluno .cab strong { flex: 1; min-width: 0; }
+    .pj-crit { display: grid; grid-template-columns: 1fr auto; gap: 6px; align-items: center; font-size: .85rem; }
+    .pj-faces { display: flex; gap: 4px; }
+    .pj-faces button { font-size: 1.3rem; border: 2px solid var(--borda); background: #fff; border-radius: 10px; width: 40px; height: 36px; cursor: pointer; padding: 0; }
+    .pj-faces button.ativa { border-color: var(--primaria); background: var(--primaria-clara); }
+    .pj-nota { font-weight: 700; }
+    .pj-foto { max-width: 100%; max-height: 70vh; display: block; margin: 0 auto; border-radius: 10px; }
+  </style>
+
+  <!-- Lista -->
+  <div id="pj-lista-tela" class="pilha">
+    <div class="linha">
+      <h2 style="margin:0">Miniprojetos</h2><span class="espaco"></span>
+      <button class="btn primario" id="pj-novo">+ Novo miniprojeto</button>
+    </div>
+    <p class="suave pequeno" style="margin:0">A criança faz o trabalho no papel (cartaz, desenho, livrinho…), tira uma foto no Chromebook e envia. Você avalia cada critério com 3 carinhas:
+      😀 = 100, 🙂 = 70, 😐 = 40. Se o projeto valer nota, a média entra no nível como um quiz.</p>
+    <div class="cartao tabela-rolagem">
+      <table>
+        <thead><tr><th>Miniprojeto</th><th>Série</th><th>Mês</th><th>Fotos</th><th>Avaliados</th><th>Situação</th><th></th></tr></thead>
+        <tbody id="pj-tabela"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Turma -->
+  <div id="pj-turma-tela" class="pilha" hidden>
+    <div class="linha">
+      <button class="btn" id="pj-voltar">← Voltar</button>
+      <h2 style="margin:0" id="pj-titulo"></h2><span class="espaco"></span>
+      <select id="pj-turma"></select>
+      <button class="btn" id="pj-atualizar">↻ Atualizar</button>
+    </div>
+    <div class="cartao"><div class="suave pequeno" id="pj-info"></div></div>
+    <div class="pj-alunos" id="pj-alunos"></div>
+  </div>
+
+  <dialog id="pj-form" style="width:min(620px, calc(100vw - 32px))">
+    <form id="pj-form-el">
+      <h2 style="margin-top:0" id="pj-form-titulo">Novo miniprojeto</h2>
+      <input type="hidden" id="pj-id">
+      <div class="campo"><label for="pj-nome">Título</label><input id="pj-nome" maxlength="80" required placeholder="ex.: Cartaz do meu bichinho"></div>
+      <div class="grade-2">
+        <div class="campo"><label for="pj-serie">Série</label><select id="pj-serie"></select></div>
+        <div class="campo"><label for="pj-mes">Mês</label><input id="pj-mes" type="month" required></div>
+      </div>
+      <div class="campo"><label for="pj-instr">Instruções para a criança</label>
+        <textarea id="pj-instr" rows="4" maxlength="800" placeholder="ex.: Desenhe o seu bichinho e escreva 3 frases: This is my dog. His name is Max. He is brown."></textarea></div>
+      <div class="campo"><label>Critérios da avaliação (até 4)</label>
+        <div class="pilha" id="pj-criterios" style="gap:6px"></div></div>
+      <label class="pequeno"><input type="checkbox" id="pj-nota" checked> Vale nota (entra no nível como um quiz)</label>
+      <div class="rodape-modal">
+        <button class="btn" type="button" data-fechar>Cancelar</button>
+        <button class="btn primario" type="submit">Salvar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="pj-foto-modal" style="width:min(900px, calc(100vw - 32px))">
+    <div class="linha" style="margin-bottom:10px"><h2 style="margin:0" id="pj-foto-titulo"></h2><span class="espaco"></span>
+      <a class="btn" id="pj-foto-drive" target="_blank" rel="noopener">Abrir no Drive</a>
+      <button class="btn" type="button" data-fechar>Fechar</button></div>
+    <div id="pj-foto-conteudo"></div>
+  </dialog>
+</section>
+
+<script>
+  const pj = { lista: [], atual: null, turma: null, rascunho: {} };
+  const PJ_FACES = { 3: '😀', 2: '🙂', 1: '😐' };
+  const PJ_CRITERIOS = ['Usou as palavras do tema em inglês', 'Capricho e criatividade', 'Apresentou ou explicou o trabalho'];
+
+  function mesHojePj() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+
+  async function carregarProjetos() {
+    pj.lista = await chamar('profListarProjetos');
+    renderProjetosLista();
+  }
+
+  function renderProjetosLista() {
+    $('pj-tabela').innerHTML = pj.lista.length ? pj.lista.map((p) => `<tr>
+      <td><strong>${esc(p.titulo)}</strong>${p.vale_nota ? '' : ' <span class="selo">sem nota</span>'}</td>
+      <td>${esc(p.serie)}</td><td>${esc(p.mes)}</td><td>${p.enviados}</td><td>${p.avaliados}</td>
+      <td><span class="selo ${p.status === 'aberto' ? 'liberado' : 'oculto'}">${p.status === 'aberto' ? 'aberto' : 'encerrado'}</span></td>
+      <td class="acoes"><button class="btn mini" data-pj-abrir="${esc(p.id)}">Avaliar</button>
+        <button class="btn mini" data-pj-editar="${esc(p.id)}">Editar</button>
+        <button class="btn mini" data-pj-status="${esc(p.id)}">${p.status === 'aberto' ? 'Encerrar' : 'Reabrir'}</button>
+        <button class="btn mini" data-pj-excluir="${esc(p.id)}">Excluir</button></td></tr>`).join('')
+      : '<tr><td colspan="7" class="vazio">Nenhum miniprojeto ainda. Clique em "+ Novo miniprojeto".</td></tr>';
+  }
+
+  function abrirFormProjeto(p) {
+    $('pj-form-titulo').textContent = p ? 'Editar miniprojeto' : 'Novo miniprojeto';
+    $('pj-id').value = p ? p.id : '';
+    $('pj-nome').value = p ? p.titulo : '';
+    $('pj-serie').innerHTML = estado.resumo.series.map((s) => `<option value="${esc(s)}">${esc(s)} ano</option>`).join('');
+    $('pj-serie').value = p ? p.serie : estado.resumo.series[0];
+    $('pj-mes').value = p ? p.mes : mesHojePj();
+    $('pj-instr').value = p ? p.instrucoes : '';
+    const crit = p ? p.criterios : PJ_CRITERIOS;
+    $('pj-criterios').innerHTML = [0, 1, 2, 3].map((i) => `<input data-crit maxlength="80" value="${esc(crit[i] || '')}" placeholder="Critério ${i + 1}${i >= 3 ? ' (opcional)' : ''}">`).join('');
+    $('pj-nota').checked = p ? p.vale_nota : true;
+    $('pj-form').showModal();
+  }
+
+  async function salvarFormProjeto(ev) {
+    ev.preventDefault();
+    const botao = ev.submitter || $('pj-form-el').querySelector('[type=submit]');
+    await comBotao(botao, async () => {
+      pj.lista = await chamar('profSalvarProjeto', {
+        id: $('pj-id').value, titulo: $('pj-nome').value, serie: $('pj-serie').value, mes: $('pj-mes').value,
+        instrucoes: $('pj-instr').value, criterios: [...document.querySelectorAll('#pj-criterios [data-crit]')].map((i) => i.value),
+        vale_nota: $('pj-nota').checked,
+      });
+      $('pj-form').close();
+      renderProjetosLista();
+      avisar('Miniprojeto salvo. As crianças da série já veem o cartão.');
+    });
+  }
+
+  // ---------- Avaliar por turma ----------
+  async function abrirProjetoTurma(id) {
+    pj.atual = pj.lista.find((p) => p.id === id);
+    const turmas = estado.resumo.turmas.filter((t) => t.serie === pj.atual.serie);
+    $('pj-turma').innerHTML = turmas.map((t) => `<option value="${esc(t.turma)}">${esc(t.turma)}</option>`).join('');
+    if (pj.turma && turmas.some((t) => t.turma === pj.turma.turma)) $('pj-turma').value = pj.turma.turma;
+    else if (turmas.some((t) => t.total > 0)) $('pj-turma').value = turmas.find((t) => t.total > 0).turma;
+    await carregarProjetoTurma();
+    $('pj-lista-tela').hidden = true;
+    $('pj-turma-tela').hidden = false;
+  }
+
+  async function carregarProjetoTurma() {
+    const turma = $('pj-turma').value;
+    if (!turma) { $('pj-alunos').innerHTML = '<div class="cartao vazio">Nenhuma turma desta série.</div>'; return; }
+    pj.turma = await chamar('profProjetoTurma', pj.atual.id, turma);
+    pj.rascunho = {};
+    renderProjetoTurma();
+  }
+
+  function renderProjetoTurma() {
+    const d = pj.turma, p = d.projeto;
+    $('pj-titulo').textContent = '🎨 ' + p.titulo;
+    const fotos = d.alunos.filter((a) => a.foto).length, avaliados = d.alunos.filter((a) => a.nota != null).length;
+    $('pj-info').innerHTML = `${p.serie} ano · ${esc(p.mes)} · ${p.vale_nota ? 'vale nota' : 'sem nota'} · ${p.status === 'aberto' ? 'aberto para envio' : 'encerrado'}<br>
+      <strong>${fotos}</strong> de ${d.alunos.length} enviaram foto · <strong>${avaliados}</strong> avaliados.
+      Quem fez no papel e não enviou foto também pode ser avaliado.`;
+    $('pj-alunos').innerHTML = d.alunos.length ? d.alunos.map((a) => {
+      const faces = pj.rascunho[a.email] || a.faces;
+      return `<div class="cartao pj-aluno" data-email="${esc(a.email)}">
+        <div class="cab"><span class="avatar">${esc(a.avatar)}</span><strong>${esc(a.nome)}</strong>
+          ${a.foto ? `<button class="btn mini" data-pj-foto>📷 Ver foto</button>` : '<span class="suave pequeno">sem foto</span>'}</div>
+        <div class="suave pequeno">${a.foto ? 'Enviou em ' + esc(a.enviado_em) : ''}${a.autoavaliacao ? ' · a criança achou: ' + PJ_FACES[a.autoavaliacao] : ''}</div>
+        ${p.criterios.map((c, i) => `<div class="pj-crit"><span>${esc(c)}</span><span class="pj-faces">${[3, 2, 1].map((f) =>
+          `<button type="button" data-face="${f}" data-crit="${i}" class="${faces[i] === f ? 'ativa' : ''}" title="${f === 3 ? 'Muito bem' : f === 2 ? 'Bem' : 'Precisa melhorar'}">${PJ_FACES[f]}</button>`).join('')}</span></div>`).join('')}
+        <input data-recado maxlength="200" placeholder="Recado para a criança (opcional)" value="${esc(a.recado)}">
+        <div class="linha"><span class="pj-nota">${a.nota != null ? 'Nota: ' + a.nota : '<span class="suave pequeno">não avaliado</span>'}</span><span class="espaco"></span>
+          <button class="btn mini primario" data-pj-salvar>Salvar avaliação</button></div>
+      </div>`;
+    }).join('') : '<div class="cartao vazio">Nenhum aluno nesta turma.</div>';
+  }
+
+  async function cliqueProjetoTurma(ev) {
+    const card = ev.target.closest('[data-email]');
+    if (!card) return;
+    const email = card.dataset.email, a = pj.turma.alunos.find((x) => x.email === email);
+    const face = ev.target.closest('[data-face]');
+    if (face) {
+      const lista = (pj.rascunho[email] || a.faces).slice();
+      lista[Number(face.dataset.crit)] = Number(face.dataset.face);
+      pj.rascunho[email] = lista;
+      card.querySelectorAll(`[data-crit="${face.dataset.crit}"]`).forEach((b) => b.classList.toggle('ativa', b === face));
+      return;
+    }
+    if (ev.target.closest('[data-pj-foto]')) {
+      await comBotao(ev.target, async () => {
+        const f = await chamar('profFotoEntrega', pj.atual.id, email);
+        $('pj-foto-titulo').textContent = `${a.avatar} ${a.nome}`;
+        $('pj-foto-conteudo').innerHTML = `<img class="pj-foto" src="${f.dataUrl}" alt="Foto do trabalho de ${esc(a.nome)}">`;
+        $('pj-foto-drive').href = f.url;
+        $('pj-foto-modal').showModal();
+      });
+      return;
+    }
+    if (ev.target.closest('[data-pj-salvar]')) {
+      const faces = pj.rascunho[email] || a.faces;
+      await comBotao(ev.target, async () => {
+        pj.turma = await chamar('profAvaliarEntrega', pj.atual.id, email, pj.turma.projeto.criterios.map((_, i) => faces[i] || 0), card.querySelector('[data-recado]').value);
+        delete pj.rascunho[email];
+        renderProjetoTurma();
+        avisar('Avaliação salva: ' + a.nome + '.');
+      });
+    }
+  }
+
+  function configurarProjetos() {
+    document.querySelector('.abas button[data-aba="projetos"]').addEventListener('click', () => { if (!$('pj-lista-tela').hidden) carregarProjetos(); });
+    $('pj-novo').addEventListener('click', () => abrirFormProjeto(null));
+    $('pj-form-el').addEventListener('submit', salvarFormProjeto);
+    $('pj-tabela').addEventListener('click', async (ev) => {
+      const b = ev.target.closest('button');
+      if (!b) return;
+      if (b.dataset.pjAbrir) comBotao(b, () => abrirProjetoTurma(b.dataset.pjAbrir));
+      if (b.dataset.pjEditar) abrirFormProjeto(pj.lista.find((p) => p.id === b.dataset.pjEditar));
+      if (b.dataset.pjStatus) {
+        const p = pj.lista.find((x) => x.id === b.dataset.pjStatus);
+        comBotao(b, async () => { pj.lista = await chamar('profStatusProjeto', p.id, p.status === 'aberto' ? 'encerrado' : 'aberto'); renderProjetosLista(); });
+      }
+      if (b.dataset.pjExcluir) {
+        if (!confirm('Excluir este miniprojeto?')) return;
+        comBotao(b, async () => { pj.lista = await chamar('profExcluirProjeto', b.dataset.pjExcluir); renderProjetosLista(); });
+      }
+    });
+    $('pj-voltar').addEventListener('click', () => { $('pj-turma-tela').hidden = true; $('pj-lista-tela').hidden = false; carregarProjetos(); });
+    $('pj-turma').addEventListener('change', carregarProjetoTurma);
+    $('pj-atualizar').addEventListener('click', (ev) => comBotao(ev.target, carregarProjetoTurma));
+    $('pj-alunos').addEventListener('click', cliqueProjetoTurma);
+  }
+</script>

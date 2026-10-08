@@ -30,6 +30,7 @@
     <button data-aba="progresso">Progresso</button>
     <button data-aba="habilidades">Habilidades</button>
     <button data-aba="missoes">Missões</button>
+    <button data-aba="projetos">Projetos</button>
     <button data-aba="avaliacoes">Avaliações</button>
     <button data-aba="equipes">Equipes</button>
     <button data-aba="relatorios">Relatórios</button>
@@ -46,6 +47,18 @@
         <p class="suave pequeno">Envie este link às turmas (Google Sala de Aula, por exemplo). No primeiro acesso, a criança escreve o nome, escolhe a turma e um bichinho; o e-mail escolar é registrado sozinho.</p>
         <div class="link-box"><code id="link"></code><button class="btn mini" id="copiar-link">Copiar</button></div>
         <p id="aviso-cadastro" class="pequeno" style="color:var(--perigo)" hidden>O cadastro de novos alunos está fechado (veja Configurações).</p>
+      </div>
+      <div class="cartao">
+        <h3>👀 Ver o app como aluno</h3>
+        <p class="suave pequeno">Escolha uma turma e abra a tela da criança com a sua conta, como um "aluno teste". Você pode jogar, fazer missões, quizzes e enviar fotos de miniprojetos.
+          Nada disso aparece em listas, relatórios, equipes ou habilidades. O botão "Zerar" apaga tudo o que o aluno teste fez.</p>
+        <div class="linha">
+          <select id="at-turma" style="width:auto"></select>
+          <button class="btn primario" id="at-preparar">Preparar aluno teste</button>
+          <a class="btn" id="at-abrir" target="_blank" rel="noopener" hidden>Abrir a tela do aluno ↗</a>
+          <button class="btn" id="at-zerar" hidden>Zerar aluno teste</button>
+        </div>
+        <p class="suave pequeno" id="at-info" style="margin-bottom:0"></p>
       </div>
       <div class="linha"><h2 style="margin:0">Turmas</h2><span class="espaco"></span><span class="suave" id="total-alunos"></span>
         <button class="btn" id="editar-turmas">Editar turmas</button></div>
@@ -78,6 +91,7 @@
     <?!= incluir('ProfRelatorios'); ?>
     <?!= incluir('MissaoTela'); ?>
     <?!= incluir('ProfMissoes'); ?>
+    <?!= incluir('ProfProjetos'); ?>
 
     <!-- Configurações -->
     <section id="aba-config" class="pilha" hidden>
@@ -247,6 +261,29 @@
       }));
     }
     $('copiar-link').addEventListener('click', () => copiar($('link').textContent));
+
+    // ---------- Aluno teste ----------
+    function renderAlunoTeste(info) {
+      $('at-abrir').hidden = !info.turma || !info.link;
+      $('at-zerar').hidden = !info.turma;
+      if (info.link) $('at-abrir').href = info.link;
+      if (info.turma) $('at-turma').value = info.turma;
+      $('at-info').textContent = info.turma
+        ? 'Aluno teste pronto na turma ' + info.turma + '. Abra a tela do aluno numa aba nova. Para mudar de turma, escolha outra e clique em Preparar.'
+        : (info.link ? '' : 'Publique o sistema para gerar o link.');
+    }
+    function configurarAlunoTeste() {
+      $('at-turma').innerHTML = opcoesTurma(false);
+      chamar('profInfoAlunoTeste').then(renderAlunoTeste).catch(() => {});
+      $('at-preparar').addEventListener('click', (ev) => comBotao(ev.target, async () => {
+        renderAlunoTeste(await chamar('profAlunoTeste', $('at-turma').value));
+        avisar('Aluno teste pronto na turma ' + $('at-turma').value + '.');
+      }));
+      $('at-zerar').addEventListener('click', (ev) => {
+        if (!confirm('Apagar o aluno teste e tudo o que ele fez (partidas, respostas, missões e fotos)?')) return;
+        comBotao(ev.target, async () => { renderAlunoTeste(await chamar('profZerarAlunoTeste')); avisar('Aluno teste apagado.'); });
+      });
+    }
 
     $('editar-turmas').addEventListener('click', () => {
       const r = estado.resumo;
@@ -453,6 +490,8 @@
         configurarEquipes();
         configurarRelatorios();
         configurarMissoes();
+        configurarProjetos();
+        configurarAlunoTeste();
         renderTudo();
         Fala.iniciar();
         $('carregando').hidden = true;

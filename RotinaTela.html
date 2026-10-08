@@ -1,0 +1,217 @@
+<!-- Etapa 4 (rotina) na tela da criança: tarefas do dia, miniprojetos (foto + carinhas) e aviso do aluno teste.
+     Arquivo incluído sem processamento. Usa estado, $, esc, chamar, abrirTema e Narrativa de AlunoCorpo/NarrativaTela. -->
+<style>
+  .rt-cartao { background: #fff; border-radius: 22px; padding: 16px 18px; margin-bottom: 18px; border: 3px solid #ffd8a8; box-shadow: 0 5px 0 #ffe8cc; }
+  .rt-cab { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+  .rt-cab strong { font-size: 1.25rem; font-weight: 900; flex: 1; }
+  .rt-dias { background: #fff9db; border: 2px solid #ffe066; border-radius: 99px; padding: 4px 12px; font-weight: 900; white-space: nowrap; }
+  .rt-tarefas { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .rt-tarefa { display: grid; grid-template-columns: auto 1fr auto; gap: 2px 10px; align-items: center; text-align: left; border: 2px solid #e9ecef;
+    border-radius: 16px; padding: 10px 12px; background: #f8f9fa; color: var(--tinta); font-family: inherit; cursor: pointer; }
+  .rt-tarefa:hover { border-color: #ffc078; }
+  .rt-tarefa .ic { font-size: 1.8rem; grid-row: span 2; }
+  .rt-tarefa .en { font-weight: 900; }
+  .rt-tarefa .pt { font-weight: 700; font-size: .85rem; color: #6c7086; grid-column: 2; }
+  .rt-tarefa .ok { font-size: 1.6rem; grid-row: 1 / span 2; grid-column: 3; }
+  .rt-tarefa.feita { background: #ebfbee; border-color: #8ce99a; }
+  .rt-completo { margin-top: 10px; font-weight: 900; color: #2b8a3e; }
+  .rt-projeto { border-color: #d0bfff; box-shadow: 0 5px 0 #e5dbff; }
+  .rt-projeto .instr { white-space: pre-wrap; font-weight: 700; margin: 4px 0 10px; }
+  .rt-projeto .situ { font-weight: 800; }
+  .rt-faces { display: grid; gap: 6px; margin: 8px 0; }
+  .rt-faces div { display: flex; gap: 10px; align-items: center; font-weight: 700; }
+  .rt-faces b { font-size: 1.6rem; }
+  .rt-recado { background: #f3f0ff; border-radius: 14px; padding: 10px 12px; font-weight: 800; }
+  .rt-escolha { display: flex; gap: 10px; justify-content: center; margin: 8px 0 4px; }
+  .rt-escolha button { font-size: 2.4rem; border: 3px solid #dee2e6; background: #fff; border-radius: 18px; width: 72px; height: 72px; cursor: pointer; }
+  .rt-escolha button.ativa { border-color: #7048e8; background: #f3f0ff; }
+  .rt-previa { display: block; max-width: 100%; max-height: 46vh; margin: 10px auto; border-radius: 14px; border: 3px solid #e9ecef; }
+  .rt-teste { background: #fff3bf; border: 3px dashed #fab005; border-radius: 18px; padding: 12px 16px; margin-bottom: 16px; font-weight: 800; }
+</style>
+
+<dialog id="rt-foto" style="width:min(560px, calc(100vw - 32px))">
+  <h2 id="rt-foto-titulo" style="margin-top:0"></h2>
+  <p class="sub-kids" style="margin-top:0">1. Tire uma foto do seu trabalho (ou escolha uma foto já tirada).</p>
+  <p style="text-align:center;margin:0"><label class="botao-grande claro" style="cursor:pointer">📷 Tirar ou escolher foto
+    <input type="file" id="rt-arquivo" accept="image/*" capture="environment" hidden></label></p>
+  <img id="rt-previa" class="rt-previa" alt="Prévia da foto" hidden>
+  <p class="sub-kids" style="margin-bottom:0">2. How did you do? Como você acha que ficou?</p>
+  <div class="rt-escolha" id="rt-auto">
+    <button type="button" data-auto="3" aria-label="Ficou muito bom">😀</button>
+    <button type="button" data-auto="2" aria-label="Ficou bom">🙂</button>
+    <button type="button" data-auto="1" aria-label="Pode melhorar">😐</button>
+  </div>
+  <p id="rt-foto-msg" class="sub-kids" style="text-align:center;min-height:1.4em"></p>
+  <div class="rodape-modal">
+    <button class="botao-grande claro" type="button" id="rt-cancelar">Cancelar</button>
+    <button class="botao-grande" type="button" id="rt-enviar" disabled>Enviar ✅</button>
+  </div>
+</dialog>
+
+<script>
+  const Rotina = (function () {
+    const FACES = { 3: '😀', 2: '🙂', 1: '😐' };
+    let projetoAtual = null, fotoAtual = '', autoAtual = 0;
+
+    // ---------- Aluno teste ----------
+    function renderTeste() {
+      $('teste-aviso').innerHTML = estado.teste
+        ? `<div class="rt-teste">🧪 Modo aluno teste · turma ${esc(estado.aluno.turma)}. Nada do que você fizer aqui aparece nos relatórios, equipes ou habilidades.
+            Para trocar de turma ou zerar, use o painel do professor (aba Turmas).</div>`
+        : '';
+    }
+
+    // ---------- Tarefas do dia ----------
+    function renderTarefas() {
+      const r = estado.rotina;
+      if (!r || !r.tarefas || !r.tarefas.length) { $('tarefas').innerHTML = ''; return; }
+      $('tarefas').innerHTML = `<div class="rt-cartao">
+        <div class="rt-cab"><span style="font-size:2rem">📋</span><strong>Today's tasks · Tarefas do dia</strong>
+          <span class="rt-dias" title="Dias em que você fez as 3 tarefas">🌞 ${r.dias || 0} ${r.dias === 1 ? 'dia completo' : 'dias completos'}</span></div>
+        <div class="rt-tarefas">${r.tarefas.map((t) => `
+          <button class="rt-tarefa ${t.feito ? 'feita' : ''}" data-tarefa="${esc(t.id)}" ${t.tema_id ? `data-tema-tarefa="${esc(t.tema_id)}"` : ''}>
+            <span class="ic">${esc(t.icone)}</span><span class="en">${esc(t.en)}</span><span class="ok">${t.feito ? '✅' : '⬜'}</span>
+            <span class="pt">${esc(t.pt)}</span></button>`).join('')}</div>
+        ${r.completo ? '<div class="rt-completo">🌞 Great day! Você fez as 3 tarefas de hoje. Volte amanhã para mais!</div>'
+          : '<p class="sub-kids" style="margin:10px 0 0">Faça as 3 tarefas para ganhar um dia completo. Dias completos dão medalhas!</p>'}
+      </div>`;
+    }
+
+    function cliqueTarefa(ev) {
+      const b = ev.target.closest('[data-tarefa]');
+      if (!b) return;
+      if (b.dataset.temaTarefa) {
+        const t = estado.temas.find((x) => x.id === b.dataset.temaTarefa);
+        if (t) abrirTema(t);
+        return;
+      }
+      if (b.dataset.tarefa === 'reforco' && $('meu-reforco').firstElementChild) {
+        $('meu-reforco').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      $('mapa-cab').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // ---------- Miniprojetos ----------
+    function renderProjetos() {
+      const lista = estado.projetos || [];
+      $('projetos').innerHTML = lista.map((p) => `
+        <div class="rt-cartao rt-projeto">
+          <div class="rt-cab"><span style="font-size:2rem">🎨</span><strong>Mini project: ${esc(p.titulo)}</strong></div>
+          ${p.instrucoes ? `<div class="instr">${esc(p.instrucoes)}</div>` : ''}
+          ${p.avaliado ? `<div class="situ">⭐ Your teacher checked it! · O professor avaliou:</div>
+            <div class="rt-faces">${p.criterios.map((c, i) => `<div><b>${FACES[p.faces[i]] || '·'}</b> ${esc(c)}</div>`).join('')}</div>
+            ${p.recado ? `<div class="rt-recado">💬 ${esc(p.recado)}</div>` : ''}`
+          : p.enviado ? `<div class="situ">✅ Foto enviada${p.enviado_em ? ' em ' + esc(p.enviado_em) : ''}. Agora é só esperar o professor avaliar.</div>`
+          : '<div class="situ">Quando terminar no papel, tire uma foto e envie aqui.</div>'}
+          ${p.aberto ? `<p style="margin:10px 0 0"><button class="botao-grande ${p.enviado ? 'claro' : ''}" data-projeto="${esc(p.id)}">📷 ${p.enviado ? 'Trocar a foto' : 'Enviar foto'}</button></p>` : ''}
+        </div>`).join('');
+    }
+
+    function abrirFoto(id) {
+      projetoAtual = (estado.projetos || []).find((p) => p.id === id);
+      if (!projetoAtual) return;
+      fotoAtual = '';
+      autoAtual = projetoAtual.autoavaliacao || 0;
+      $('rt-foto-titulo').textContent = '🎨 ' + projetoAtual.titulo;
+      $('rt-previa').hidden = true;
+      $('rt-arquivo').value = '';
+      $('rt-foto-msg').textContent = '';
+      atualizarFoto();
+      $('rt-foto').showModal();
+    }
+
+    function atualizarFoto() {
+      document.querySelectorAll('#rt-auto [data-auto]').forEach((b) => b.classList.toggle('ativa', Number(b.dataset.auto) === autoAtual));
+      $('rt-enviar').disabled = !fotoAtual;
+    }
+
+    /** Diminui a foto para no máximo 1280 px (envio rápido mesmo com internet fraca). */
+    function reduzir(arquivo) {
+      return new Promise((ok, falha) => {
+        const leitor = new FileReader();
+        leitor.onerror = () => falha(new Error('Não consegui abrir a foto.'));
+        leitor.onload = () => {
+          const img = new Image();
+          img.onerror = () => falha(new Error('Este arquivo não é uma foto.'));
+          img.onload = () => {
+            const escala = Math.min(1, 1280 / Math.max(img.width, img.height));
+            const c = document.createElement('canvas');
+            c.width = Math.round(img.width * escala);
+            c.height = Math.round(img.height * escala);
+            c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+            ok(c.toDataURL('image/jpeg', 0.8));
+          };
+          img.src = leitor.result;
+        };
+        leitor.readAsDataURL(arquivo);
+      });
+    }
+
+    async function escolherArquivo() {
+      const f = $('rt-arquivo').files[0];
+      if (!f) return;
+      $('rt-foto-msg').textContent = '⏳ Preparando a foto…';
+      try {
+        fotoAtual = await reduzir(f);
+        $('rt-previa').src = fotoAtual;
+        $('rt-previa').hidden = false;
+        $('rt-foto-msg').textContent = '';
+      } catch (e) {
+        fotoAtual = '';
+        $('rt-foto-msg').textContent = e.message;
+      }
+      atualizarFoto();
+    }
+
+    async function enviar() {
+      if (!fotoAtual || !projetoAtual) return;
+      const primeira = !projetoAtual.enviado && !projetoAtual.avaliado;
+      $('rt-enviar').disabled = true;
+      $('rt-foto-msg').textContent = '⏳ Enviando…';
+      try {
+        estado.projetos = await chamar('alunoEnviarProjeto', projetoAtual.id, fotoAtual, autoAtual);
+        $('rt-foto').close();
+        renderProjetos();
+        if (typeof Som !== 'undefined') Som.vitoria();
+        if (typeof Fala !== 'undefined') Fala.falar('Great job!');
+        const n = Narrativa.dados();
+        if (primeira && n) {
+          n.stats.projetos = (Number(n.stats.projetos) || 0) + 1;
+          Narrativa.verificar();
+          Narrativa.comemorar();
+        }
+      } catch (e) {
+        $('rt-foto-msg').textContent = '😕 ' + e.message;
+        $('rt-enviar').disabled = false;
+      }
+    }
+
+    let ligado = false;
+    function ligar() {
+      if (ligado) return;
+      ligado = true;
+      $('tarefas').addEventListener('click', cliqueTarefa);
+      $('projetos').addEventListener('click', (ev) => {
+        const b = ev.target.closest('[data-projeto]');
+        if (b) abrirFoto(b.dataset.projeto);
+      });
+      $('rt-arquivo').addEventListener('change', escolherArquivo);
+      $('rt-auto').addEventListener('click', (ev) => {
+        const b = ev.target.closest('[data-auto]');
+        if (b) { autoAtual = Number(b.dataset.auto); atualizarFoto(); }
+      });
+      $('rt-cancelar').addEventListener('click', () => $('rt-foto').close());
+      $('rt-enviar').addEventListener('click', enviar);
+    }
+
+    function render() {
+      ligar();
+      renderTeste();
+      renderTarefas();
+      renderProjetos();
+    }
+
+    return { render, renderTarefas };
+  })();
+</script>

@@ -145,9 +145,9 @@ function atualizarNotaMes_(email, turma, mes) {
   }, 'missoes');
 }
 
-/** Questionários + "questionários virtuais" das notas de missões (para relatórios e ficha do aluno). */
+/** Questionários + "questionários virtuais" das notas de missões e dos miniprojetos (para relatórios e ficha do aluno). */
 function questionariosEMissoes_(respostas) {
-  const lista = lerQuestionarios_();
+  const lista = lerQuestionarios_().concat(questionariosDeProjetos_());
   const vistos = {};
   (respostas || lerRespostas_()).forEach(function (r) {
     const id = r.questionario_id;
@@ -298,7 +298,9 @@ function profMissoesPainel(turma) {
     return { id: m.id, titulo: m.titulo, icone: m.icone, mes: m.mes, tema: m.tema, temaExiste: !!temaDaMissao_(m, temas) };
   });
   const feitas = lerFeitas_().filter(function (f) { return f.turma === turma; });
-  const nAlunos = lerTabela_('Alunos').filter(function (a) { return String(a.turma) === turma; }).length;
+  const daTurma = {};
+  lerTabela_('Alunos').forEach(function (a) { if (String(a.turma) === turma) daTurma[String(a.email).toLowerCase()] = true; });
+  const nAlunos = Object.keys(daTurma).length;
   const sessoes = lerSessoes_().filter(function (s) { return s.turma === turma; })
     .sort(function (a, b) { return b.aberta_ms - a.aberta_ms; })
     .map(function (s) {
@@ -306,7 +308,7 @@ function profMissoesPainel(turma) {
       return {
         id: s.id, missao_id: s.missao_id, titulo: m ? m.titulo : s.missao_id, icone: m ? m.icone : '🐶', mes: s.mes,
         status: s.status, aberta_ms: s.aberta_ms, fechada_ms: s.fechada_ms, reabertos: s.reabertos.length,
-        concluidas: feitas.filter(function (f) { return f.sessao_id === s.id && f.tipo === 'comum'; }).length, alunos: nAlunos,
+        concluidas: feitas.filter(function (f) { return f.sessao_id === s.id && f.tipo === 'comum' && daTurma[f.email]; }).length, alunos: nAlunos,
       };
     });
   return { turma: turma, serie: serie, mesAtual: mesAtual_(), banco: banco, sessoes: sessoes };
