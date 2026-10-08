@@ -4,6 +4,20 @@ Faça tudo com a sua **conta institucional** (@edu.joinville.sc.gov.br).
 
 ---
 
+# Tamanho das equipes escolhido na hora (atualização)
+
+## A. Atualizar o código
+No editor do Apps Script, apague tudo e cole as novas versões de `Equipes` (.gs) e `ProfEquipes` (.html). Depois publique a nova versão (**Implantar > Gerenciar implantações > ✏️ > Versão: Nova versão > Implantar**).
+
+## B. Como usar
+- Na aba **Equipes**, abra a turma. Ao lado de **✨ Gerar sugestão** há o campo **Alunos por equipe** (de 2 a 10).
+- O campo já vem com o tamanho das equipes atuais da turma (ou com o valor de `tamanho_max_grupo` da aba Config, se a turma ainda não tem equipes).
+- Ao mudar o número, aparece a prévia, por exemplo **→ 6 equipes (5 com 4 e 1 com 3 alunos)**. Clique em **Gerar sugestão** para montar as equipes com esse tamanho.
+- O número também é o limite ao **Aplicar**: se você mover alguém e uma equipe passar do tamanho escolhido, ela fica com borda vermelha e o sistema avisa.
+- Cada turma e cada mês pode ter um tamanho diferente.
+
+---
+
 # Etapa 3: habilidades do Mapa e Meu reforço (atualização)
 
 ## A. Atualizar o código

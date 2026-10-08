@@ -48,6 +48,9 @@
     </div>
     <div class="info-equipes pequeno" id="eq-info"></div>
     <div class="linha">
+      <label class="pequeno" for="eq-tamanho" style="font-weight:600">Alunos por equipe</label>
+      <input id="eq-tamanho" type="number" min="2" max="10" step="1" style="width:72px">
+      <span class="suave pequeno" id="eq-previa"></span>
       <button class="btn" id="eq-sugerir">✨ Gerar sugestão</button>
       <button class="btn" id="eq-manter">Manter equipes atuais neste mês</button>
       <span class="espaco"></span>
@@ -110,6 +113,9 @@
   // ---------- Turma ----------
   async function abrirTurmaEquipes(turma) {
     eq.turma = await chamar('profEquipesTurma', turma, $('eq-mes').value || mesHojeEq());
+    // Começa com o tamanho das equipes atuais (ou o padrão das Configurações); o professor muda quando quiser.
+    const atuais = eq.turma.equipes.map((g) => g.membros.length);
+    $('eq-tamanho').value = Math.min(10, Math.max(2, atuais.length ? Math.max(...atuais) : eq.turma.maxEquipe));
     carregarRascunhoEq();
     telaEquipes('eq-turma');
   }
@@ -117,6 +123,19 @@
     eq.rascunho = eq.turma.equipes.map((g) => g.membros.slice());
     eq.alterado = false;
     renderTurmaEquipes();
+  }
+  /** Alunos por equipe escolhido na tela (2 a 10). */
+  function tamanhoEq() {
+    const v = Math.floor(Number($('eq-tamanho').value));
+    return Math.min(10, Math.max(2, v || eq.turma.maxEquipe || 5));
+  }
+  /** Quantas equipes saem com esse tamanho, distribuindo os alunos o mais igual possível. */
+  function previaTamanhoEq() {
+    const total = eq.turma.alunos.length, max = tamanhoEq();
+    if (!total) { $('eq-previa').textContent = ''; return; }
+    const n = Math.ceil(total / max), menor = Math.floor(total / n), maiores = total % n;
+    const detalhe = maiores ? `${maiores} com ${menor + 1} e ${n - maiores} com ${menor} alunos` : n > 1 ? `todas com ${menor} alunos` : `${menor} alunos`;
+    $('eq-previa').textContent = `→ ${n} equipe${n > 1 ? 's' : ''} (${detalhe})`;
   }
   function alunoEq(email) { return eq.turma.alunos.find((a) => a.email === email); }
   function mediaEq(emails) {
@@ -134,6 +153,8 @@
       : 'Esta turma ainda não tem equipes. Clique em <strong>Gerar sugestão</strong>. Quem ainda não fez avaliação também entra (nas equipes menores).';
     $('eq-manter').hidden = !t.mesVigente || t.definidoNoMes;
     $('eq-estado').textContent = eq.alterado ? 'Rascunho não aplicado' : '';
+    const max = tamanhoEq();
+    previaTamanhoEq();
 
     const opcoes = (atual) => `<select data-mover><option value="">Mover para…</option>${eq.rascunho.map((_, i) =>
       i === atual ? '' : `<option value="${i}">${nomeEq(i)}</option>`).join('')}<option value="novo">Nova equipe</option>${atual === -1 ? '' : '<option value="fora">Fora das equipes</option>'}</select>`;
@@ -149,8 +170,8 @@
       const comp = {};
       g.forEach((e) => { const a = alunoEq(e); const n = a && a.nivel ? a.nivel : 'sem avaliação'; comp[n] = (comp[n] || 0) + 1; });
       const media = mediaEq(g);
-      return `<div class="cartao equipe-card ${g.length > t.maxEquipe ? 'excedida' : ''}">
-        <h3>${nomeEq(i)} <span class="suave pequeno">${g.length}/${t.maxEquipe}</span><span class="espaco"></span>
+      return `<div class="cartao equipe-card ${g.length > max ? 'excedida' : ''}">
+        <h3>${nomeEq(i)} <span class="suave pequeno">${g.length}/${max}</span><span class="espaco"></span>
           <span class="pequeno">${media != null ? 'média ' + media + '%' : ''}</span></h3>
         <div class="composicao">${Object.keys(comp).map((n) => `<span class="selo ${esc(n)}">${comp[n]} ${ABREV_N[n] || esc(n)}</span>`).join('')}</div>
         ${g.map((e) => linhaAluno(e, i)).join('')}</div>`;
@@ -269,14 +290,15 @@
     });
     $('eq-sugerir').addEventListener('click', () => {
       if (eq.alterado && !confirm('Descartar o rascunho atual e gerar outra sugestão?')) return;
-      eq.rascunho = sugerirEquipes(eq.turma.alunos, eq.turma.maxEquipe);
+      eq.rascunho = sugerirEquipes(eq.turma.alunos, tamanhoEq());
       eq.alterado = true;
       renderTurmaEquipes();
     });
     $('eq-manter').addEventListener('click', (ev) => {
       if (!confirm(`Manter as equipes de ${eq.turma.mesVigente} também em ${eq.turma.mes}?`)) return;
       comBotao(ev.target, async () => {
-        eq.turma = await chamar('profSalvarEquipes', eq.turma.turma, eq.turma.mes, eq.turma.equipes.map((g) => g.membros));
+        const atuais = eq.turma.equipes.map((g) => g.membros);
+        eq.turma = await chamar('profSalvarEquipes', eq.turma.turma, eq.turma.mes, atuais, Math.max(2, ...atuais.map((g) => g.length)));
         carregarRascunhoEq();
         avisar('Equipes mantidas para este mês.');
       });
@@ -284,14 +306,16 @@
     $('eq-aplicar').addEventListener('click', (ev) => {
       const equipes = eq.rascunho.filter((g) => g.length);
       if (!equipes.length) { avisar('Não há equipes para aplicar. Clique em "Gerar sugestão".', true); return; }
-      const grande = equipes.findIndex((g) => g.length > eq.turma.maxEquipe);
-      if (grande !== -1) { avisar(`A equipe ${nomeEq(grande)} passou do limite de ${eq.turma.maxEquipe} alunos.`, true); return; }
+      const max = tamanhoEq();
+      const grande = equipes.findIndex((g) => g.length > max);
+      if (grande !== -1) { avisar(`A equipe ${nomeEq(grande)} passou de ${max} alunos. Mova alguém ou aumente "Alunos por equipe".`, true); return; }
       comBotao(ev.target, async () => {
-        eq.turma = await chamar('profSalvarEquipes', eq.turma.turma, eq.turma.mes, equipes);
+        eq.turma = await chamar('profSalvarEquipes', eq.turma.turma, eq.turma.mes, equipes, max);
         carregarRascunhoEq();
         avisar('Equipes aplicadas. As crianças já veem a nova equipe.');
       });
     });
+    $('eq-tamanho').addEventListener('input', () => { if (eq.turma) renderTurmaEquipes(); });
     $('eq-imprimir').addEventListener('click', imprimirEquipes);
     $('eq-equipes').addEventListener('change', moverAlunoEq);
     $('eq-fora').addEventListener('change', moverAlunoEq);

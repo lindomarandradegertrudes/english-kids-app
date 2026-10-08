@@ -173,12 +173,13 @@ function profEquipesTurma(turma, mes) {
 }
 
 /** Grava as equipes de uma turma para o mês (substitui as desse mês). equipes: lista de listas de e-mails. */
-function profSalvarEquipes(turma, mes, equipes) {
+/** tamanho = alunos por equipe escolhido pelo professor ao formar as equipes (2 a 10). */
+function profSalvarEquipes(turma, mes, equipes, tamanho) {
   exigirProfessor_();
   validarTurma_(turma);
   if (!/^\d{4}-\d{2}$/.test(mes)) throw new Error('Mês inválido.');
   const cfg = lerConfig_();
-  const max = Number(cfg.tamanho_max_grupo) || 5;
+  const max = Math.min(10, Math.max(2, Math.floor(Number(tamanho)) || Number(cfg.tamanho_max_grupo) || 5));
   const niveis = calcularNiveis_(cfg);
   const alunos = {};
   lerTabela_('Alunos').forEach(function (a) { if (String(a.turma) === turma) alunos[String(a.email).toLowerCase()] = String(a.nome); });

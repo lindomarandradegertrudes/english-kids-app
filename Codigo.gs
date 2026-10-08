@@ -28,7 +28,7 @@ const CONFIG_PADRAO = [
   ['professores', '', 'E-mails com acesso ao painel do professor, separados por vírgula.'],
   ['cadastro_aberto', 'SIM', 'SIM = alunos podem se cadastrar; NÃO = novos cadastros bloqueados.'],
   ['velocidade_voz', 0.85, 'Velocidade da voz em inglês nos jogos (0,5 = bem devagar; 1 = normal).'],
-  ['tamanho_max_grupo', 5, 'Máximo de alunos por equipe.'],
+  ['tamanho_max_grupo', 5, 'Alunos por equipe sugerido ao abrir uma turma (você pode mudar na hora de formar as equipes).'],
   ['faixa_basico', 40, 'Média mínima (%) para o nível Básico. Abaixo disso: Iniciante.'],
   ['faixa_intermediario', 60, 'Média mínima (%) para o nível Intermediário.'],
   ['faixa_avancado', 80, 'Média mínima (%) para o nível Avançado.'],
