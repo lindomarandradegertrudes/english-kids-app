@@ -12,7 +12,7 @@ const AVATARES = ['🐶', '🐱', '🦊', '🐼', '🐸', '🦁', '🐵', '🐰'
 const CABECALHOS = {
   Config: ['chave', 'valor', 'descricao'],
   Turmas: ['turma', 'serie'],
-  Alunos: ['email', 'nome', 'turma', 'avatar', 'cadastrado_em', 'atualizado_em'],
+  Alunos: ['email', 'nome', 'turma', 'avatar', 'cadastrado_em', 'atualizado_em', 'visual_json'],
   Temas: ['id', 'serie', 'trimestre', 'mes', 'titulo', 'titulo_pt', 'conteudo', 'palavras_json', 'frases_json', 'status', 'criado_em', 'atualizado_em'],
   Progresso: ['email', 'turma', 'tema_id', 'dominio_json', 'estrelas_json', 'jogadas', 'segundos', 'atualizado_em'],
   Jogadas: ['id', 'email', 'turma', 'tema_id', 'jogo', 'acertos', 'total', 'estrelas', 'segundos', 'palavras_json', 'jogado_em'],
@@ -250,6 +250,7 @@ function alunoObterEstado() {
   const aluno = lerTabela_('Alunos').filter(function (a) { return String(a.email).toLowerCase() === email; })[0];
   const serie = aluno ? serieDaTurma_(String(aluno.turma)) : '';
   const temas = aluno ? temasDoAluno_(serie) : [];
+  const progresso = aluno ? resumoProgressoAluno_(email, temas) : null;
   return {
     email: email,
     cadastroAberto: String(cfg.cadastro_aberto).toUpperCase() !== 'NÃO' && String(cfg.cadastro_aberto).toUpperCase() !== 'NAO',
@@ -259,11 +260,12 @@ function alunoObterEstado() {
     aluno: aluno ? { nome: String(aluno.nome), turma: String(aluno.turma), serie: serie, avatar: avatarValido_(String(aluno.avatar)) } : null,
     temas: temas,
     jogos: Object.keys(JOGOS).map(function (k) { return { id: k, nome: JOGOS[k].nome }; }),
-    progresso: aluno ? resumoProgressoAluno_(email, temas) : null,
+    progresso: progresso,
     urlApp: ScriptApp.getService().getUrl(),
     avaliacoes: aluno ? avaliacoesPendentes_(email, serie) : [],
     equipe: aluno ? equipeSegura_(email, String(aluno.turma)) : null,
     missoes: aluno ? missoesSeguras_(email, String(aluno.turma)) : [],
+    narrativa: aluno ? narrativaSegura_(email, serie, progresso, aluno) : null,
   };
 }
 
@@ -424,7 +426,7 @@ function profSalvarAluno(dados) {
     const cadastro = aba.getRange(atual._linha, CABECALHOS.Alunos.indexOf('cadastrado_em') + 1).getValue();
     aba.getRange(atual._linha, 1, 1, CABECALHOS.Alunos.length).setValues([linhaDe_('Alunos', {
       email: email, nome: nome, turma: dados.turma, avatar: avatarValido_(dados.avatar || String(atual.avatar)),
-      cadastrado_em: cadastro, atualizado_em: new Date(),
+      cadastrado_em: cadastro, atualizado_em: new Date(), visual_json: String(atual.visual_json || ''),
     })]);
     if (email !== original) trocarEmailNoHistorico_(original, email);
   });

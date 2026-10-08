@@ -1,0 +1,418 @@
+<!-- Etapa 2 (narrativa): mapa de aventura, medalhas, cantinho (bichinho com acessórios + casinha) e tour com o Max.
+     Arquivo incluído sem processamento. Usa estado, $, esc, chamar, progressoDe, somaEstrelas e abrirTema de AlunoCorpo. -->
+<style>
+  .nv-cab { display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; margin-bottom: 14px; }
+  .nv-cab h1 { margin: 0; flex: 1; min-width: 220px; }
+  .nv-cab .sub-kids { display: block; font-size: .95rem; }
+  .nv-btn { border: 3px solid #dee2e6; background: #fff; border-radius: 99px; padding: 8px 16px; font-weight: 900; font-size: 1rem; cursor: pointer; color: var(--tinta); box-shadow: 0 3px 0 #dee2e6; }
+  .nv-btn:hover { border-color: #74c0fc; }
+
+  /* Mapa */
+  .nv-mar { position: relative; border-radius: 28px; padding: 26px 18px 30px; overflow: hidden;
+    background: radial-gradient(circle at 20% 10%, rgba(255,255,255,.35) 0 6%, transparent 7%),
+                radial-gradient(circle at 85% 40%, rgba(255,255,255,.25) 0 5%, transparent 6%),
+                linear-gradient(180deg, #74c0fc, #4dabf7 55%, #339af0); box-shadow: inset 0 -8px 0 rgba(0,0,0,.08); }
+  .nv-trilha { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 6px; }
+  .nv-passo { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .nv-pegadas { grid-column: 1 / -1; text-align: center; font-size: 1.1rem; opacity: .75; letter-spacing: 10px; height: 26px; }
+  .nv-pegadas.e { text-align: left; padding-left: 26%; } .nv-pegadas.d { text-align: right; padding-right: 26%; }
+  .nv-ilha { position: relative; border: 0; cursor: pointer; color: var(--tinta); text-align: center; padding: 18px 14px 16px; min-height: 170px;
+    justify-self: center; width: min(100%, 250px);
+    border-radius: 48% 52% 45% 55% / 55% 48% 52% 45%; background: radial-gradient(ellipse at 50% 40%, #d3f9d8 0 45%, #b2f2bb 60%, #ffe8a3 72%, #ffd8a8 100%);
+    box-shadow: 0 6px 0 rgba(0,0,0,.15); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; transition: transform .12s; }
+  .nv-ilha:hover { transform: translateY(-4px) scale(1.03); }
+  .nv-ilha.col-1 { grid-column: 1; } .nv-ilha.col-2 { grid-column: 2; } .nv-ilha.col-3 { grid-column: 3; }
+  .nv-ilha .figs { font-size: 2rem; line-height: 1.1; }
+  .nv-ilha .tit { font-weight: 900; font-size: 1.08rem; line-height: 1.15; }
+  .nv-ilha .tit-pt { font-weight: 700; font-size: .85rem; opacity: .75; }
+  .nv-ilha .pr { display: flex; align-items: center; gap: 6px; width: 86%; font-weight: 900; font-size: .82rem; }
+  .nv-ilha .pr .barrinha { height: 10px; background: rgba(255,255,255,.8); }
+  .nv-ilha.trancada { cursor: default; filter: grayscale(.9); opacity: .78; background: radial-gradient(ellipse at 50% 40%, #e9ecef 0 50%, #dee2e6 70%, #ced4da 100%); }
+  .nv-ilha.trancada:hover { transform: none; }
+  .nv-ilha .cadeado { font-size: 1.6rem; }
+  .nv-ilha .quando { font-weight: 800; font-size: .85rem; }
+  .nv-ilha .aqui { position: absolute; top: -14px; right: -4px; background: #fff; border: 3px solid #ff922b; border-radius: 99px; padding: 2px 10px 2px 6px;
+    font-weight: 900; font-size: .8rem; white-space: nowrap; box-shadow: 0 3px 0 rgba(0,0,0,.12); animation: nv-bob 1.6s ease-in-out infinite; }
+  .nv-ilha .aqui b { font-size: 1.3rem; vertical-align: middle; }
+  .nv-ilha .estrelas { font-weight: 900; font-size: .85rem; }
+  @keyframes nv-bob { 50% { transform: translateY(-4px); } }
+  @media (max-width: 560px) {
+    .nv-trilha, .nv-passo { grid-template-columns: 1fr; }
+    .nv-ilha.col-1, .nv-ilha.col-2, .nv-ilha.col-3 { grid-column: 1; }
+    .nv-pegadas.e, .nv-pegadas.d { text-align: center; padding: 0; }
+  }
+
+  /* Bichinho com acessórios */
+  .nv-av { position: relative; display: inline-block; line-height: 1; }
+  .nv-av-cab { position: absolute; left: 50%; top: -.42em; transform: translateX(-50%); font-size: .58em; pointer-events: none; }
+  .nv-av-ros { position: absolute; left: 50%; top: .2em; transform: translateX(-50%); font-size: .5em; pointer-events: none; }
+
+  /* Cantinho */
+  .nv-casa { position: relative; height: 300px; border-radius: 26px; overflow: hidden; border: 4px solid #ffc078; box-shadow: 0 6px 0 #ffd8a8;
+    background: linear-gradient(180deg, #fff4e6 0 66%, #e8c39e 66% 100%); }
+  .nv-casa::before { content: ''; position: absolute; left: 0; right: 0; top: 66%; height: 8px; background: #d9a066; }
+  .nv-janela { position: absolute; left: 6%; top: 10%; width: 92px; height: 74px; border: 6px solid #fff; border-radius: 10px; background: linear-gradient(#a5d8ff, #d0ebff); box-shadow: 0 0 0 3px #ffc078; }
+  .nv-janela::after { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 5px; margin-left: -2px; background: #fff; }
+  .nv-prateleira { position: absolute; right: 7%; top: 38%; width: 120px; height: 8px; background: #b5763c; border-radius: 4px; }
+  .nv-pet { position: absolute; left: 50%; bottom: 8%; transform: translateX(-50%); font-size: 6.5rem; }
+  .nv-item { position: absolute; font-size: 2.8rem; line-height: 1; }
+  .nv-item.vazio { font-size: 1.3rem; font-weight: 900; color: #c9a27a; border: 3px dashed #e0c3a4; border-radius: 14px; width: 54px; height: 54px; display: flex; align-items: center; justify-content: center; }
+  .nv-i-balao { left: 24%; top: 6%; } .nv-i-quadro { left: 60%; top: 9%; } .nv-i-livros { right: 9%; top: 23%; }
+  .nv-i-planta { left: 7%; bottom: 7%; } .nv-i-osso { right: 26%; bottom: 7%; }
+  .nv-secao { background: #fff; border-radius: 22px; padding: 16px 18px; margin-top: 16px; box-shadow: 0 4px 0 #ffe8cc; }
+  .nv-secao h2 { margin: 0 0 4px; }
+  .nv-linha-acs { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; align-items: center; }
+  .nv-linha-acs .rot { font-weight: 900; min-width: 80px; }
+  .nv-acs { border: 3px solid #dee2e6; background: #fff; border-radius: 16px; min-width: 64px; height: 64px; font-size: 2rem; cursor: pointer; position: relative; }
+  .nv-acs.ativa { border-color: #e8590c; background: #fff0e6; }
+  .nv-acs.trancado { cursor: default; filter: grayscale(1); opacity: .45; }
+  .nv-acs.trancado::after { content: '🔒'; position: absolute; right: -6px; bottom: -6px; font-size: 1rem; filter: none; }
+  .nv-acs .nada { font-size: .9rem; font-weight: 900; }
+  .nv-medalhas { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); margin-top: 10px; }
+  .nv-medalha { border: 3px solid #ffe066; background: #fff9db; border-radius: 18px; padding: 12px; display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; align-items: center; }
+  .nv-medalha .ic { font-size: 2.4rem; grid-row: span 3; }
+  .nv-medalha .en { font-weight: 900; }
+  .nv-medalha .pt { font-weight: 700; font-size: .85rem; color: #6c7086; }
+  .nv-medalha .pr { font-weight: 800; font-size: .85rem; }
+  .nv-medalha.falta { border-color: #e9ecef; background: #f8f9fa; }
+  .nv-medalha.falta .ic { filter: grayscale(1); opacity: .45; }
+
+  /* Medalha nova */
+  .nv-nova { text-align: center; width: min(420px, calc(100vw - 32px)); }
+  .nv-nova .ic { font-size: 5rem; animation: nv-pulo .7s ease-out; }
+  .nv-nova .premio { font-size: 1.1rem; font-weight: 800; background: #fff3bf; border-radius: 16px; padding: 10px; margin: 10px 0; }
+  .nv-nova .premio b { font-size: 2rem; vertical-align: middle; }
+  @keyframes nv-pulo { 0% { transform: scale(.2) rotate(-20deg); } 70% { transform: scale(1.2) rotate(6deg); } 100% { transform: none; } }
+
+  /* Tour com o Max */
+  .nv-tour { position: fixed; inset: 0; z-index: 1000; }
+  .nv-luz { position: absolute; border-radius: 20px; box-shadow: 0 0 0 9999px rgba(20, 24, 40, .62); outline: 4px solid #ffd43b; transition: all .25s; pointer-events: none; }
+  .nv-luz.sem-alvo { left: 50%; top: 50%; width: 0; height: 0; outline: 0; }
+  .nv-balao { position: absolute; left: 50%; transform: translateX(-50%); width: min(520px, calc(100vw - 32px)); background: #fff; border-radius: 24px;
+    padding: 16px 18px; box-shadow: 0 8px 0 rgba(0,0,0,.2); display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; align-items: start; }
+  .nv-balao .max { font-size: 4rem; line-height: 1; grid-row: span 2; animation: nv-bob 1.6s ease-in-out infinite; }
+  .nv-balao .en { font-size: 1.3rem; font-weight: 900; }
+  .nv-balao .pt { font-weight: 700; color: #6c7086; }
+  .nv-balao .bts { grid-column: 1 / -1; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; align-items: center; }
+  .nv-balao .bts .passos { margin-right: auto; font-weight: 800; color: #868e96; font-size: .9rem; }
+</style>
+
+<script>
+  const Narrativa = (function () {
+    const MESES_EN = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const MESES_PT = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+    const COLUNAS = [1, 2, 3, 2];
+    let jaGanhas = null;
+    let paraComemorar = [];
+
+    const dados = () => (typeof estado !== 'undefined' && estado && estado.narrativa) || null;
+    const falar = (t) => { if (typeof Fala !== 'undefined') Fala.falar(t); };
+
+    // ---------- Medalhas ----------
+    function stats() {
+      const n = dados(), s = Object.assign({}, n.stats);
+      if (estado.progresso) {
+        const temas = Object.values(estado.progresso.porTema || {});
+        s.estrelas = estado.progresso.totalEstrelas;
+        s.partidas = Math.max(Number(s.partidas) || 0, temas.reduce((t, x) => t + (x.jogadas || 0), 0));
+        s.temasJogados = Math.max(Number(s.temasJogados) || 0, temas.filter((x) => x.jogadas > 0).length);
+        s.temasDominados = Math.max(Number(s.temasDominados) || 0, temas.filter((x) => x.dominio >= 90).length);
+      }
+      return s;
+    }
+
+    function conquistas() {
+      const n = dados();
+      if (!n) return [];
+      const s = stats();
+      return n.marcos.map((m) => {
+        const v = Number(s[m.medida]) || 0;
+        return Object.assign({}, m, { feito: v >= m.meta, valor: Math.min(v, m.meta) });
+      });
+    }
+
+    function ganhos() {
+      const g = {};
+      conquistas().forEach((c) => { if (c.feito) g[c.premio.id] = c.premio; });
+      return g;
+    }
+
+    /** Chamada depois de salvar partidas ou missões: guarda as medalhas novas para comemorar na próxima tela. */
+    function verificar() {
+      if (!dados()) return;
+      const agora = conquistas().filter((c) => c.feito).map((c) => c.id);
+      if (!jaGanhas) { jaGanhas = agora; return; }
+      agora.filter((id) => !jaGanhas.includes(id)).forEach((id) => paraComemorar.push(id));
+      jaGanhas = agora;
+    }
+
+    function registrarMissao(parte, pontos) {
+      const n = dados();
+      if (!n) return;
+      if (parte === 'reforco') n.stats.reforcos = (Number(n.stats.reforcos) || 0) + 1;
+      else {
+        n.stats.missoes = (Number(n.stats.missoes) || 0) + 1;
+        if (pontos >= 90) n.stats.missoes90 = (Number(n.stats.missoes90) || 0) + 1;
+      }
+      verificar();
+    }
+
+    function comemorar() {
+      if (!paraComemorar.length || document.querySelector('.nv-tour')) return;
+      const id = paraComemorar.shift();
+      const c = conquistas().find((x) => x.id === id);
+      if (!c) return;
+      const p = c.premio;
+      const dlg = document.createElement('dialog');
+      dlg.className = 'nv-nova';
+      dlg.innerHTML = `<div class="ic">${esc(c.icone)}</div><h2>New medal! ${esc(c.en)}</h2>
+        <p style="font-weight:700;margin:0">${esc(c.nome)}</p>
+        <div class="premio">Você ganhou: <b>${esc(p.icone)}</b> ${esc(p.nome)}<br>
+          <span class="sub-kids">${p.tipo === 'acessorio' ? 'Um acessório para o seu bichinho!' : 'Um item para a sua casinha!'}</span></div>
+        <div class="rodape-modal" style="justify-content:center">
+          <button class="botao-grande claro" data-ok>OK</button>
+          <button class="botao-grande" data-ir>🏠 Ver meu cantinho</button></div>`;
+      document.body.appendChild(dlg);
+      dlg.addEventListener('close', () => { dlg.remove(); setTimeout(comemorar, 300); });
+      dlg.querySelector('[data-ok]').addEventListener('click', () => dlg.close());
+      dlg.querySelector('[data-ir]').addEventListener('click', () => { paraComemorar = []; dlg.close(); abrirCantinho(); });
+      dlg.showModal();
+      if (typeof Som !== 'undefined') Som.vitoria();
+      falar('New medal! ' + c.en);
+    }
+
+    // ---------- Bichinho ----------
+    function avatarHtml(avatar, visual) {
+      const v = visual || (dados() && dados().visual) || {};
+      const g = dados() ? ganhos() : {};
+      const cab = v.cabeca && g[v.cabeca] ? g[v.cabeca].icone : '';
+      const ros = v.rosto && g[v.rosto] ? g[v.rosto].icone : '';
+      return `<span class="nv-av"><span>${esc(avatar)}</span>${cab ? `<span class="nv-av-cab">${esc(cab)}</span>` : ''}${ros ? `<span class="nv-av-ros">${esc(ros)}</span>` : ''}</span>`;
+    }
+
+    function atualizarTopo() {
+      if (estado && estado.aluno) $('meu-avatar').innerHTML = avatarHtml(estado.aluno.avatar);
+    }
+
+    // ---------- Mapa ----------
+    function temMapa() { const n = dados(); return !!(n && n.mapa && n.mapa.length); }
+
+    function mapaHtml() {
+      const n = dados();
+      const liberados = new Set(estado.temas.map((t) => t.id));
+      const ilhas = n.mapa.map((i) => Object.assign({}, i, { liberado: liberados.has(i.id) }));
+      const ultima = ilhas.map((i) => i.liberado).lastIndexOf(true);
+      const partes = [];
+      ilhas.forEach((ilha, k) => {
+        const col = COLUNAS[k % COLUNAS.length];
+        if (k > 0) {
+          const ant = COLUNAS[(k - 1) % COLUNAS.length];
+          partes.push(`<div class="nv-pegadas ${col < ant ? 'e' : col > ant ? 'd' : ''}" aria-hidden="true">🐾 🐾</div>`);
+        }
+        const figs = (ilha.figuras.length ? ilha.figuras : ['🔤']).map((f) => esc(f)).join(' ');
+        if (!ilha.liberado) {
+          const m = Number(ilha.mes) - 1;
+          partes.push(`<div class="nv-passo"><div class="nv-ilha trancada col-${col}" title="Esta ilha abre em ${esc(MESES_PT[m] || '')}">
+            <span class="cadeado">🔒</span><span class="figs">${figs}</span>
+            <span class="tit">${esc(ilha.titulo)}</span>
+            <span class="quando">Opens in ${esc(MESES_EN[m] || '')}</span></div></div>`);
+          return;
+        }
+        const p = progressoDe(ilha.id), est = somaEstrelas(p.estrelas);
+        partes.push(`<div class="nv-passo"><button class="nv-ilha col-${col}" data-tema="${esc(ilha.id)}" data-ilha="${k}">
+          ${k === ultima ? '<span class="aqui"><b>🐶</b> New!</span>' : ''}
+          <span class="figs">${figs}</span>
+          <span class="tit">${esc(ilha.titulo)}</span>
+          <span class="tit-pt">${esc(ilha.titulo_pt)}</span>
+          <span class="pr" title="Quanto você já aprendeu desta ilha"><span class="barrinha"><i style="width:${p.dominio}%"></i></span>${p.dominio}%</span>
+          ${est ? `<span class="estrelas">⭐ ${est}</span>` : ''}
+        </button></div>`);
+      });
+      return `<div class="nv-mar"><div class="nv-trilha" id="nv-trilha">${partes.join('')}</div></div>`;
+    }
+
+    function cabecalhoMapa() {
+      const serie = estado.aluno.serie || '';
+      return `<div class="nv-cab"><h1>Adventure map 🗺️<span class="sub-kids">${esc(serie)} ano · toque numa ilha para aprender e jogar</span></h1>
+        <button class="nv-btn" data-tour>🐶 Max's tour</button>
+        <button class="nv-btn" data-cantinho>🏠 My corner</button></div>`;
+    }
+
+    // ---------- Cantinho ----------
+    function abrirCantinho() {
+      renderCantinho();
+      mostrar('cantinho');
+    }
+
+    function renderCantinho() {
+      const n = dados(), v = n.visual, cs = conquistas(), g = ganhos();
+      const premios = cs.map((c) => c.premio);
+      const itens = premios.filter((p) => p.tipo === 'item');
+      const acs = (slot) => premios.filter((p) => p.tipo === 'acessorio' && p.slot === slot);
+      const botaoAcs = (slot, p) => {
+        const marco = cs.find((c) => c.premio.id === p.id);
+        const tem = !!g[p.id];
+        return `<button class="nv-acs ${v[slot] === p.id ? 'ativa' : ''} ${tem ? '' : 'trancado'}" ${tem ? `data-slot="${slot}" data-acs="${esc(p.id)}"` : ''}
+          title="${esc(p.nome)}${tem ? '' : ' · ganhe a medalha: ' + esc(marco.nome)}">${esc(p.icone)}</button>`;
+      };
+      $('cantinho').innerHTML = `
+        <div class="barra-tema"><button class="botao-grande claro" data-voltar aria-label="Voltar">⬅</button><h1>My corner 🏠</h1></div>
+        <div class="nv-casa" aria-label="Minha casinha">
+          <div class="nv-janela"></div><div class="nv-prateleira"></div>
+          ${itens.map((p) => g[p.id] ? `<span class="nv-item nv-i-${esc(p.id)}" title="${esc(p.nome)}">${esc(p.icone)}</span>`
+            : `<span class="nv-item vazio nv-i-${esc(p.id)}" title="Ganhe medalhas para enfeitar a casinha">?</span>`).join('')}
+          <span class="nv-pet">${avatarHtml(estado.aluno.avatar)}</span>
+        </div>
+        <div class="nv-secao"><h2>🎩 Accessories</h2><p class="sub-kids" style="margin:0">Ganhe medalhas para liberar acessórios para o seu bichinho.</p>
+          <div class="nv-linha-acs"><span class="rot">Head</span>
+            <button class="nv-acs ${v.cabeca ? '' : 'ativa'}" data-slot="cabeca" data-acs=""><span class="nada">none</span></button>
+            ${acs('cabeca').map((p) => botaoAcs('cabeca', p)).join('')}</div>
+          <div class="nv-linha-acs"><span class="rot">Face</span>
+            <button class="nv-acs ${v.rosto ? '' : 'ativa'}" data-slot="rosto" data-acs=""><span class="nada">none</span></button>
+            ${acs('rosto').map((p) => botaoAcs('rosto', p)).join('')}</div>
+        </div>
+        <div class="nv-secao"><h2>🏅 My medals <span class="sub-kids" style="display:inline">${cs.filter((c) => c.feito).length} de ${cs.length}</span></h2>
+          <div class="nv-medalhas">${cs.map((c) => `
+            <div class="nv-medalha ${c.feito ? '' : 'falta'}"><span class="ic">${esc(c.icone)}</span>
+              <span class="en">${esc(c.en)}</span><span class="pt">${esc(c.nome)}</span>
+              <span class="pr">${c.feito ? '✅' : c.valor + '/' + c.meta} · prêmio ${esc(c.premio.icone)}</span></div>`).join('')}</div>
+        </div>
+        <div class="nv-secao"><h2>🐾 My pet</h2><p class="sub-kids" style="margin:0 0 10px">Toque para trocar o seu bichinho.</p>
+          <div class="grade-avatares">${estado.avatares.map((a) =>
+            `<button type="button" data-avatar="${esc(a)}" class="${a === estado.aluno.avatar ? 'ativa' : ''}">${esc(a)}</button>`).join('')}</div>
+        </div>`;
+    }
+
+    async function cliqueCantinho(ev) {
+      const b = ev.target.closest('button');
+      if (!b) return;
+      if (b.hasAttribute('data-voltar')) { renderTemas(); mostrar('inicio'); return; }
+      if (b.hasAttribute('data-acs')) {
+        const n = dados(), slot = b.dataset.slot, id = b.dataset.acs, antes = n.visual[slot];
+        if (antes === id) return;
+        n.visual[slot] = id;
+        renderCantinho(); atualizarTopo();
+        if (id) falar(ganhos()[id] ? 'Nice!' : '');
+        try { await chamar('alunoSalvarVisual', { [slot]: id }); }
+        catch (e) { n.visual[slot] = antes; renderCantinho(); atualizarTopo(); alert(e.message); }
+        return;
+      }
+      if (b.hasAttribute('data-avatar')) {
+        const anterior = estado.aluno.avatar, novo = b.dataset.avatar;
+        if (novo === anterior) return;
+        estado.aluno.avatar = novo;
+        renderCantinho(); atualizarTopo();
+        try { await chamar('alunoTrocarAvatar', novo); }
+        catch (e) { estado.aluno.avatar = anterior; renderCantinho(); atualizarTopo(); alert(e.message); }
+      }
+    }
+
+    // ---------- Tour com o Max (Missão 0) ----------
+    function passosTour() {
+      const ilha = document.querySelector('#nv-trilha [data-tema]');
+      const trancada = document.querySelector('#nv-trilha .trancada');
+      const missao = document.querySelector('#missoes .missao-aviso');
+      const lista = [
+        { en: "Hi! I'm Max! Welcome to English Kids!", pt: 'Oi! Eu sou o Max, o seu amigo nesta aventura. Vou te mostrar o app!', botao: "Let's go! ▶" },
+        { alvo: ilha, en: 'This is your adventure map. Each island is a theme.', pt: 'Este é o seu mapa de aventura. Cada ilha é um tema: toque nela para ouvir as palavras e jogar.' },
+        { alvo: trancada, en: 'Locked islands open later.', pt: 'As ilhas com cadeado abrem mais tarde, mês a mês. Fique de olho!' },
+        { alvo: $('minhas-estrelas'), en: 'Play games and win stars!', pt: 'Cada jogo vale até 3 estrelas. Junte estrelas para ganhar medalhas!' },
+        { alvo: missao, en: 'When I need help, a mission appears here!', pt: 'Quando o professor abrir uma missão, ela aparece aqui em cima. A missão vale nota!' },
+        { alvo: $('meu-avatar'), en: 'This is you! Tap here to open your corner.', pt: 'Este é você! Toque aqui para ver suas medalhas, colocar acessórios e enfeitar a sua casinha.' },
+        { en: "Now it's your turn. Let's play!", pt: 'Agora é com você. Bom jogo!', botao: 'Finish ✅' },
+      ];
+      return lista.filter((p, i) => i === 0 || i === lista.length - 1 || p.alvo);
+    }
+
+    function tour() {
+      if (document.querySelector('.nv-tour')) return;
+      if ($('inicio').hidden) mostrar('inicio');
+      const passos = passosTour();
+      let i = 0;
+      const caixa = document.createElement('div');
+      caixa.className = 'nv-tour';
+      caixa.innerHTML = '<div class="nv-luz sem-alvo"></div><div class="nv-balao" role="dialog" aria-live="polite"></div>';
+      document.body.appendChild(caixa);
+      const luz = caixa.querySelector('.nv-luz'), balao = caixa.querySelector('.nv-balao');
+
+      function posicionar() {
+        const p = passos[i];
+        if (!p.alvo) {
+          luz.className = 'nv-luz sem-alvo'; luz.removeAttribute('style');
+          balao.style.top = '50%'; balao.style.bottom = ''; balao.style.transform = 'translate(-50%, -50%)';
+          return;
+        }
+        const r = p.alvo.getBoundingClientRect(), m = 8;
+        luz.className = 'nv-luz';
+        luz.style.left = (r.left - m) + 'px'; luz.style.top = (r.top - m) + 'px';
+        luz.style.width = (r.width + 2 * m) + 'px'; luz.style.height = (r.height + 2 * m) + 'px';
+        balao.style.transform = 'translateX(-50%)';
+        if (r.top + r.height / 2 > window.innerHeight / 2) { balao.style.top = '16px'; balao.style.bottom = ''; }
+        else { balao.style.top = ''; balao.style.bottom = '16px'; }
+      }
+
+      function mostrarPasso() {
+        const p = passos[i], ultimo = i === passos.length - 1;
+        balao.innerHTML = `<span class="max">🐶</span><span class="en">${esc(p.en)}</span><span class="pt">${esc(p.pt)}</span>
+          <span class="bts"><span class="passos">${i + 1} / ${passos.length}</span>
+            <button class="nv-btn" data-ouvir aria-label="Ouvir de novo">🔊</button>
+            ${ultimo ? '' : '<button class="nv-btn" data-pular>Pular</button>'}
+            <button class="botao-grande" data-proximo>${esc(p.botao || 'Next ▶')}</button></span>`;
+        if (p.alvo) p.alvo.scrollIntoView({ block: 'center', behavior: 'instant' });
+        posicionar();
+        if (i > 0) falar(p.en);
+        balao.querySelector('[data-proximo]').focus();
+      }
+
+      function terminar() {
+        window.removeEventListener('resize', posicionar);
+        window.removeEventListener('scroll', posicionar);
+        caixa.remove();
+        const n = dados();
+        if (n && !n.visual.tutorial) {
+          n.visual.tutorial = true;
+          chamar('alunoSalvarVisual', { tutorial: true }).catch(() => { n.visual.tutorial = false; });
+        }
+        window.scrollTo(0, 0);
+        comemorar();
+      }
+
+      balao.addEventListener('click', async (ev) => {
+        const b = ev.target.closest('button');
+        if (!b) return;
+        if (b.hasAttribute('data-ouvir')) { if (typeof Fala !== 'undefined') { await Fala.iniciar(); falar(passos[i].en); } return; }
+        if (b.hasAttribute('data-pular')) { terminar(); return; }
+        if (i === 0 && typeof Fala !== 'undefined') await Fala.iniciar();
+        if (i === passos.length - 1) { terminar(); return; }
+        i++;
+        mostrarPasso();
+      });
+      window.addEventListener('resize', posicionar);
+      window.addEventListener('scroll', posicionar);
+      mostrarPasso();
+    }
+
+    function iniciar() {
+      jaGanhas = null;
+      paraComemorar = [];
+      verificar();
+      atualizarTopo();
+      $('cantinho').addEventListener('click', cliqueCantinho);
+      $('mapa-cab').addEventListener('click', (ev) => {
+        const b = ev.target.closest('button');
+        if (!b) return;
+        if (b.hasAttribute('data-tour')) tour();
+        if (b.hasAttribute('data-cantinho')) abrirCantinho();
+      });
+    }
+
+    let ligado = false;
+    function preparar() {
+      if (!dados()) return;
+      if (!ligado) { iniciar(); ligado = true; } else { jaGanhas = null; verificar(); atualizarTopo(); }
+      if (!dados().visual.tutorial) setTimeout(tour, 400);
+    }
+
+    return { preparar, temMapa, mapaHtml, cabecalhoMapa, avatarHtml, atualizarTopo, verificar, registrarMissao, comemorar, abrirCantinho, tour, dados };
+  })();
+</script>

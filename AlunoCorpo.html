@@ -31,15 +31,17 @@
       <p>O cadastro de novos alunos está fechado no momento. Fale com o seu professor.</p>
     </div>
 
-    <!-- Início: temas -->
+    <!-- Início: mapa de aventura (ou a grade de temas, se o mapa não vier) -->
     <div id="inicio" hidden>
       <div id="missoes"></div>
       <div id="quizzes"></div>
       <div id="equipe"></div>
-      <h1>Choose a theme! 🎨</h1>
-      <p class="sub-kids" style="margin-top:-6px">Escolha um tema para ouvir e aprender as palavras.</p>
-      <div class="grade-temas" id="temas"></div>
+      <div id="mapa-cab"></div>
+      <div id="temas"></div>
     </div>
+
+    <!-- Meu cantinho: bichinho, acessórios, casinha e medalhas -->
+    <div id="cantinho" hidden></div>
 
     <!-- Tema -->
     <div id="tema" hidden>
@@ -80,12 +82,6 @@
     </div>
   </dialog>
 
-  <dialog id="trocar-avatar" style="width:min(520px, calc(100vw - 32px))">
-    <h2>Escolha o seu bichinho</h2>
-    <div class="grade-avatares" id="troca-avatares"></div>
-    <div class="rodape-modal"><button class="botao-grande claro" id="fechar-avatar">Fechar</button></div>
-  </dialog>
-
   <script>
     const $ = (id) => document.getElementById(id);
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -102,9 +98,10 @@
     }
 
     function mostrar(id) {
-      ['carregando', 'erro', 'cadastro', 'fechado', 'inicio', 'tema', 'jogo', 'quiz', 'missao'].forEach((x) => ($(x).hidden = x !== id));
+      ['carregando', 'erro', 'cadastro', 'fechado', 'inicio', 'tema', 'jogo', 'quiz', 'missao', 'cantinho'].forEach((x) => ($(x).hidden = x !== id));
       $('topo').hidden = !estado || !estado.aluno;
       window.scrollTo(0, 0);
+      if (id === 'inicio' || id === 'tema') Narrativa.comemorar();
     }
 
     function mostrarErro(msg) {
@@ -117,6 +114,7 @@
       Fala.velocidade = e.velocidadeVoz;
       if (!e.aluno) { renderCadastro(); return; }
       $('meu-avatar').textContent = e.aluno.avatar;
+      Narrativa.preparar();
       $('primeiro-nome').textContent = e.aluno.nome.split(' ')[0];
       $('minha-turma').textContent = e.aluno.turma;
       renderEstrelas();
@@ -187,22 +185,10 @@
       } finally { botao.disabled = false; }
     });
 
-    // ---------- Bichinho ----------
+    // ---------- Bichinho: abre o cantinho (trocar bichinho, acessórios, casinha e medalhas) ----------
     $('meu-avatar').addEventListener('click', () => {
-      $('troca-avatares').innerHTML = estado.avatares.map((a) =>
-        `<button type="button" data-avatar="${esc(a)}" class="${a === estado.aluno.avatar ? 'ativa' : ''}">${esc(a)}</button>`).join('');
-      $('trocar-avatar').showModal();
-    });
-    $('fechar-avatar').addEventListener('click', () => $('trocar-avatar').close());
-    $('troca-avatares').addEventListener('click', async (ev) => {
-      const b = ev.target.closest('[data-avatar]');
-      if (!b) return;
-      const anterior = estado.aluno.avatar;
-      estado.aluno.avatar = b.dataset.avatar;
-      $('meu-avatar').textContent = b.dataset.avatar;
-      $('trocar-avatar').close();
-      try { await chamar('alunoTrocarAvatar', b.dataset.avatar); }
-      catch (e) { estado.aluno.avatar = anterior; $('meu-avatar').textContent = anterior; alert(e.message); }
+      if (Narrativa.dados()) { Narrativa.abrirCantinho(); return; }
+      mostrarErro('Recarregue a página para abrir o seu cantinho.');
     });
 
     // ---------- Temas ----------
@@ -214,6 +200,14 @@
 
     function renderTemas() {
       const temas = estado.temas;
+      if (Narrativa.temMapa()) {
+        $('mapa-cab').innerHTML = Narrativa.cabecalhoMapa();
+        $('temas').className = '';
+        $('temas').innerHTML = Narrativa.mapaHtml();
+        return;
+      }
+      $('mapa-cab').innerHTML = '<h1>Choose a theme! 🎨</h1><p class="sub-kids" style="margin-top:-6px">Escolha um tema para ouvir e aprender as palavras.</p>';
+      $('temas').className = 'grade-temas';
       $('temas').innerHTML = temas.length ? temas.map((t, i) => `
         <button class="cartao-tema cor-${i % 6}" data-tema="${esc(t.id)}">
           <span class="figs">${(t.palavras.map((p) => p.figura).filter(Boolean).slice(0, 3).map((f) => `<span>${esc(f)}</span>`).join('')) || '<span>🔤</span>'}</span>
@@ -229,7 +223,8 @@
     $('temas').addEventListener('click', (ev) => {
       const b = ev.target.closest('[data-tema]');
       if (!b) return;
-      abrirTema(estado.temas.find((t) => t.id === b.dataset.tema));
+      const t = estado.temas.find((x) => x.id === b.dataset.tema);
+      if (t) abrirTema(t);
     });
 
     function abrirTema(t) {
@@ -379,7 +374,7 @@
       mostrar('missao');
       const res = await MissaoPlayer.jogar($('missao'), r.missao, {
         botaoFim: 'Continuar ▶',
-        aoTerminar: (resultado, status) => { m.comum = resultado.pontos; m.erros = resultado.detalhe.erros; salvarMissao(m, 'comum', resultado, status); },
+        aoTerminar: (resultado, status) => { m.comum = resultado.pontos; m.erros = resultado.detalhe.erros; Narrativa.registrarMissao('comum', resultado.pontos); salvarMissao(m, 'comum', resultado, status); },
       });
       return res;
     }
@@ -389,7 +384,7 @@
       mostrar('missao');
       await MissaoPlayer.reforco($('missao'), spec, {
         botaoFim: 'Voltar ao início ▶',
-        aoTerminar: (resultado, status) => { m.reforco = resultado.pontos; salvarMissao(m, 'reforco', resultado, status); },
+        aoTerminar: (resultado, status) => { m.reforco = resultado.pontos; Narrativa.registrarMissao('reforco', resultado.pontos); salvarMissao(m, 'reforco', resultado, status); },
       });
     }
 
@@ -526,6 +521,7 @@
       }
       enviando = false;
       renderEstrelas();
+      Narrativa.verificar();
       if (avisar) avisar(falhou ? 'pendente' : 'ok');
       // Tenta de novo em até ~1 minuto, com um sorteio para os alunos não tentarem todos juntos.
       if (falhou) tentativa = setTimeout(() => enviarFila(), 20000 + Math.random() * 40000);

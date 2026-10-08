@@ -4,6 +4,45 @@ Faça tudo com a sua **conta institucional** (@edu.joinville.sc.gov.br).
 
 ---
 
+# Etapa 2 da narrativa: mapa, medalhas, cantinho e tour do Max (atualização)
+
+## A. Atualizar o código
+No editor do Apps Script (**Extensões > Apps Script**, na planilha):
+
+| Arquivo no editor | O que fazer |
+|---|---|
+| `Narrativa` | **novo:** clique em **+ > Script**, dê o nome `Narrativa` e cole **Narrativa.gs** |
+| `NarrativaTela` | **novo:** clique em **+ > HTML**, dê o nome `NarrativaTela` e cole **NarrativaTela.html** |
+| `Codigo` | apague tudo e cole a nova versão (.gs) |
+| `Aluno`, `AlunoCorpo` | apague tudo e cole as novas versões (.html) |
+
+Depois faça o seguinte:
+1. Salve (💾). Execute **instalar**: ela acrescenta a coluna **visual_json** na aba **Alunos**. Se você esquecer, o app cria a coluna sozinho na primeira vez que uma criança terminar o tour.
+2. Publique a nova versão: **Implantar > Gerenciar implantações > ✏️ > Versão: Nova versão > Implantar**.
+
+## B. O que muda para a criança
+- **Tour com o Max (Missão 0):** no primeiro acesso depois da atualização, o Max apresenta o app em 7 passos curtos, falando em inglês e com o texto em português. Ele aparece uma vez só. O botão **🐶 Max's tour** repete o tour quando a criança quiser.
+- **Mapa de aventura:** a tela inicial agora é um mapa com uma **ilha para cada tema** da série, em ordem de mês. As ilhas liberadas mostram quanto a criança já aprendeu e as estrelas. As ilhas futuras aparecem com 🔒 e o mês em que abrem. A ilha mais nova tem o selo **New!**. Liberar e ocultar temas continua igual (aba **Temas**).
+- **Medalhas:** 10 medalhas ganhas sozinhas, sem você precisar fazer nada. Cada medalha libera um prêmio:
+
+| Medalha | Como ganhar | Prêmio |
+|---|---|---|
+| 🎮 First game! | 1ª partida | 🎈 balão (casinha) |
+| ⭐ 10 stars! | 10 estrelas | 🧢 boné |
+| 🗺️ 3 islands! | jogar em 3 ilhas | 📚 livros (casinha) |
+| 🌟 25 stars! | 25 estrelas | 🕶️ óculos |
+| 🐶 Mission complete! | 1ª missão do Max | 🦴 ossinho (casinha) |
+| 🎯 Super mission! | missão com 90 pontos ou mais | 🎀 laço |
+| 💪 Strong learner! | 3 reforços | 🪴 plantinha (casinha) |
+| 🏅 Island master! | uma ilha com 90% ou mais | 🖼️ quadro (casinha) |
+| 💫 50 stars! | 50 estrelas | 🎩 cartola |
+| 🏆 100 stars! | 100 estrelas | 👑 coroa |
+
+- **Meu cantinho:** tocar no bichinho (no alto da tela) ou em **🏠 My corner** abre a casinha, a escolha de acessórios (cabeça e rosto), a lista de medalhas com o quanto falta e a troca de bichinho.
+- Nada é gasto nem perdido: as medalhas são calculadas a partir das estrelas, partidas e missões que já estão na planilha. Por isso, quem já jogava antes ganha as medalhas na hora.
+
+---
+
 # Missões do mês com o Max (atualização)
 
 ## A. Atualizar o código
