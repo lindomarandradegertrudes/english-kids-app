@@ -16,6 +16,7 @@ Roda **gratuitamente** no Google Workspace da escola, com Google Apps Script e G
 | 4 | Equipes de até 5 alunos (níveis misturados) e placar mensal por equipes | ✅ entregue |
 | 5 | Mais jogos: Find it! (caça-palavras), Color it!, Build it! (frases), Spelling Bee e Repeat after me | ✅ entregue |
 | + | Speak! (pronúncia com microfone): retirado, porque o reconhecimento de voz falhava muito com as crianças | ❌ removido |
+| M3 | Habilidades do Mapa (ouvir, ler, escrever com códigos EF0xLI04/07/09-JO) por tema e turma, quadro na ficha do aluno e "Meu reforço" sem nota para a criança | ✅ entregue |
 | M2 | Narrativa: tour do Max (Missão 0), mapa de aventura por série como tela inicial, 10 medalhas automáticas, acessórios do bichinho e casinha no "Meu cantinho" | ✅ entregue |
 | M1 | Missões do mês com o Max: história + 4 desafios em 3 degraus, aula aberta/fechada pelo professor, reabertura para quem faltou, reforço individual e nota mensal no nível | ✅ entregue |
 | 6 | Relatórios: comparativo das turmas, palavras difíceis, ficha do aluno (impressão) e exportação para planilha | ✅ entregue |
@@ -33,12 +34,12 @@ Roda **gratuitamente** no Google Workspace da escola, com Google Apps Script e G
 | `Equipes.gs` | Equipes mensais e placar |
 | `MissoesPadrao.gs` / `Missoes.gs` | Banco de missões e regras (aulas, reforço, nota do mês) |
 | `MissaoTela.html` / `ProfMissoes.html` | Tela da missão (criança e prévia) e aba Missões do professor |
+| `Habilidades.gs` / `ProfHabilidades.html` | Habilidades do Mapa calculadas com jogos, quizzes e missões, e aba Habilidades do professor |
 | `Narrativa.gs` / `NarrativaTela.html` | Medalhas, acessórios e tour (servidor) e mapa, cantinho e tour (tela da criança) |
 | `Relatorios.gs` / `ProfRelatorios.html` | Relatórios, ficha do aluno e exportação |
 | `Professor.html` / `ProfTemas.html` / `ProfProgresso.html` / `ProfAvaliacoes.html` / `ProfEquipes.html` | Painel do professor e abas de Temas, Progresso, Avaliações e Equipes |
 | `Aluno.html` / `AlunoCorpo.html` | Tela da criança (o modelo `Aluno` só inclui arquivos; todo o código fica em `AlunoCorpo`) |
 | `Fala.html` | Voz em inglês do Chrome |
-| `Teste.html` / `TesteConteudo.html` | Teste de voz (`?teste=1`) |
 | `Estilo.html` / `Marca.html` | Estilos compartilhados e marca do cabeçalho (bandeira + nome) |
 
 ## Privacidade

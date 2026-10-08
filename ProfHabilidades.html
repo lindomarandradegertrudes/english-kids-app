@@ -1,0 +1,140 @@
+<!-- Habilidades: turma × habilidade (ouvir, ler, escrever) com os códigos do Mapa de Progressão -->
+<section id="aba-habilidades" class="pilha" hidden>
+  <style>
+    .hb-legenda { display: grid; gap: 8px; }
+    .hb-legenda div { display: grid; grid-template-columns: 30px 150px 1fr; gap: 8px; align-items: baseline; }
+    .hb-legenda .ic { font-size: 1.3rem; }
+    .hb-legenda code { font-weight: 700; }
+    .hb-cel { text-align: center; font-weight: 700; cursor: pointer; min-width: 92px; }
+    .hb-cel:hover { outline: 2px solid var(--primaria); outline-offset: -2px; }
+    .hb-cel small { display: block; font-weight: 400; font-size: .72rem; opacity: .8; }
+    .hb-th { text-align: center; min-width: 92px; }
+    .hb-th small { display: block; font-weight: 400; font-size: .72rem; }
+    .hb-aluno { display: grid; grid-template-columns: 34px 1fr 140px 56px 60px; gap: 10px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--borda); }
+    .hb-aluno .barra { margin: 0; height: 10px; }
+  </style>
+
+  <div class="linha">
+    <select id="hb-turma"></select>
+    <select id="hb-visao">
+      <option value="temas">Turma por tema</option>
+      <option value="alunos">Alunos (todos os temas)</option>
+    </select>
+    <button class="btn" id="hb-atualizar">↻ Atualizar</button>
+  </div>
+
+  <div class="cartao">
+    <h3 style="margin-top:0">Habilidades do Mapa de Progressão</h3>
+    <div class="hb-legenda" id="hb-legenda"><span class="suave pequeno">Escolha a turma.</span></div>
+    <p class="suave pequeno" style="margin-bottom:0">Calculado com o que a criança já faz no app: as 5 partidas mais recentes de cada tema e tipo de jogo, as questões dos quizzes respondidos no app e os desafios das missões.
+      Com menos de 3 respostas o resultado fica em branco.</p>
+  </div>
+
+  <div class="cartao">
+    <div class="linha" style="margin-bottom:10px">
+      <h3 style="margin:0" id="hb-titulo">Resultados</h3><span class="espaco"></span>
+      <div class="legenda"><span class="n0">pouca informação</span><span class="n1">0–39%</span><span class="n2">40–69%</span><span class="n3">70–89%</span><span class="n4">90–100%</span></div>
+    </div>
+    <p class="suave pequeno" style="margin-top:0" id="hb-dica"></p>
+    <div class="tabela-rolagem"><table class="mapa" id="hb-tabela"></table></div>
+  </div>
+
+  <dialog id="hb-modal" style="width:min(640px, calc(100vw - 32px))">
+    <div class="linha" style="margin-bottom:10px"><h2 style="margin:0" id="hb-det-titulo"></h2><span class="espaco"></span>
+      <button class="btn" type="button" data-fechar>Fechar</button></div>
+    <div id="hb-det" style="max-height:70vh;overflow-y:auto"></div>
+  </dialog>
+</section>
+
+<script>
+  let habTurma = null;
+
+  function hbCor(v) { return v == null ? 'n0' : v >= 90 ? 'n4' : v >= 70 ? 'n3' : v >= 40 ? 'n2' : 'n1'; }
+
+  /** Média da turma num tema e tipo (só alunos com resultado). */
+  function hbMedia(temaId, tipo) {
+    const v = habTurma.alunos.map((a) => (temaId ? (a.porTema[temaId] || {})[tipo] : a.geral[tipo])).filter((x) => x && x.pct != null).map((x) => x.pct);
+    return { pct: v.length ? Math.round(v.reduce((s, x) => s + x, 0) / v.length) : null, alunos: v.length };
+  }
+
+  async function carregarHabilidades() {
+    const turma = $('hb-turma').value;
+    if (!turma) return;
+    $('hb-tabela').innerHTML = '<tr><td class="carregando">Carregando…</td></tr>';
+    habTurma = await chamar('profHabilidadesTurma', turma);
+    renderHabilidades();
+  }
+
+  function renderHabilidades() {
+    const d = habTurma;
+    $('hb-legenda').innerHTML = d.legenda.map((h) => `<div><span class="ic">${esc(h.icone)}</span>
+      <span><strong>${esc(h.nome)}</strong> · <code>${esc(h.codigo)}</code></span><span class="suave pequeno">${esc(h.descricao)}</span></div>`).join('');
+    const cab = d.legenda.map((h) => `<th class="hb-th">${esc(h.icone)} ${esc(h.nome)}<small>${esc(h.codigo)}</small></th>`).join('');
+
+    if ($('hb-visao').value === 'temas') {
+      const temas = d.temas.filter((t) => t.status === 'liberado' || d.legenda.some((h) => hbMedia(t.id, h.tipo).alunos));
+      $('hb-titulo').textContent = 'Turma ' + d.turma + ' por tema';
+      $('hb-dica').textContent = 'Média da turma (entre os alunos com resultado). Clique numa célula para ver cada aluno.';
+      const linha = (id, rotulo) => `<tr><td>${rotulo}</td>${d.legenda.map((h) => {
+        const m = hbMedia(id, h.tipo);
+        return `<td class="hb-cel ${hbCor(m.pct)}" data-tema="${esc(id || '')}" data-tipo="${h.tipo}">${m.pct == null ? '—' : m.pct + '%'}<small>${m.alunos} de ${d.alunos.length} alunos</small></td>`;
+      }).join('')}</tr>`;
+      $('hb-tabela').innerHTML = d.alunos.length ? `<thead><tr><th>Tema</th>${cab}</tr></thead><tbody>
+        ${temas.map((t) => linha(t.id, `<strong>${esc(t.titulo)}</strong> <span class="suave pequeno">${esc(t.titulo_pt)}${t.status === 'liberado' ? '' : ' (oculto)'}</span>`)).join('')}
+        ${linha('', '<strong>Todos os temas</strong>')}</tbody>`
+        : '<tr><td class="vazio">Nenhum aluno cadastrado nesta turma.</td></tr>';
+      return;
+    }
+
+    $('hb-titulo').textContent = 'Alunos da turma ' + d.turma;
+    $('hb-dica').textContent = 'Resultado de cada aluno somando todos os temas. Clique numa célula para ver por tema.';
+    $('hb-tabela').innerHTML = d.alunos.length ? `<thead><tr><th></th><th>Aluno</th>${cab}</tr></thead><tbody>
+      ${d.alunos.map((a) => `<tr><td class="avatar">${esc(a.avatar)}</td><td>${esc(a.nome)}</td>${d.legenda.map((h) => {
+        const x = a.geral[h.tipo];
+        return `<td class="hb-cel ${hbCor(x.pct)}" data-email="${esc(a.email)}" data-tipo="${h.tipo}">${x.pct == null ? '—' : x.pct + '%'}<small>${x.n} respostas</small></td>`;
+      }).join('')}</tr>`).join('')}</tbody>`
+      : '<tr><td class="vazio">Nenhum aluno cadastrado nesta turma.</td></tr>';
+  }
+
+  function hbBarra(x) {
+    return x && x.pct != null
+      ? `<div class="barra"><i style="width:${x.pct}%;background:${x.pct < 40 ? 'var(--perigo)' : x.pct < 70 ? '#f08c00' : 'var(--ok)'}"></i></div><strong>${x.pct}%</strong>`
+      : '<span class="suave pequeno">pouca informação</span><span></span>';
+  }
+
+  function hbDetalhe(cel) {
+    const d = habTurma, h = d.legenda.find((x) => x.tipo === cel.dataset.tipo);
+    if (cel.dataset.email) {
+      const a = d.alunos.find((x) => x.email === cel.dataset.email);
+      $('hb-det-titulo').textContent = `${a.avatar} ${a.nome} · ${h.icone} ${h.nome}`;
+      const temas = d.temas.filter((t) => (a.porTema[t.id] || {})[h.tipo]);
+      $('hb-det').innerHTML = `<p class="suave pequeno"><code>${esc(h.codigo)}</code> ${esc(h.descricao)}</p>` + (temas.length ? temas.map((t) => {
+        const x = a.porTema[t.id][h.tipo];
+        return `<div class="hb-aluno"><span></span><span><strong>${esc(t.titulo)}</strong></span>${hbBarra(x)}<span class="suave pequeno">${x.n} resp.</span></div>`;
+      }).join('') : '<p class="vazio">Ainda sem respostas desta habilidade.</p>');
+    } else {
+      const tema = d.temas.find((t) => t.id === cel.dataset.tema);
+      $('hb-det-titulo').textContent = `${h.icone} ${h.nome} · ${tema ? tema.titulo : 'Todos os temas'}`;
+      const lista = d.alunos.map((a) => ({ a, x: tema ? (a.porTema[tema.id] || {})[h.tipo] : a.geral[h.tipo] }))
+        .sort((p, q) => (p.x && p.x.pct != null ? p.x.pct : 999) - (q.x && q.x.pct != null ? q.x.pct : 999));
+      const atencao = lista.filter((l) => l.x && l.x.pct != null && l.x.pct < 60).length;
+      $('hb-det').innerHTML = `<p class="suave pequeno"><code>${esc(h.codigo)}</code> ${esc(h.descricao)}<br>
+        ${atencao ? `<strong style="color:var(--perigo)">${atencao} aluno(s) abaixo de 60%</strong>: bons candidatos para retomar em aula.` : 'Nenhum aluno abaixo de 60%.'}</p>` +
+        lista.map((l) => `<div class="hb-aluno"><span class="avatar">${esc(l.a.avatar)}</span><span>${esc(l.a.nome)}</span>${hbBarra(l.x)}
+          <span class="suave pequeno">${l.x ? l.x.n + ' resp.' : ''}</span></div>`).join('');
+    }
+    $('hb-modal').showModal();
+  }
+
+  function configurarHabilidades() {
+    $('hb-turma').innerHTML = '<option value="">Escolha a turma…</option>' + opcoesTurma(false);
+    $('hb-turma').addEventListener('change', carregarHabilidades);
+    $('hb-visao').addEventListener('change', () => { if (habTurma) renderHabilidades(); });
+    $('hb-atualizar').addEventListener('click', (ev) => comBotao(ev.target, carregarHabilidades));
+    $('hb-tabela').addEventListener('click', (ev) => {
+      const c = ev.target.closest('td.hb-cel');
+      if (c) hbDetalhe(c);
+    });
+    $('hb-modal').querySelector('[data-fechar]').addEventListener('click', () => $('hb-modal').close());
+  }
+</script>

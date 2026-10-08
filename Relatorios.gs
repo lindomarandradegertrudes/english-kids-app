@@ -164,8 +164,14 @@ function profRelatorioAluno(email) {
     reforcar: reforcar.sort(function (a, b) { return a.pontos - b.pontos; }).slice(0, 12),
     jogos: { estrelas: estrelas, jogadas: jogadas, segundos: segundos, dominadas: dominadas },
     equipe: minha ? nomeEquipe_(minha.equipe) : null,
+    habilidades: habilidadesSeguras_(email, serie, temas),
     faixas: { basico: Number(cfg.faixa_basico), intermediario: Number(cfg.faixa_intermediario), avancado: Number(cfg.faixa_avancado) },
   };
+}
+
+/** As habilidades são um extra da ficha: se der erro, o resto do relatório abre. */
+function habilidadesSeguras_(email, serie, temas) {
+  try { return habilidadesDoAluno_(email, serie, temas); } catch (e) { return null; }
 }
 
 /** Cria uma planilha nova no Drive do professor com o retrato atual. Devolve o link. */

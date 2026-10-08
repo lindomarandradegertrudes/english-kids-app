@@ -188,12 +188,10 @@ function validarAluno_(email, cfg) {
 // Páginas
 // ============================================================
 
-/** ?teste=1 abre o teste de voz para qualquer conta (útil para testar no Chromebook de um aluno). */
 function doGet(e) {
   try {
     const email = usuarioAtual_();
-    const teste = e && e.parameter && e.parameter.teste;
-    const pagina = teste ? 'Teste' : ehProfessor_(email) ? 'Professor' : 'Aluno';
+    const pagina = ehProfessor_(email) ? 'Professor' : 'Aluno';
     const t = HtmlService.createTemplateFromFile(pagina);
     t.email = email;
     return t.evaluate()

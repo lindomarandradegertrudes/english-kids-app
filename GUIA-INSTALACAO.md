@@ -4,6 +4,45 @@ Faça tudo com a sua **conta institucional** (@edu.joinville.sc.gov.br).
 
 ---
 
+# Etapa 3: habilidades do Mapa e Meu reforço (atualização)
+
+## A. Atualizar o código
+No editor do Apps Script (**Extensões > Apps Script**, na planilha):
+
+| Arquivo no editor | O que fazer |
+|---|---|
+| `Habilidades` | **novo:** clique em **+ > Script**, dê o nome `Habilidades` e cole **Habilidades.gs** |
+| `ProfHabilidades` | **novo:** clique em **+ > HTML**, dê o nome `ProfHabilidades` e cole **ProfHabilidades.html** |
+| `Codigo`, `Jogos`, `Relatorios` | apague tudo e cole as novas versões (.gs) |
+| `Aluno`, `AlunoCorpo`, `Professor`, `ProfRelatorios` | apague tudo e cole as novas versões (.html) |
+| `Teste`, `TesteConteudo` | **apague os dois arquivos** (⋮ ao lado do nome > Excluir) |
+
+Depois publique a nova versão: **Implantar > Gerenciar implantações > ✏️ > Versão: Nova versão > Implantar**. Não é preciso executar **instalar**.
+
+## B. Aba Habilidades (professor)
+- Escolha a turma. **Turma por tema** mostra, para cada tema, a média da turma em três habilidades do Mapa de Progressão:
+
+| Habilidade | Código (ex.: 4º ano) | De onde vem |
+|---|---|---|
+| 👂 Ouvir | `EF04LI04-JO` | Listen & Click, Color it!, questões "ouvir" dos quizzes, desafio Listen & Click das missões |
+| 📖 Ler | `EF04LI07-JO` | Match it!, Memory, Find it!, questões "ler" e "figura" dos quizzes, desafio Read & Choose das missões |
+| ✏️ Escrever | `EF04LI09-JO` | Spell it!, Spelling Bee, Build it!, desafios Spell it e Build it das missões |
+
+- O código muda com a série: `EF03…` no 3º ano e `EF05…` no 5º.
+- Clique numa célula para ver os alunos daquele tema e habilidade, do menor para o maior resultado, com o aviso de quem está abaixo de 60%.
+- **Alunos (todos os temas)** mostra cada criança nas três habilidades. Clique numa célula para ver o resultado por tema.
+- **Como é calculado:** nos jogos valem as **5 partidas mais recentes** de cada tema e tipo, para mostrar como a criança está agora. Nos quizzes valem as questões respondidas **no app** (a prova impressa só guarda o total, não o acerto de cada questão). Nas missões vale a missão comum. Com menos de 3 respostas, a célula fica em branco (—).
+- A **ficha do aluno** (aba Relatórios) ganhou o quadro **Habilidades do Mapa de Progressão**, com os códigos, o geral e cada tema.
+
+## C. Meu reforço (criança)
+- Na tela inicial aparece o cartão verde **💪 My practice · Meu reforço** quando a criança tem pelo menos 4 palavras fracas (domínio abaixo de 70%) nos temas que já jogou. Entram até 8 palavras, misturando os temas.
+- Ela escolhe **Listen & Click**, **Match it!** ou **Spell it!**. O reforço **não vale nota e não dá estrelas**: só melhora o domínio das palavras, cada uma no tema de onde veio.
+
+## D. Fim da aba "Teste do Chromebook"
+A aba e a página de teste (`?teste=1`) foram removidas. Desde a saída do Speak!, ela só testava a voz, e qualquer botão 🔊 do app já faz esse teste. No lugar dela, a tela da criança mostra sozinha o aviso **🔇 A voz em inglês não está funcionando neste computador** quando o Chromebook não tem voz disponível.
+
+---
+
 # Etapa 2 da narrativa: mapa, medalhas, cantinho e tour do Max (atualização)
 
 ## A. Atualizar o código
@@ -336,8 +375,6 @@ O **domínio do tema** é a média de todas as palavras do tema. As palavras ain
 | HTML | `Professor` | `Professor.html` |
 | HTML | `ProfTemas` | `ProfTemas.html` |
 | HTML | `Aluno` | `Aluno.html` |
-| HTML | `Teste` | `Teste.html` |
-| HTML | `TesteConteudo` | `TesteConteudo.html` |
 
 4. Salve (💾). No topo do editor, escolha a função **instalar** e clique em **Executar**. Autorize quando o Google pedir.
    - A função cria as abas **Config**, **Turmas**, **Alunos** e **Temas**.
@@ -355,11 +392,7 @@ Para atualizar o código depois: **Implantar > Gerenciar implantações > ✏️
 
 ## 3. Primeiro teste no Chromebook
 
-Antes dos jogos, confira se a **voz em inglês** funciona nos Chromebooks da escola.
-
-1. No painel, abra a aba **Teste do Chromebook** e copie o link de teste. É o link do sistema com `?teste=1` no final.
-2. Num Chromebook da escola, entre **com a conta de um aluno** e abra esse link.
-3. Clique em **🔊 Falar** e confira se ouviu a frase em inglês. Se não ouvir nada, confira o volume.
+Antes dos jogos, confira se a **voz em inglês** funciona nos Chromebooks da escola: num Chromebook, entre **com a conta de um aluno**, abra o link do sistema e toque numa figura de qualquer tema. Se não ouvir nada, confira o volume. Se o aparelho não tiver voz, a própria tela avisa (🔇).
 
 ## 4. Usar
 

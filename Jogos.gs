@@ -140,7 +140,8 @@ function alunoSalvarJogada(j) {
     const ganho = r.a ? jogo.ganho : r.c ? jogo.parcial : 0;
     atual.dominio[en] = Math.max(0, Math.min(PONTOS_DOMINIO, antes + ganho - r.e * jogo.perda));
   });
-  atual.estrelas[j.jogo] = Math.max(Number(atual.estrelas[j.jogo]) || 0, estrelas);
+  // "Meu reforço" treina palavras fracas de vários temas: muda o domínio, mas não dá estrelas.
+  if (j.reforco !== true) atual.estrelas[j.jogo] = Math.max(Number(atual.estrelas[j.jogo]) || 0, estrelas);
 
   const agora = new Date();
   const dados = linhaDe_('Progresso', {

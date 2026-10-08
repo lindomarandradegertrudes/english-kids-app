@@ -28,11 +28,11 @@
     <button data-aba="alunos">Alunos</button>
     <button data-aba="temas">Temas</button>
     <button data-aba="progresso">Progresso</button>
+    <button data-aba="habilidades">Habilidades</button>
     <button data-aba="missoes">Missões</button>
     <button data-aba="avaliacoes">Avaliações</button>
     <button data-aba="equipes">Equipes</button>
     <button data-aba="relatorios">Relatórios</button>
-    <button data-aba="teste">Teste do Chromebook</button>
     <button data-aba="config">Configurações</button>
   </nav>
 
@@ -72,21 +72,12 @@
 
     <?!= incluir('ProfTemas'); ?>
     <?!= incluir('ProfProgresso'); ?>
+    <?!= incluir('ProfHabilidades'); ?>
     <?!= incluir('ProfAvaliacoes'); ?>
     <?!= incluir('ProfEquipes'); ?>
     <?!= incluir('ProfRelatorios'); ?>
     <?!= incluir('MissaoTela'); ?>
     <?!= incluir('ProfMissoes'); ?>
-
-    <!-- Teste do Chromebook -->
-    <section id="aba-teste" class="pilha" hidden>
-      <div class="cartao">
-        <h3>Teste num Chromebook dos alunos</h3>
-        <p class="suave pequeno">Abra este link num Chromebook da escola, de preferência <strong>com a conta de um aluno</strong>. Assim o teste mostra o que as crianças vão encontrar, inclusive bloqueios da administração da rede.</p>
-        <div class="link-box"><code id="link-teste"></code><button class="btn mini" id="copiar-teste">Copiar</button></div>
-      </div>
-      <?!= incluir('TesteConteudo'); ?>
-    </section>
 
     <!-- Configurações -->
     <section id="aba-config" class="pilha" hidden>
@@ -237,7 +228,6 @@
     function renderTurmas() {
       const r = estado.resumo;
       $('link').textContent = r.link || 'Publique o sistema para gerar o link.';
-      $('link-teste').textContent = r.link ? r.link + '?teste=1' : 'Publique o sistema para gerar o link.';
       $('aviso-cadastro').hidden = r.config.cadastro_aberto !== 'NÃO';
       $('total-alunos').textContent = r.totalAlunos + ' alunos cadastrados';
       $('series').innerHTML = r.series.map((serie) => {
@@ -257,7 +247,6 @@
       }));
     }
     $('copiar-link').addEventListener('click', () => copiar($('link').textContent));
-    $('copiar-teste').addEventListener('click', () => copiar($('link-teste').textContent));
 
     $('editar-turmas').addEventListener('click', () => {
       const r = estado.resumo;
@@ -459,6 +448,7 @@
         $('al-turma').innerHTML = opcoesTurma(false);
         configurarTemas();
         configurarProgresso();
+        configurarHabilidades();
         configurarAvaliacoes();
         configurarEquipes();
         configurarRelatorios();

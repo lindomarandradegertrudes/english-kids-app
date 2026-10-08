@@ -141,6 +141,20 @@
     </svg></div>`;
   }
 
+  /** Habilidades do Mapa (ouvir, ler, escrever) na ficha: geral e por tema. */
+  function htmlHabilidadesFicha(h) {
+    if (!h) return '';
+    const cel = (x) => x && x.pct != null
+      ? `<td style="text-align:center;font-weight:700;color:${corBarra(x.pct)}" title="${x.n} respostas">${x.pct}%</td>`
+      : `<td style="text-align:center" class="suave pequeno" title="${x ? x.n : 0} respostas">—</td>`;
+    return `<div class="cartao"><h3>Habilidades do Mapa de Progressão</h3>
+      <p class="suave pequeno" style="margin-top:0">Calculado com os jogos recentes, as questões dos quizzes respondidos no app e os desafios das missões. — = menos de 3 respostas.</p>
+      <div class="tabela-rolagem"><table><thead><tr><th>Habilidade</th><th>Geral</th>${h.temas.map((t) => `<th style="text-align:center">${esc(t.titulo)}</th>`).join('')}</tr></thead><tbody>
+        ${h.legenda.map((l) => `<tr><td><strong>${esc(l.icone)} ${esc(l.nome)}</strong> <code>${esc(l.codigo)}</code><div class="suave pequeno">${esc(l.descricao)}</div></td>
+          ${cel(h.geral[l.tipo])}${h.temas.map((t) => cel(t.habilidades[l.tipo])).join('')}</tr>`).join('')}
+      </tbody></table></div></div>`;
+  }
+
   function htmlFicha(f) {
     const a = f.aluno;
     return `<div class="pilha">
@@ -160,6 +174,7 @@
         ${f.avaliacoes.length ? `<div class="tabela-rolagem"><table><thead><tr><th>Avaliação</th><th>Mês</th><th>Acertos</th><th>%</th><th>Forma</th></tr></thead><tbody>
           ${f.avaliacoes.map((x) => `<tr><td>${esc(x.titulo)}</td><td>${mesCurto(x.mes)}</td><td>${x.pontuacao}/${x.total}</td><td><strong>${pctBr(x.percentual)}</strong></td><td class="suave pequeno">${x.origem === 'online' ? 'online' : x.origem === 'missoes' ? 'missões' : 'impressa'}</td></tr>`).join('')}
         </tbody></table></div>` : ''}</div>
+      ${htmlHabilidadesFicha(f.habilidades)}
       <div class="cartao"><h3>Domínio nos temas (jogos)</h3>
         ${f.temas.length ? f.temas.map((t) => `<div class="tema-linha"><span><strong>${esc(t.titulo)}</strong> <span class="suave pequeno">${esc(t.titulo_pt)}</span></span>
           ${t.dominio == null ? '<span class="suave pequeno">ainda não jogou</span><span></span><span></span>' : `

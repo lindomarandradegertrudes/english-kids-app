@@ -33,8 +33,10 @@
 
     <!-- Início: mapa de aventura (ou a grade de temas, se o mapa não vier) -->
     <div id="inicio" hidden>
+      <div id="aviso-voz" class="aviso-voz" hidden>🔇 A voz em inglês não está funcionando neste computador. Confira o volume e avise o professor.</div>
       <div id="missoes"></div>
       <div id="quizzes"></div>
+      <div id="meu-reforco"></div>
       <div id="equipe"></div>
       <div id="mapa-cab"></div>
       <div id="temas"></div>
@@ -124,6 +126,7 @@
       renderTemas();
       mostrar('inicio');
       enviarFila();
+      Fala.iniciar().then(() => { $('aviso-voz').hidden = Fala.disponivel() && speechSynthesis.getVoices().length > 0; });
     }
 
     function progressoDe(temaId) {
@@ -200,6 +203,7 @@
 
     function renderTemas() {
       const temas = estado.temas;
+      renderReforco();
       if (Narrativa.temMapa()) {
         $('mapa-cab').innerHTML = Narrativa.cabecalhoMapa();
         $('temas').className = '';
@@ -308,6 +312,68 @@
         enviarFila(avisar);
       });
     }
+
+    // ---------- Meu reforço (sem nota): as palavras mais fracas de todos os temas já jogados ----------
+    const JOGOS_REFORCO = ['ouvir', 'arrastar', 'montar'];
+    function palavrasFracas() {
+      const lista = [], vistas = new Set();
+      estado.temas.forEach((t) => {
+        const p = progressoDe(t.id);
+        if (!p.jogadas) return;
+        t.palavras.forEach((w) => {
+          const k = w.en.toLowerCase();
+          if (vistas.has(k)) return;
+          vistas.add(k);
+          const v = Number(p.palavras[w.en] || 0);
+          if (v < 70) lista.push({ en: w.en, pt: w.pt, figura: w.figura, tema_id: t.id, v });
+        });
+      });
+      // Empate: alterna os temas, para o reforço misturar palavras de vários assuntos.
+      const ordem = {};
+      lista.sort((a, b) => a.v - b.v).forEach((w) => { ordem[w.tema_id] = (ordem[w.tema_id] || 0) + 1; w.r = ordem[w.tema_id]; });
+      return lista.sort((a, b) => a.v - b.v || a.r - b.r).slice(0, 8);
+    }
+    function temaReforco() {
+      return { id: 'meu-reforco', titulo: 'My practice', titulo_pt: 'Meu reforço', palavras: palavrasFracas(), frases: [] };
+    }
+    function renderReforco() {
+      const t = temaReforco();
+      if (t.palavras.length < 4) { $('meu-reforco').innerHTML = ''; return; }
+      const pode = Jogos.disponiveis(t);
+      $('meu-reforco').innerHTML = `<div class="reforco-aviso">
+        <span class="ic">💪</span>
+        <span class="tx"><strong>My practice · Meu reforço</strong>
+          <span class="sub-kids">Treine as palavras que você ainda erra. Não vale nota!</span>
+          <div class="figs">${t.palavras.map((w) => esc(w.figura || '🔤')).join(' ')}</div></span>
+        <span class="bts">${JOGOS_REFORCO.filter((j) => pode[j]).map((j) =>
+          `<button class="botao-grande" data-reforco="${j}">${Jogos.DADOS[j].icone} ${esc(Jogos.DADOS[j].nome)}</button>`).join('')}</span>
+      </div>`;
+    }
+    $('meu-reforco').addEventListener('click', (ev) => {
+      const b = ev.target.closest('[data-reforco]');
+      if (!b) return;
+      const tema = temaReforco();
+      const dom = {};
+      tema.palavras.forEach((w) => (dom[w.en] = w.v));
+      mostrar('jogo');
+      Jogos.iniciar(b.dataset.reforco, tema, dom, $('jogo'), (res, avisar) => {
+        if (!res) { renderTemas(); mostrar('inicio'); return; }
+        // Cada palavra volta para o tema de onde veio; o reforço muda o domínio, mas não dá estrelas.
+        const grupos = {};
+        Object.keys(res.palavras).forEach((en) => {
+          const w = tema.palavras.find((x) => x.en === en);
+          if (w) (grupos[w.tema_id] = grupos[w.tema_id] || {})[en] = res.palavras[en];
+        });
+        const ids = Object.keys(grupos);
+        ids.forEach((tid, k) => {
+          const pal = grupos[tid];
+          guardarNaFila({ id: res.id + 'r' + k, tema_id: tid, jogo: res.jogo, palavras: pal, reforco: true,
+            acertos: Object.values(pal).filter((x) => x.a).length, total: Object.keys(pal).length,
+            estrelas: res.estrelas, segundos: Math.round(res.segundos / ids.length) });
+        });
+        enviarFila(avisar);
+      });
+    });
 
     // ---------- Equipe e placar ----------
     const numeroBr = (n) => Number(n || 0).toLocaleString('pt-BR', { maximumFractionDigits: 1 });
