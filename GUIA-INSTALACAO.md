@@ -4,6 +4,41 @@ Faça tudo com a sua **conta institucional** (@edu.joinville.sc.gov.br).
 
 ---
 
+# Etapa 9: acompanhamento e banco de quizzes prontos (atualização)
+
+## A. Atualizar o código
+No editor do Apps Script (**Extensões > Apps Script**, na planilha):
+
+| Arquivo no editor | O que fazer |
+|---|---|
+| `Acompanhamento` | **novo:** **+ > Script**, nome `Acompanhamento`, cole **Acompanhamento.gs** |
+| `ProfAcompanhamento` | **novo:** **+ > HTML**, nome `ProfAcompanhamento`, cole **ProfAcompanhamento.html** |
+| `Boletim` | apague tudo e cole a nova versão (.gs) |
+| `Professor`, `ProfAvaliacoes` | apague tudo e cole as novas versões (.html) |
+
+Depois publique a nova versão. Não é preciso executar **instalar**.
+
+## B. Aba Acompanhamento
+- **Quadro das turmas** (mês e trimestre atuais):
+  - quantos alunos **usaram o app nos últimos 30 dias** (e quantos nunca usaram);
+  - quantos fizeram a **missão do mês** (quando houve aula de missão na turma);
+  - quantos estão **sem nota no trimestre**;
+  - a **média do trimestre** (0 a 10, como no Boletim);
+  - a **habilidade a reforçar** (ouvir, ler ou escrever com a menor média da turma).
+- **⚠️ Precisa de atenção:** cada aluno com os motivos, quem tem mais pendências primeiro:
+  - não fez a missão do mês;
+  - não respondeu um quiz aberto, ou não entregou um miniprojeto aberto;
+  - está sem nota no trimestre, ou com nota abaixo de 5;
+  - não usa o app há mais de 30 dias, ou nunca usou.
+- Filtre por turma e por tipo de pendência. Os botões levam direto para **Reabrir missão** (aba Missões), **Boletim** e a **Ficha** do aluno (aba Relatórios).
+
+## C. Banco de quizzes prontos (aba Avaliações)
+- Escolha a série no filtro. Abaixo da lista aparece o **📚 Banco de quizzes prontos**, com os temas por trimestre e se cada tema já foi usado em algum quiz.
+- **＋ Quiz do tema** monta um quiz de 10 questões só daquele tema. **＋ Revisão do trimestre** monta 12 questões com todos os temas do trimestre.
+- O quiz abre no editor para você revisar e trocar questões. Depois clique em **Salvar** e libere para os alunos ou imprima, como nos outros quizzes.
+
+---
+
 # Etapa 8: fichas para imprimir e modo telão (atualização)
 
 ## A. Atualizar o código

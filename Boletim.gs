@@ -91,6 +91,20 @@ function rascunhoParecer_(d) {
   return frases.slice(0, 5).join(' ');
 }
 
+/** { email: [{ titulo, percentual }] } com as notas do trimestre que entram no boletim (sem o diagnóstico). */
+function notasDoTrimestre_(emails, ano, tri, respostas) {
+  const questionarios = {};
+  questionariosEMissoes_(respostas).forEach(function (q) { questionarios[q.id] = q; });
+  const notas = {};
+  (respostas || lerRespostas_()).forEach(function (r) {
+    const q = questionarios[r.questionario_id];
+    if (!q || !emails[r.email] || q.tipo === 'diagnostico' || isNaN(r.percentual)) return;
+    if (!noTrimestre_(mesDe_(q.mes), ano, tri)) return;
+    (notas[r.email] = notas[r.email] || []).push({ titulo: q.titulo, percentual: r.percentual });
+  });
+  return notas;
+}
+
 /** Boletim de uma turma num trimestre: nota calculada, nota manual, parecer salvo e rascunho de cada aluno. */
 function profBoletimTurma(turma, ano, tri) {
   exigirProfessor_();
@@ -105,15 +119,7 @@ function profBoletimTurma(turma, ano, tri) {
   alunos.forEach(function (a) { emails[String(a.email).toLowerCase()] = true; });
 
   // Notas do trimestre (sem o diagnóstico).
-  const questionarios = {};
-  questionariosEMissoes_().forEach(function (q) { questionarios[q.id] = q; });
-  const notas = {};
-  lerRespostas_().forEach(function (r) {
-    const q = questionarios[r.questionario_id];
-    if (!q || !emails[r.email] || q.tipo === 'diagnostico' || isNaN(r.percentual)) return;
-    if (!noTrimestre_(mesDe_(q.mes), ano, tri)) return;
-    (notas[r.email] = notas[r.email] || []).push({ titulo: q.titulo, percentual: r.percentual });
-  });
+  const notas = notasDoTrimestre_(emails, ano, tri);
 
   // Atividades oferecidas no trimestre (para a participação).
   const sessoes = lerSessoes_().filter(function (s) { return s.turma === turma && noTrimestre_(s.mes, ano, tri); });

@@ -66,6 +66,11 @@
         <tbody id="av-tabela"></tbody>
       </table>
     </div>
+    <div class="cartao">
+      <h3 style="margin-top:0">📚 Banco de quizzes prontos <span class="suave pequeno" id="av-banco-serie"></span></h3>
+      <p class="suave pequeno" style="margin-top:0">Um clique monta o quiz com 10 questões do tema (ou 12 na revisão do trimestre) e abre para você revisar, trocar o que quiser e salvar. Depois é só liberar para os alunos ou imprimir.</p>
+      <div id="av-banco"></div>
+    </div>
   </div>
 
   <!-- Editor -->
@@ -176,6 +181,36 @@
         </td>
       </tr>`;
     }).join('') : '<tr><td colspan="7" class="vazio">Nenhuma avaliação ainda. Comece pelo diagnóstico de cada série.</td></tr>';
+    renderBancoQuizzes();
+  }
+
+  // ---------- Banco de quizzes prontos ----------
+  const AV_FIM_TRI = { 1: '05', 2: '09', 3: '11' };
+  function renderBancoQuizzes() {
+    const serie = $('av-filtro-serie').value;
+    if (!serie) { $('av-banco-serie').textContent = ''; $('av-banco').innerHTML = '<p class="vazio">Escolha uma série no filtro acima para ver o banco.</p>'; return; }
+    $('av-banco-serie').textContent = '· ' + serie + ' ano';
+    const temas = estado.temas.filter((t) => t.serie === serie && t.palavras.length >= 4).sort((a, b) => a.mes - b.mes);
+    const usados = (id) => estado.avaliacoes.filter((q) => q.serie === serie && (q.temas || []).includes(id)).map((q) => q.titulo);
+    const meses = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+    $('av-banco').innerHTML = [1, 2, 3].map((tri) => {
+      const doTri = temas.filter((t) => t.trimestre === tri);
+      if (!doTri.length) return '';
+      return `<div style="margin-bottom:14px"><div class="linha"><strong>${tri}º trimestre</strong><span class="espaco"></span>
+          <button class="btn mini" data-banco-tri="${tri}">＋ Revisão do ${tri}º trimestre (12 questões)</button></div>
+        <div class="tabela-rolagem"><table><tbody>${doTri.map((t) => {
+          const u = usados(t.id);
+          return `<tr><td><strong>${esc(t.titulo)}</strong> <span class="suave pequeno">${esc(t.titulo_pt)} · ${meses[t.mes - 1]} · ${t.palavras.length} palavras${t.status === 'liberado' ? '' : ' · oculto'}</span></td>
+            <td class="pequeno">${u.length ? '✔ já usado em: ' + u.map(esc).join(', ') : '<span class="suave">ainda sem quiz</span>'}</td>
+            <td class="acoes"><button class="btn mini" data-banco-tema="${esc(t.id)}">＋ Quiz do tema</button></td></tr>`;
+        }).join('')}</tbody></table></div></div>`;
+    }).join('') || '<p class="vazio">Nenhum tema nesta série.</p>';
+  }
+
+  async function quizDoBanco(serie, temaIds, titulo, mes, quantidade) {
+    const questoes = await chamar('profGerarQuestoes', { serie, temas: temaIds, quantidade });
+    abrirEditorAv({ id: '', tipo: 'mensal', serie, mes, titulo, temas: temaIds, questoes, respostas: 0 });
+    avisar('Quiz montado. Revise as questões e clique em Salvar.');
   }
 
   // ---------- Editor ----------
@@ -314,6 +349,20 @@
     $('av-filtro-serie').innerHTML = opcoesSerie(true);
     $('ave-serie').innerHTML = opcoesSerie(false);
     $('av-filtro-serie').addEventListener('change', renderAvaliacoes);
+    $('av-banco').addEventListener('click', (ev) => {
+      const b = ev.target.closest('button');
+      if (!b) return;
+      const serie = $('av-filtro-serie').value, ano = new Date().getFullYear();
+      if (b.dataset.bancoTema) {
+        const t = estado.temas.find((x) => x.id === b.dataset.bancoTema);
+        comBotao(b, () => quizDoBanco(serie, [t.id], 'Quiz: ' + t.titulo + ' – ' + serie + ' ano', ano + '-' + String(t.mes).padStart(2, '0'), 10));
+      }
+      if (b.dataset.bancoTri) {
+        const tri = Number(b.dataset.bancoTri);
+        const ids = estado.temas.filter((t) => t.serie === serie && t.trimestre === tri && t.palavras.length >= 4).map((t) => t.id);
+        comBotao(b, () => quizDoBanco(serie, ids, 'Revisão do ' + tri + 'º trimestre – ' + serie + ' ano', ano + '-' + AV_FIM_TRI[tri], 12));
+      }
+    });
     $('av-novo-diag').addEventListener('click', (ev) => comBotao(ev.target, () => novaAvaliacao('diagnostico')));
     $('av-novo-mensal').addEventListener('click', (ev) => comBotao(ev.target, () => novaAvaliacao('mensal')));
     document.querySelectorAll('[data-av-voltar]').forEach((b) => b.addEventListener('click', async () => {

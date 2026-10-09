@@ -25,6 +25,7 @@
 
   <nav class="abas">
     <button data-aba="turmas" class="ativa">Turmas</button>
+    <button data-aba="acompanhamento">Acompanhamento</button>
     <button data-aba="alunos">Alunos</button>
     <button data-aba="temas">Temas</button>
     <button data-aba="planejamento">Planejamento</button>
@@ -92,6 +93,7 @@
       </div>
     </section>
 
+    <?!= incluir('ProfAcompanhamento'); ?>
     <?!= incluir('ProfTemas'); ?>
     <?!= incluir('ProfPlanejamento'); ?>
     <?!= incluir('ProfMaterial'); ?>
@@ -496,6 +498,7 @@
         Object.assign(estado, { resumo, alunos, temas, avaliacoes });
         $('filtro-turma').innerHTML = opcoesTurma(true);
         $('al-turma').innerHTML = opcoesTurma(false);
+        configurarAcompanhamento();
         configurarTemas();
         configurarPlanejamento();
         configurarMaterial();

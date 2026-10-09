@@ -1,0 +1,139 @@
+<!-- Acompanhamento: visão geral das turmas e alunos que precisam de atenção -->
+<section id="aba-acompanhamento" class="pilha" hidden>
+  <style>
+    .ac-ok { color: #2b8a3e; font-weight: 700; }
+    .ac-atencao { color: var(--perigo); font-weight: 700; }
+    .ac-alunos { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+    .ac-aluno { display: grid; gap: 6px; align-content: start; }
+    .ac-aluno .cab { display: flex; align-items: center; gap: 8px; }
+    .ac-aluno .cab strong { flex: 1; min-width: 0; }
+    .ac-mot { display: flex; flex-wrap: wrap; gap: 4px; }
+    .ac-mot span { font-size: .78rem; font-weight: 600; padding: 2px 8px; border-radius: 99px; background: #f1f3f5; }
+    .ac-mot .missao { background: #e7f5ff; color: #1864ab; }
+    .ac-mot .quiz, .ac-mot .projeto { background: #fff3bf; color: #a05a00; }
+    .ac-mot .semnota, .ac-mot .nota { background: #ffe3e3; color: #c92a2a; }
+    .ac-mot .parado { background: #f3f0ff; color: #5f3dc4; }
+    .ac-filtros { display: flex; flex-wrap: wrap; gap: 6px; }
+    .ac-filtros .btn.ativa { background: var(--primaria); color: #fff; border-color: var(--primaria); }
+  </style>
+
+  <div class="linha">
+    <h2 style="margin:0">Acompanhamento</h2>
+    <span class="suave pequeno" id="ac-periodo"></span>
+    <span class="espaco"></span>
+    <button class="btn" id="ac-atualizar">↻ Atualizar</button>
+  </div>
+
+  <div class="cartao tabela-rolagem">
+    <table>
+      <thead><tr><th>Turma</th><th>Alunos</th><th>Usaram o app<br><span class="suave pequeno">últimos 30 dias</span></th><th>Missão do mês</th>
+        <th>Sem nota no trimestre</th><th>Média do trimestre</th><th>Habilidade a reforçar</th><th></th></tr></thead>
+      <tbody id="ac-turmas"><tr><td colspan="8" class="carregando">Carregando…</td></tr></tbody>
+    </table>
+  </div>
+
+  <div class="cartao">
+    <div class="linha" style="margin-bottom:10px">
+      <h3 style="margin:0">⚠️ Precisa de atenção</h3>
+      <select id="ac-turma" style="width:auto"></select>
+      <span class="espaco"></span>
+      <div class="ac-filtros" id="ac-filtros">
+        <button class="btn mini ativa" data-filtro="">Todos</button>
+        <button class="btn mini" data-filtro="missao">Missão</button>
+        <button class="btn mini" data-filtro="quiz">Quiz</button>
+        <button class="btn mini" data-filtro="projeto">Miniprojeto</button>
+        <button class="btn mini" data-filtro="semnota">Sem nota</button>
+        <button class="btn mini" data-filtro="nota">Nota baixa</button>
+        <button class="btn mini" data-filtro="parado">Parados</button>
+      </div>
+    </div>
+    <p class="suave pequeno" id="ac-resumo" style="margin-top:0"></p>
+    <div class="ac-alunos" id="ac-alunos"></div>
+  </div>
+</section>
+
+<script>
+  const ac = { dados: null, filtro: '' };
+
+  async function acCarregar() {
+    ac.dados = await chamar('profAcompanhamento');
+    acRender();
+  }
+
+  function acRender() {
+    const d = ac.dados;
+    $('ac-periodo').textContent = `· ${d.nomeMes} · ${d.tri}º trimestre de ${d.ano}`;
+    $('ac-turmas').innerHTML = d.turmas.map((t) => {
+      const uso = t.alunos ? Math.round((t.ativos / t.alunos) * 100) : 0;
+      return `<tr>
+        <td><strong>${esc(t.turma)}</strong></td><td>${t.alunos}</td>
+        <td>${t.alunos ? `<span class="${uso < 50 ? 'ac-atencao' : 'ac-ok'}">${t.ativos} (${uso}%)</span>${t.nunca ? `<div class="suave pequeno">${t.nunca} nunca usaram</div>` : ''}` : '—'}</td>
+        <td>${t.aulasMissao ? `<span class="${t.fizeramMissao < t.alunos ? 'ac-atencao' : 'ac-ok'}">${t.fizeramMissao} / ${t.alunos}</span>` : '<span class="suave pequeno">sem aula de missão no mês</span>'}</td>
+        <td>${t.semNota ? `<span class="ac-atencao">${t.semNota}</span>` : '<span class="ac-ok">0</span>'}</td>
+        <td>${t.media == null ? '—' : `<strong>${String(t.media).replace('.', ',')}</strong>`}</td>
+        <td>${t.fraca ? `${esc(t.fraca.icone)} ${esc(t.fraca.nome)} <span class="suave pequeno">(${t.fraca.pct}%)</span>` : '<span class="suave pequeno">poucos dados</span>'}</td>
+        <td class="acoes"><button class="btn mini" data-ac-ver="${esc(t.turma)}">Ver alunos</button></td></tr>`;
+    }).join('');
+    const turmas = d.turmas.filter((t) => t.alunos).map((t) => t.turma);
+    const atual = $('ac-turma').value;
+    $('ac-turma').innerHTML = '<option value="">Todas as turmas</option>' + turmas.map((t) => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+    if (turmas.includes(atual)) $('ac-turma').value = atual;
+    acRenderAlunos();
+  }
+
+  function acRenderAlunos() {
+    const turma = $('ac-turma').value;
+    const lista = ac.dados.alertas.filter((a) => (!turma || a.turma === turma) && (!ac.filtro || a.motivos.some((m) => m.tipo === ac.filtro)));
+    $('ac-resumo').textContent = lista.length
+      ? `${lista.length} aluno(s)${turma ? ' na ' + turma : ''}. Os que têm mais pendências aparecem primeiro.`
+      : '';
+    $('ac-alunos').innerHTML = lista.length ? lista.map((a) => `
+      <div class="cartao ac-aluno">
+        <div class="cab"><span class="avatar">${esc(a.avatar)}</span><strong>${esc(a.nome)}</strong><span class="selo">${esc(a.turma)}</span></div>
+        <div class="ac-mot">${a.motivos.map((m) => `<span class="${esc(m.tipo)}">${esc(m.texto)}</span>`).join('')}</div>
+        <div class="linha">
+          ${a.motivos.some((m) => m.tipo === 'missao') ? `<button class="btn mini" data-ac-ir="missoes" data-turma="${esc(a.turma)}">Reabrir missão</button>` : ''}
+          ${a.motivos.some((m) => m.tipo === 'semnota' || m.tipo === 'nota') ? `<button class="btn mini" data-ac-ir="boletim" data-turma="${esc(a.turma)}">Boletim</button>` : ''}
+          <button class="btn mini" data-ac-ir="relatorios" data-email="${esc(a.email)}" data-turma="${esc(a.turma)}">Ficha</button>
+        </div>
+      </div>`).join('') : '<div class="vazio">Ninguém com pendências aqui. 🎉</div>';
+  }
+
+  function acIr(destino, turma, email) {
+    abrirAba(destino);
+    if (destino === 'missoes' && $('ms-turma')) { $('ms-turma').value = turma; $('ms-turma').dispatchEvent(new Event('change')); }
+    if (destino === 'boletim' && $('bl-turma')) { $('bl-turma').value = turma; $('bl-turma').dispatchEvent(new Event('change')); }
+    if (destino === 'relatorios') {
+      const tSel = $('rel-al-turma'), aSel = $('rel-al-aluno');
+      if (tSel) { tSel.value = turma; tSel.dispatchEvent(new Event('change')); }
+      setTimeout(() => { if (aSel) { aSel.value = email; aSel.dispatchEvent(new Event('change')); } }, 300);
+    }
+  }
+
+  function configurarAcompanhamento() {
+    let carregado = false;
+    document.querySelector('.abas button[data-aba="acompanhamento"]').addEventListener('click', () => {
+      if (!carregado) { carregado = true; comBotao($('ac-atualizar'), acCarregar).then(() => { if (!ac.dados) carregado = false; }); }
+    });
+    $('ac-atualizar').addEventListener('click', (ev) => comBotao(ev.target, acCarregar));
+    $('ac-turma').addEventListener('change', acRenderAlunos);
+    $('ac-filtros').addEventListener('click', (ev) => {
+      const b = ev.target.closest('[data-filtro]');
+      if (!b) return;
+      ac.filtro = b.dataset.filtro;
+      document.querySelectorAll('#ac-filtros [data-filtro]').forEach((x) => x.classList.toggle('ativa', x === b));
+      if (ac.dados) acRenderAlunos();
+    });
+    $('ac-turmas').addEventListener('click', (ev) => {
+      const b = ev.target.closest('[data-ac-ver]');
+      if (!b) return;
+      $('ac-turma').value = b.dataset.acVer;
+      acRenderAlunos();
+      $('ac-alunos').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    $('ac-alunos').addEventListener('click', (ev) => {
+      const b = ev.target.closest('[data-ac-ir]');
+      if (b) acIr(b.dataset.acIr, b.dataset.turma, b.dataset.email);
+    });
+  }
+</script>
