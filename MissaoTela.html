@@ -330,6 +330,7 @@
      */
     async function jogar(alvo, missao, opcoes) {
       el = alvo; atual = missao; d = missao.degrau;
+      el.classList.add('mx');
       est = { pontos: 0, resultados: [], passo: 0, erros: [] };
       ligarAjudas();
       const h = missao.historia;
@@ -361,6 +362,7 @@
     /** Mini-missão de reforço: 1 Listen & Click + 1 Spell it! (50 pontos cada). */
     async function reforco(alvo, spec, opcoes) {
       el = alvo; d = spec.degrau;
+      el.classList.add('mx');
       atual = { titulo: '💪 Reforço', palavras: spec.ouvir.palavras };
       est = { pontos: 0, resultados: [], passo: 0, erros: [] };
       ligarAjudas();
