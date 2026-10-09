@@ -9,46 +9,59 @@
     .mt-telao-bts button b { display: block; font-size: 1.05rem; }
     #mt-previa { background: #fff; border: 1px solid var(--borda); border-radius: var(--raio); padding: 16px; max-height: 70vh; overflow: auto; }
 
-    /* Fichas (prévia e impressão) */
-    .fx-pagina { font: 13pt/1.35 Arial, sans-serif; color: #000; }
-    .fx-pagina + .fx-pagina { margin-top: 26px; border-top: 2px dashed #ccc; padding-top: 18px; }
-    .fx-cab { border: 2px solid #000; border-radius: 10px; padding: 8px 12px; margin-bottom: 12px; }
-    .fx-cab .t { font-size: 15pt; font-weight: 700; }
-    .fx-cab .l { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 6px; }
-    .fx-cmd { font-weight: 700; margin: 0 0 10px; }
-    .fx-cmd small { font-weight: 400; }
-    .fx-ligar { display: grid; grid-template-columns: 1fr 120px 1fr; row-gap: 16px; align-items: center; }
-    .fx-ligar .e { font-size: 30pt; text-align: center; }
-    .fx-ligar .e.txt { font-size: 14pt; font-weight: 700; }
-    .fx-ligar .p { font-size: 17pt; font-weight: 700; }
-    .fx-ponto { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #000; vertical-align: middle; margin: 0 8px; }
-    .fx-grade { border-collapse: collapse; margin: 0 auto 12px; }
-    #impressao .fx-grade td, .fx-grade td { width: 30px; height: 30px; border: 1px solid #555; text-align: center; font: 700 15pt Arial, sans-serif; padding: 0; }
-    #impressao .fx-grade td.ok, .fx-grade td.ok { background: #ddd; text-decoration: underline; }
-    .fx-lista { display: flex; flex-wrap: wrap; gap: 6px 18px; justify-content: center; font-weight: 700; }
-    .fx-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-    .fx-card { border: 2px solid #000; border-radius: 10px; padding: 8px; text-align: center; min-height: 120px; break-inside: avoid; }
-    .fx-card .e { font-size: 34pt; line-height: 1.2; }
-    .fx-card .e.txt { font-size: 14pt; font-weight: 700; padding: 12px 0; }
-    .fx-card .w { font: 700 17pt 'Courier New', monospace; letter-spacing: 3px; }
-    .fx-card .desenho { height: 120px; border: 1px dashed #999; border-radius: 8px; margin-top: 6px; }
-    .fx-banco { border: 2px dashed #000; border-radius: 10px; padding: 6px 10px; margin-bottom: 12px; text-align: center; font-weight: 700; }
-    .fx-frase { margin-bottom: 18px; break-inside: avoid; }
-    .fx-frase .b { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
-    .fx-frase .b span { border: 2px solid #000; border-radius: 8px; padding: 2px 10px; font-weight: 700; }
-    .fx-frase .linha-escrever { border-bottom: 2px solid #000; height: 30px; }
-    .fx-gab { font-size: 12pt; }
-    .fx-gab h3 { margin: 0 0 8px; }
-    .fx-bingo { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-    .fx-bingo .cart { border: 3px solid #000; border-radius: 12px; padding: 8px; break-inside: avoid; }
-    .fx-bingo .cart .t { text-align: center; font-weight: 700; margin-bottom: 6px; }
-    .fx-bingo .g { display: grid; gap: 4px; }
-    .fx-bingo .c { border: 2px solid #000; border-radius: 6px; min-height: 74px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+    /* Fichas: até 2 páginas A4. Cada página ajusta sozinha o tamanho (--k) para encher sem cortar. */
+    #mt-previa { overflow: auto; }
+    .fx-pag { width: 186mm; height: 270mm; overflow: hidden; display: flex; flex-direction: column; gap: 3mm; box-sizing: border-box;
+      font: calc(11pt * var(--k, 1))/1.3 Arial, Helvetica, sans-serif; color: #000; background: #fff; }
+    #mt-previa .fx-pag { margin: 0 auto 18px; outline: 1px solid #ccc; outline-offset: 4mm; }
+    .fx-cab { font-size: 11pt; display: flex; flex-wrap: wrap; align-items: baseline; gap: 2mm 6mm; border: 2px solid #000; border-radius: 3mm; padding: 2mm 4mm; }
+    .fx-cab .t { font-size: 14pt; font-weight: 700; flex: 1 1 auto; }
+    .fx-cab .t span { font-weight: 400; font-size: 11pt; }
+    .fx-cab .l { white-space: nowrap; }
+    .fx-corpo { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: .9em 1.1em; align-content: stretch; }
+    .fx-at { border: 1.5px solid #000; border-radius: 3mm; padding: .55em .8em .7em; min-width: 0; display: flex; flex-direction: column; }
+    .fx-at > :last-child { flex: 1; }
+    .fx-at.inteira { grid-column: 1 / -1; }
+    .fx-at h4 { margin: 0 0 .5em; font-size: 1.08em; display: flex; align-items: baseline; gap: .4em; }
+    .fx-at h4 .n { display: inline-flex; align-items: center; justify-content: center; min-width: 1.5em; height: 1.5em; border-radius: 50%; background: #000; color: #fff; font-size: .9em; }
+    .fx-at h4 small { font-weight: 400; font-size: .85em; }
+    .fx-e { font-size: 2.2em; line-height: 1.1; text-align: center; }
+    .fx-e.txt { font-size: 1em; font-weight: 700; line-height: 1.3; }
+    .fx-lig { display: grid; grid-template-columns: auto auto minmax(1.5em, 1fr) auto auto; align-items: center; align-content: space-evenly; row-gap: .3em; column-gap: .5em; }
+    .fx-lig .p { font-size: 1.25em; font-weight: 700; }
+    .fx-lig.duas { grid-template-columns: auto auto minmax(1.5em, 1fr) auto auto 1.6em auto auto minmax(1.5em, 1fr) auto auto; }
+    .fx-ponto { display: inline-block; width: .55em; height: .55em; border-radius: 50%; background: #000; }
+    .fx-banco { border: 1.5px dashed #000; border-radius: 2mm; padding: .25em .6em; margin-bottom: .5em; text-align: center; font-weight: 700; }
+    .fx-cards { display: grid; gap: .45em; align-content: space-evenly; }
+    .fx-card { border: 1.5px solid #000; border-radius: 2mm; padding: .3em; text-align: center; }
+    .fx-card .w { font: 700 1.2em 'Courier New', monospace; letter-spacing: .12em; white-space: nowrap; }
+    .fx-card { display: flex; flex-direction: column; }
+    .fx-card .desenho { flex: 1; min-height: 6em; border: 1px dashed #888; border-radius: 2mm; margin-top: .3em; }
+    .fx-caca { display: flex; gap: 1.2em; align-items: center; justify-content: center; }
+    .fx-grade { border-collapse: collapse; }
+    #impressao .fx-grade td, .fx-grade td { width: 1.7em; height: 1.7em; border: 1px solid #555; text-align: center; font-weight: 700; font-size: 1.05em; padding: 0; }
+    #impressao .fx-grade td.ok, .fx-grade td.ok { background: #d9d9d9; text-decoration: underline; }
+    .fx-lista { display: flex; flex-direction: column; gap: .3em; font-weight: 700; }
+    .fx-lista span { white-space: nowrap; }
+    .fx-lista .e { font-size: 1.5em; vertical-align: middle; margin-right: .2em; }
+    .fx-frases { display: grid; gap: .55em; align-content: space-evenly; }
+    .fx-frase .b { display: flex; flex-wrap: wrap; gap: .35em; align-items: center; }
+    .fx-frase .b span { border: 1.5px solid #000; border-radius: 2mm; padding: .05em .45em; font-weight: 700; }
+    .fx-frase .linha-escrever { border-bottom: 1.5px solid #000; height: 1.7em; }
+    .fx-gab { font-size: 1em; }
+    .fx-gab h4 { margin: .6em 0 .25em; }
+    .fx-gab .fx-grade td { width: 1.35em; height: 1.35em; font-size: .9em; }
+    .fx-bingo { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 5mm; flex: 1; }
+    .fx-bingo .cart { border: 3px solid #000; border-radius: 4mm; padding: 3mm; display: flex; flex-direction: column; }
+    .fx-bingo .cart .t { text-align: center; font-weight: 700; margin-bottom: 2mm; }
+    .fx-bingo .g { display: grid; gap: 2mm; flex: 1; }
+    .fx-bingo .c { border: 2px solid #000; border-radius: 2mm; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
     .fx-bingo .c .e { font-size: 26pt; line-height: 1.1; }
     .fx-bingo .c .w { font-size: 10pt; font-weight: 700; }
     @media print {
-      #impressao .fx-pagina { break-after: page; border-top: 0; margin-top: 0; padding-top: 0; }
-      #impressao .fx-pagina:last-child { break-after: auto; }
+      @page { size: A4; margin: 12mm; }
+      #impressao .fx-pag { break-after: page; }
+      #impressao .fx-pag:last-child { break-after: auto; }
     }
 
     /* Telão */
@@ -98,7 +111,7 @@
       <label><input type="checkbox" value="bingo"> Cartelas de bingo</label>
     </div>
     <div class="linha" style="margin-top:12px">
-      <label class="pequeno">Palavras por ficha <select id="mt-qtd" style="width:auto"><option>6</option><option selected>8</option><option>10</option></select></label>
+      <label class="pequeno">Palavras por atividade <select id="mt-qtd" style="width:auto"><option>6</option><option selected>8</option><option>10</option></select></label>
       <label class="pequeno">Cartelas de bingo <input id="mt-cartelas" type="number" min="2" max="40" value="30" style="width:70px"></label>
       <label class="pequeno"><input type="checkbox" id="mt-gabarito" checked style="width:auto"> Incluir gabarito</label>
       <span class="espaco"></span>
@@ -106,7 +119,7 @@
       <button class="btn" id="mt-ver">👀 Prévia</button>
       <button class="btn primario" id="mt-imprimir">🖨️ Imprimir</button>
     </div>
-    <p class="suave pequeno">Cada ficha sai numa página A4, com nome, turma e data. O gabarito vem no fim. Para salvar em PDF, escolha "Salvar como PDF" na janela de impressão.</p>
+    <p class="suave pequeno">As atividades marcadas saem juntas em no máximo 2 páginas A4 (frente e verso), numeradas, com nome, turma e data. O tamanho se ajusta sozinho para encher as páginas sem cortar. O gabarito e as cartelas de bingo vêm em páginas separadas, no fim. Para salvar em PDF, escolha "Salvar como PDF" na janela de impressão.</p>
     <div id="mt-previa" hidden></div>
   </div>
 
@@ -170,91 +183,170 @@
     $('mt-previa').hidden = true;
   }
 
-  // ---------- Fichas ----------
-  function mtCabecalho(t, en, pt) {
-    return `<div class="fx-cab"><div class="t">English · ${esc(t.titulo)} <span style="font-weight:400">(${esc(t.titulo_pt)})</span></div>
-      <div class="l"><span>Name: ______________________________</span><span>Class: ______</span><span>Date: ___/___</span></div></div>
-      <p class="fx-cmd">${esc(en)} <small>· ${esc(pt)}</small></p>`;
+  // ---------- Fichas (até 2 páginas, com ajuste automático do tamanho) ----------
+  const MT_PESO = { ligar: 0.7, completar: 0.8, caca: 1.25, desenhar: 0.9, frases: 0.8 };
+
+  /** Monta as atividades marcadas. Cada uma sabe se desenhar em meia largura ou largura inteira. */
+  function mtAtividades(t, rnd) {
+    const qtd = Number($('mt-qtd').value);
+    const tipos = [...document.querySelectorAll('#mt-tipos input:checked')].map((i) => i.value);
+    const escolher = (filtro, n) => mtMisturar(t.palavras.filter(filtro), rnd).slice(0, n);
+    const lista = [];
+
+    if (tipos.includes('ligar')) {
+      const ws = escolher(() => true, Math.min(qtd, 10));
+      const dir = mtMisturar(ws, rnd);
+      lista.push({ id: 'ligar', meia: true, en: 'Match the pictures to the words.', pt: 'Ligue a figura à palavra.',
+        html: (inteira) => {
+          const linha = (w, i) => `${mtFig(w, 'fx-e')}<span class="fx-ponto"></span><span></span><span class="fx-ponto"></span><span class="p">${esc(dir[i].en)}</span>`;
+          if (!inteira || ws.length < 6) return `<div class="fx-lig">${ws.map(linha).join('')}</div>`;
+          const meio = Math.ceil(ws.length / 2);
+          let h = '';
+          for (let i = 0; i < meio; i++) h += linha(ws[i], i) + '<span></span>' + (ws[i + meio] ? linha(ws[i + meio], i + meio) : '<span></span><span></span><span></span><span></span><span></span>');
+          return `<div class="fx-lig duas">${h}</div>`;
+        },
+        gab: `${ws.map((w) => `${esc(w.figura || w.pt)} → <b>${esc(w.en)}</b>`).join(' · ')}` });
+    }
+
+    if (tipos.includes('completar')) {
+      const ws = escolher((w) => soLetras(w.en).length >= 3, Math.min(qtd, 10));
+      const lacunas = ws.map((w) => {
+        let k = 0;
+        return [...w.en].map((c) => {
+          if (!/[a-z]/i.test(c)) return c === ' ' ? '&nbsp;' : esc(c);
+          k++;
+          return k > 1 && (k % 2 === 0 || rnd() < 0.25) ? '_' : esc(c);
+        }).join('');
+      });
+      const banco = mtMisturar(ws, rnd).map((w) => esc(w.en)).join(' · ');
+      lista.push({ id: 'completar', meia: true, en: 'Complete the words.', pt: 'Complete as letras que faltam.',
+        html: (inteira) => `<div class="fx-banco">${banco}</div><div class="fx-cards" style="grid-template-columns:repeat(${inteira ? 5 : 2}, minmax(0, 1fr))">${ws.map((w, i) => `<div class="fx-card">${mtFig(w, 'fx-e')}<div class="w">${lacunas[i]}</div></div>`).join('')}</div>`,
+        gab: `${ws.map((w) => `${esc(w.figura || w.pt)} <b>${esc(w.en)}</b>`).join(' · ')}` });
+    }
+
+    if (tipos.includes('caca')) {
+      const tam = t.serie === '3º' ? 10 : 12;
+      const ws = escolher((w) => soLetras(w.en).length >= 2 && soLetras(w.en).length <= tam, qtd);
+      const g = mtCacaPalavras(ws.map((w) => soLetras(w.en).toUpperCase()), tam, t.serie === '5º', rnd);
+      const usados = ws.filter((w) => g.colocadas.includes(soLetras(w.en).toUpperCase()));
+      const tabela = (marcar) => `<table class="fx-grade">${g.grade.map((l, i) => `<tr>${l.map((c, j) => `<td class="${marcar && g.marcas[i][j] ? 'ok' : ''}">${c}</td>`).join('')}</tr>`).join('')}</table>`;
+      lista.push({ id: 'caca', meia: false, en: 'Find the words.', pt: 'Encontre as palavras' + (t.serie === '5º' ? ' (também na diagonal).' : '.'),
+        html: () => `<div class="fx-caca">${tabela(false)}<div class="fx-lista">${usados.map((w) => `<span>${w.figura ? `<span class="e">${esc(w.figura)}</span>` : ''}${esc(w.en.toUpperCase())}</span>`).join('')}</div></div>`,
+        gab: tabela(true) });
+    }
+
+    if (tipos.includes('desenhar')) {
+      const cores = ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink', 'brown'];
+      const ws = escolher(() => true, 6).map((w) => ({ w, cor: cores[Math.floor(rnd() * cores.length)] }));
+      lista.push({ id: 'desenhar', meia: false, en: 'Read, draw and color.', pt: 'Leia, desenhe e pinte da cor pedida.',
+        html: () => `<div class="fx-cards" style="grid-template-columns:repeat(3, minmax(0, 1fr))">${ws.map((x) => `<div class="fx-card"><div><b>${esc(x.w.en)}</b> &nbsp;🖍️ <u>${x.cor}</u></div><div class="desenho"></div></div>`).join('')}</div>` });
+    }
+
+    if (tipos.includes('frases')) {
+      const fs = mtMisturar(t.frases.filter((f) => f.en.split(' ').length >= 3), rnd).slice(0, 5).map((f) => {
+        let m = mtMisturar(f.en.split(' '), rnd);
+        if (m.join(' ') === f.en) m = m.reverse();
+        return { f, m };
+      });
+      if (fs.length) {
+        lista.push({ id: 'frases', meia: fs.length <= 3, en: 'Put the words in order. Write the sentence.', pt: 'Coloque as palavras na ordem e escreva a frase.',
+          html: () => `<div class="fx-frases">${fs.map((x, i) => `<div class="fx-frase"><div class="b"><b>${String.fromCharCode(97 + i)})</b>${x.m.map((p) => `<span>${esc(p)}</span>`).join('')}</div><div class="linha-escrever"></div></div>`).join('')}</div>`,
+          gab: `<ol type="a" style="margin:0">${fs.map((x) => `<li>${esc(x.f.en)} <i>(${esc(x.f.pt)})</i></li>`).join('')}</ol>` });
+      }
+    }
+    return lista;
+  }
+
+  /** Divide as atividades em 1 ou 2 páginas (sem mudar a ordem), equilibrando o "peso" de cada página. */
+  function mtDividir(lista) {
+    const peso = (l) => l.reduce((s, a) => s + MT_PESO[a.id] * (a.meia ? 1 : 1.15), 0);
+    if (lista.length <= 1) return [lista];
+    let melhor = 1, dif = Infinity;
+    for (let i = 1; i < lista.length; i++) {
+      const d = Math.abs(peso(lista.slice(0, i)) - peso(lista.slice(i)));
+      if (d < dif) { dif = d; melhor = i; }
+    }
+    return [lista.slice(0, melhor), lista.slice(melhor)];
+  }
+
+  /** Atividade de meia largura sem par na mesma página ocupa a largura inteira. */
+  function mtLarguras(pagina) {
+    const inteira = pagina.map((a) => !a.meia);
+    for (let i = 0; i < pagina.length; i++) {
+      if (inteira[i]) continue;
+      if (i + 1 < pagina.length && !inteira[i + 1]) { i++; continue; }
+      inteira[i] = true;
+    }
+    return inteira;
+  }
+
+  function mtPaginaHtml(t, pagina, numero, total, inicio) {
+    const inteira = mtLarguras(pagina);
+    const cab = numero === 1
+      ? `<div class="fx-cab"><span class="t">English · ${esc(t.titulo)} <span>(${esc(t.titulo_pt)})</span></span>
+          <span class="l">Name: _____________________________</span><span class="l">Class: _____</span><span class="l">Date: ___/___</span></div>`
+      : `<div class="fx-cab"><span class="t">English · ${esc(t.titulo)} <span>(${esc(t.titulo_pt)}) · página ${numero} de ${total}</span></span></div>`;
+    return `<div class="fx-pag">${cab}<div class="fx-corpo">${pagina.map((a, i) => `
+      <div class="fx-at ${inteira[i] ? 'inteira' : ''}"><h4><span class="n">${inicio + i}</span><span>${esc(a.en)} <small>${esc(a.pt)}</small></span></h4>${a.html(inteira[i])}</div>`).join('')}</div></div>`;
+  }
+
+  /** Acha o maior tamanho (--k) em que o conteúdo de cada página ainda cabe, para não cortar nem sobrar espaço. */
+  const MT_K_MAX = 1.7;
+  function mtAjustar(paginas) {
+    const caixa = document.createElement('div');
+    caixa.style.cssText = 'position:absolute;left:-10000px;top:0;visibility:hidden';
+    document.body.appendChild(caixa);
+    const prontas = paginas.map((html) => {
+      caixa.innerHTML = html;
+      const pag = caixa.firstElementChild, corpo = pag.querySelector('.fx-corpo') || pag;
+      const cabe = () => corpo.scrollHeight <= corpo.clientHeight + 1 && corpo.scrollWidth <= corpo.clientWidth + 1 &&
+        [...corpo.children].every((c) => c.scrollWidth <= c.clientWidth + 1);
+      let lo = 0.5, hi = MT_K_MAX;
+      for (let i = 0; i < 10; i++) {
+        const mid = (lo + hi) / 2;
+        pag.style.setProperty('--k', mid.toFixed(3));
+        if (cabe()) lo = mid; else hi = mid;
+      }
+      pag.style.setProperty('--k', lo.toFixed(3));
+      return { html: pag.outerHTML, k: lo };
+    });
+    caixa.remove();
+    return prontas;
   }
 
   function mtFichas() {
     const t = mtTema();
     if (!t) return null;
     const rnd = mtRng(mt.semente);
-    const qtd = Number($('mt-qtd').value);
-    const tipos = [...document.querySelectorAll('#mt-tipos input:checked')].map((i) => i.value);
-    const paginas = [], gabs = [];
-    const escolher = (filtro, n) => mtMisturar(t.palavras.filter(filtro), rnd).slice(0, n);
-
-    if (tipos.includes('ligar')) {
-      const ws = escolher(() => true, Math.min(qtd, 8));
-      const dir = mtMisturar(ws, rnd);
-      paginas.push(mtCabecalho(t, 'Match the pictures to the words.', 'Ligue cada figura à palavra.') +
-        `<div class="fx-ligar">${ws.map((w, i) => `${mtFig(w, 'e')}<div style="text-align:center"><span class="fx-ponto"></span><span style="display:inline-block;width:40px"></span><span class="fx-ponto"></span></div><div class="p">${esc(dir[i].en)}</div>`).join('')}</div>`);
-      gabs.push(`<h3>Match</h3>${ws.map((w) => `${esc(w.figura || w.pt)} → <b>${esc(w.en)}</b>`).join(' · ')}`);
-    }
-
-    if (tipos.includes('caca')) {
-      const tam = t.serie === '3º' ? 10 : 12;
-      const diagonal = t.serie === '5º';
-      const ws = escolher((w) => soLetras(w.en).length >= 2 && soLetras(w.en).length <= tam, qtd);
-      const g = mtCacaPalavras(ws.map((w) => soLetras(w.en).toUpperCase()), tam, diagonal, rnd);
-      const usados = ws.filter((w) => g.colocadas.includes(soLetras(w.en).toUpperCase()));
-      const tabela = (marcar) => `<table class="fx-grade">${g.grade.map((l, i) => `<tr>${l.map((c, j) => `<td class="${marcar && g.marcas[i][j] ? 'ok' : ''}">${c}</td>`).join('')}</tr>`).join('')}</table>`;
-      paginas.push(mtCabecalho(t, 'Find the words.', 'Encontre as palavras no caça-palavras.') + tabela(false) +
-        `<div class="fx-lista">${usados.map((w) => `<span>${esc(w.figura || '')} ${esc(w.en.toUpperCase())}</span>`).join('')}</div>`);
-      gabs.push(`<h3>Find the words</h3>${tabela(true)}`);
-    }
-
-    if (tipos.includes('completar')) {
-      const ws = escolher((w) => soLetras(w.en).length >= 3, Math.min(qtd, 9));
-      const lacunas = ws.map((w) => {
-        let k = 0;
-        return [...w.en].map((c) => {
-          if (!/[a-z]/i.test(c)) return c === ' ' ? '&nbsp;&nbsp;' : esc(c);
-          k++;
-          return k > 1 && (k % 2 === 0 || rnd() < 0.25) ? '_' : esc(c);
-        }).join(' ');
-      });
-      paginas.push(mtCabecalho(t, 'Complete the words.', 'Complete as letras que faltam.') +
-        `<div class="fx-banco">${mtMisturar(ws, rnd).map((w) => esc(w.en)).join(' · ')}</div>` +
-        `<div class="fx-cards">${ws.map((w, i) => `<div class="fx-card">${mtFig(w, 'e')}<div class="w">${lacunas[i]}</div></div>`).join('')}</div>`);
-      gabs.push(`<h3>Complete</h3>${ws.map((w) => `${esc(w.figura || w.pt)} <b>${esc(w.en)}</b>`).join(' · ')}`);
-    }
-
-    if (tipos.includes('desenhar')) {
-      const cores = ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'pink', 'brown'];
-      const ws = escolher(() => true, 6);
-      paginas.push(mtCabecalho(t, 'Read, draw and color.', 'Leia, desenhe e pinte da cor pedida.') +
-        `<div class="fx-cards">${ws.map((w) => `<div class="fx-card"><div style="font-weight:700;font-size:14pt">${esc(w.en)} · <u>${cores[Math.floor(rnd() * cores.length)]}</u></div><div class="desenho"></div></div>`).join('')}</div>`);
-    }
-
-    if (tipos.includes('frases')) {
-      const fs = mtMisturar(t.frases.filter((f) => f.en.split(' ').length >= 3), rnd).slice(0, 6);
-      if (fs.length) {
-        paginas.push(mtCabecalho(t, 'Put the words in order and write the sentence.', 'Coloque as palavras na ordem e escreva a frase.') +
-          fs.map((f, i) => {
-            const partes = f.en.split(' ');
-            let misturadas = mtMisturar(partes, rnd);
-            if (misturadas.join(' ') === f.en) misturadas = misturadas.reverse();
-            return `<div class="fx-frase"><b>${i + 1}.</b><div class="b">${misturadas.map((p) => `<span>${esc(p)}</span>`).join('')}</div><div class="linha-escrever"></div></div>`;
-          }).join(''));
-        gabs.push(`<h3>Sentences</h3><ol>${fs.map((f) => `<li>${esc(f.en)} <i>(${esc(f.pt)})</i></li>`).join('')}</ol>`);
+    const atividades = mtAtividades(t, rnd);
+    let html = '';
+    if (atividades.length) {
+      // Tudo numa página só quando cabe num tamanho confortável; senão, divide em 2 páginas.
+      let grupos = [atividades];
+      let ajustadas = mtAjustar([mtPaginaHtml(t, atividades, 1, 1, 1)]);
+      if (ajustadas[0].k < 1 && atividades.length > 1) {
+        grupos = mtDividir(atividades);
+        let n = 1;
+        ajustadas = mtAjustar(grupos.map((g, i) => { const h = mtPaginaHtml(t, g, i + 1, grupos.length, n); n += g.length; return h; }));
+      }
+      html = ajustadas.map((a) => a.html).join('');
+      const gabs = atividades.map((a, i) => a.gab ? `<h4>${i + 1}. ${esc(a.en)}</h4>${a.gab}` : '').filter(Boolean);
+      if ($('mt-gabarito').checked && gabs.length) {
+        html += mtAjustar([`<div class="fx-pag"><div class="fx-cab"><span class="t">Gabarito · ${esc(t.titulo)} <span>(para o professor)</span></span></div>
+          <div class="fx-corpo" style="display:block"><div class="fx-gab">${gabs.join('')}</div></div></div>`]).map((g) => (g.k > 1.1 ? g.html.replace(/--k: [0-9.]+/, '--k: 1.1') : g.html))[0];
       }
     }
 
-    if (tipos.includes('bingo')) {
+    if ([...document.querySelectorAll('#mt-tipos input:checked')].some((i) => i.value === 'bingo')) {
       const n = t.palavras.length, lado = n >= 9 ? 3 : 2, cel = n >= 9 ? 9 : n >= 6 ? 6 : 4;
       const qtdCart = Math.max(2, Math.min(40, Number($('mt-cartelas').value) || 30));
       const cartelas = Array.from({ length: qtdCart }, () => mtMisturar(t.palavras, rnd).slice(0, cel));
       for (let i = 0; i < cartelas.length; i += 4) {
-        paginas.push(`<div class="fx-bingo">${cartelas.slice(i, i + 4).map((c, k) => `<div class="cart"><div class="t">🎱 BINGO · ${esc(t.titulo)} · nº ${i + k + 1}</div>
-          <div class="g" style="grid-template-columns:repeat(${lado}, 1fr)">${c.map((w) => `<div class="c">${w.figura ? `<span class="e">${esc(w.figura)}</span>` : ''}<span class="w">${esc(w.en)}</span></div>`).join('')}</div></div>`).join('')}</div>`);
+        html += `<div class="fx-pag"><div class="fx-bingo">${cartelas.slice(i, i + 4).map((c, k) => `<div class="cart"><div class="t">🎱 BINGO · ${esc(t.titulo)} · nº ${i + k + 1}</div>
+          <div class="g" style="grid-template-columns:repeat(${lado}, 1fr)">${c.map((w) => `<div class="c">${w.figura ? `<span class="e">${esc(w.figura)}</span>` : ''}<span class="w">${esc(w.en)}</span></div>`).join('')}</div></div>`).join('')}</div></div>`;
       }
     }
-
-    if ($('mt-gabarito').checked && gabs.length) paginas.push(`<div class="fx-gab"><h2 style="margin-top:0">Gabarito · ${esc(t.titulo)}</h2>${gabs.map((g) => `<div style="margin-bottom:14px">${g}</div>`).join('')}</div>`);
-    return paginas.map((p) => `<div class="fx-pagina">${p}</div>`).join('');
+    return html || null;
   }
 
   /** Caça-palavras: coloca as palavras (horizontal, vertical e, no 5º ano, diagonal) e completa com letras sorteadas. */

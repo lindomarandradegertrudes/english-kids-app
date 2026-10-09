@@ -25,8 +25,14 @@ Depois publique a nova versão. Não é preciso executar **instalar**.
    - **Leia e desenhe:** a palavra e a cor para a criança desenhar e pintar.
    - **Frases embaralhadas:** frases do tema com as palavras fora de ordem para escrever na ordem certa.
    - **Cartelas de bingo:** 4 cartelas por página, cada uma diferente (escolha quantas).
-3. Escolha quantas palavras por ficha e se quer o **gabarito** (vem na última página).
-4. **👀 Prévia** mostra como vai ficar. **🔀 Sortear de novo** cria outra versão (outras palavras e outra ordem). **🖨️ Imprimir** abre a impressão; para guardar, escolha "Salvar como PDF".
+3. Escolha quantas palavras por atividade e se quer o **gabarito**.
+4. **Como sai a impressão:** todas as atividades marcadas ficam juntas num caderninho de **no máximo 2 páginas A4** (dá para imprimir frente e verso):
+   - cabeçalho com nome, turma e data só uma vez, e as atividades **numeradas** (1, 2, 3…);
+   - atividades pequenas (Ligar e Complete) ficam **lado a lado**; o caça-palavras, o Leia e desenhe e as frases ocupam a largura toda;
+   - se tudo cabe numa página num tamanho bom, sai em **uma página só**; se não, o app divide em duas;
+   - o tamanho das letras, figuras e espaços se **ajusta sozinho** para encher cada página, sem cortar e sem sobrar espaço em branco.
+   - O **gabarito** (para você) e as **cartelas de bingo** saem em páginas separadas, depois do caderninho.
+5. **👀 Prévia** mostra como vai ficar. **🔀 Sortear de novo** cria outra versão (outras palavras e outra ordem). **🖨️ Imprimir** abre a impressão; para guardar, escolha "Salvar como PDF". Na janela de impressão, deixe a escala em **Padrão / 100%** e as margens em **Padrão**.
 
 ## C. Modo telão (projetor ou TV)
 Escolha o tema e um dos jogos. Ele abre por cima do painel; use **⛶ Tela cheia** (ou F11). **Esc** fecha. Aumente o volume: o app fala as palavras.
