@@ -16,6 +16,7 @@ Roda **gratuitamente** no Google Workspace da escola, com Google Apps Script e G
 | 4 | Equipes de até 5 alunos (níveis misturados) e placar mensal por equipes | ✅ entregue |
 | 5 | Mais jogos: Find it! (caça-palavras), Color it!, Build it! (frases), Spelling Bee e Repeat after me | ✅ entregue |
 | + | Speak! (pronúncia com microfone): retirado, porque o reconhecimento de voz falhava muito com as crianças | ❌ removido |
+| M8 | Material para aulas sem Chromebook: fichas para imprimir geradas dos temas (ligar, caça-palavras, completar, leia e desenhe, frases, cartelas de bingo) com gabarito, e modo telão (flashcards, Listen & Click da turma, quiz por equipes, bingo) | ✅ entregue |
 | M7 | Planejamento: roteiro sugerido das aulas do mês (série × mês) dividindo planejamento do professor e app, link do Google Docs, registro por turma (data, conteúdo dado, observações) e texto para o diário | ✅ entregue |
 | M6 | Nota (0 a 10) e parecer do trimestre por turma: média do trimestre sem o diagnóstico, nota manual, rascunho automático do parecer, copiar, planilha no Drive e impressão | ✅ entregue |
 | M5 | Banco de missões do ano (24 temas × 3 degraus), gerador de missões sem custo (pedido para o Claude.ai gratuito + conferência + prévia), relatório mensal das missões e guia para crianças e famílias (`?guia=1`) | ✅ entregue |
@@ -38,6 +39,7 @@ Roda **gratuitamente** no Google Workspace da escola, com Google Apps Script e G
 | `Equipes.gs` | Equipes mensais e placar |
 | `MissoesPadrao.gs` / `Missoes.gs` | Banco de missões e regras (aulas, reforço, nota do mês) |
 | `MissaoTela.html` / `ProfMissoes.html` | Tela da missão (criança e prévia) e aba Missões do professor |
+| `ProfMaterial.html` | Fichas para imprimir e modo telão (aba Material) |
 | `Planejamento.gs` / `ProfPlanejamento.html` | Roteiro mensal das aulas e registro por turma (aba Planejamento) |
 | `Boletim.gs` / `ProfBoletim.html` | Nota e parecer do trimestre (aba Boletim) |
 | `MissoesAno.gs` / `MissoesBanco.gs` | Missões de março a setembro; banco completo, gerador sem custo e relatório das missões |

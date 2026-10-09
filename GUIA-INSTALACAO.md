@@ -4,6 +4,39 @@ Faça tudo com a sua **conta institucional** (@edu.joinville.sc.gov.br).
 
 ---
 
+# Etapa 8: fichas para imprimir e modo telão (atualização)
+
+## A. Atualizar o código
+No editor do Apps Script (**Extensões > Apps Script**, na planilha):
+
+| Arquivo no editor | O que fazer |
+|---|---|
+| `ProfMaterial` | **novo:** **+ > HTML**, nome `ProfMaterial`, cole **ProfMaterial.html** |
+| `Professor` | apague tudo e cole a nova versão (.html) |
+
+Depois publique a nova versão. Não é preciso executar **instalar**.
+
+## B. Fichas para imprimir (aba Material)
+1. Escolha a **série** e o **tema**. O tema do mês já vem selecionado.
+2. Marque as fichas que quer:
+   - **Ligar (Match):** figuras de um lado e palavras do outro.
+   - **Caça-palavras:** 10×10 no 3º ano e 12×12 no 4º e 5º; no 5º também com palavras na diagonal.
+   - **Complete as letras:** figura + palavra com letras faltando, com banco de palavras.
+   - **Leia e desenhe:** a palavra e a cor para a criança desenhar e pintar.
+   - **Frases embaralhadas:** frases do tema com as palavras fora de ordem para escrever na ordem certa.
+   - **Cartelas de bingo:** 4 cartelas por página, cada uma diferente (escolha quantas).
+3. Escolha quantas palavras por ficha e se quer o **gabarito** (vem na última página).
+4. **👀 Prévia** mostra como vai ficar. **🔀 Sortear de novo** cria outra versão (outras palavras e outra ordem). **🖨️ Imprimir** abre a impressão; para guardar, escolha "Salvar como PDF".
+
+## C. Modo telão (projetor ou TV)
+Escolha o tema e um dos jogos. Ele abre por cima do painel; use **⛶ Tela cheia** (ou F11). **Esc** fecha. Aumente o volume: o app fala as palavras.
+- **🃏 Flashcards:** a figura aparece com "?". **Mostrar e ouvir** revela a palavra e fala; 🐢 fala devagar. Setas ⬅ ➡ (ou as setas do teclado) passam as cartas. Bom para apresentar o vocabulário na aula 1.
+- **👂 Listen & Click da turma:** o app fala uma palavra e mostra 6 figuras; a turma aponta e você clica na figura escolhida. 10 rodadas, com contagem de acertos de primeira.
+- **🏆 Quiz por equipes:** 2 a 4 equipes (🔴 🔵 🟢 🟡), cada uma na sua vez: aparece a figura e 4 palavras; você clica na resposta da equipe. Placar na tela e vencedor no fim.
+- **🎱 Bingo:** imprima as cartelas (item B) e use o telão para sortear: o app fala a palavra e guarda a lista do que já saiu. Marque "mostrar a palavra escrita" se quiser mostrar também a figura e a palavra (sem marcar, a turma só ouve).
+
+---
+
 # Etapa 7: roteiro mensal das aulas e registro (atualização)
 
 ## A. Atualizar o código

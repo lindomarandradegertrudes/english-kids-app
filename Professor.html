@@ -28,6 +28,7 @@
     <button data-aba="alunos">Alunos</button>
     <button data-aba="temas">Temas</button>
     <button data-aba="planejamento">Planejamento</button>
+    <button data-aba="material">Material</button>
     <button data-aba="progresso">Progresso</button>
     <button data-aba="habilidades">Habilidades</button>
     <button data-aba="missoes">Missões</button>
@@ -93,6 +94,7 @@
 
     <?!= incluir('ProfTemas'); ?>
     <?!= incluir('ProfPlanejamento'); ?>
+    <?!= incluir('ProfMaterial'); ?>
     <?!= incluir('ProfProgresso'); ?>
     <?!= incluir('ProfHabilidades'); ?>
     <?!= incluir('ProfAvaliacoes'); ?>
@@ -496,6 +498,7 @@
         $('al-turma').innerHTML = opcoesTurma(false);
         configurarTemas();
         configurarPlanejamento();
+        configurarMaterial();
         configurarProgresso();
         configurarHabilidades();
         configurarAvaliacoes();
