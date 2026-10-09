@@ -4,6 +4,51 @@ Faça tudo com a sua **conta institucional** (@edu.joinville.sc.gov.br).
 
 ---
 
+# Etapa 5: banco do ano, gerador de missões, relatório das missões e guia para famílias (atualização)
+
+## A. Atualizar o código
+No editor do Apps Script (**Extensões > Apps Script**, na planilha):
+
+| Arquivo no editor | O que fazer |
+|---|---|
+| `MissoesAno` | **novo:** **+ > Script**, nome `MissoesAno`, cole **MissoesAno.gs** |
+| `MissoesBanco` | **novo:** **+ > Script**, nome `MissoesBanco`, cole **MissoesBanco.gs** |
+| `GuiaFamilias` | **novo:** **+ > HTML**, nome `GuiaFamilias`, cole **GuiaFamilias.html** |
+| `Codigo`, `Missoes` | apague tudo e cole as novas versões (.gs) |
+| `Professor`, `ProfMissoes`, `NarrativaTela` | apague tudo e cole as novas versões (.html) |
+
+Depois publique a nova versão (**Implantar > Gerenciar implantações > ✏️ > Versão: Nova versão > Implantar**). Executar **instalar** é opcional: a aba **MissoesCriadas** é criada sozinha na primeira missão que você salvar.
+
+## B. Banco de missões do ano inteiro
+- Agora há **uma missão para cada um dos 24 temas** (8 por série), de março a novembro, todas em 3 degraus (★ ★★ ★★★).
+- Na aba **Missões**, a lista "Abrir missão nesta aula" já vem com a missão do mês atual selecionada. Você pode escolher qualquer outra.
+- A nota vai para o **mês em que você abriu a aula**, não importa o mês da missão. Por isso, dá para usar o banco em qualquer ano.
+- Use os botões **▶ Prévia** para jogar como a criança antes da aula.
+
+## C. Criar missão nova, sem custo (com o Claude.ai gratuito)
+1. Na aba **Missões**, escolha a turma e clique em **✨ Criar missão nova** (no Banco de missões).
+2. Escolha o tema e clique em **Preparar pedido**. O app monta um texto com as palavras do tema, as regras e um exemplo completo.
+3. Clique em **📋 Copiar pedido** e em **Abrir o Claude.ai ↗**. Numa conversa nova, cole o pedido e envie.
+4. Copie a resposta inteira do Claude, volte ao app, cole no campo 3 e clique em **Conferir**.
+   - Se aparecer algum problema (por exemplo, uma palavra que não está no tema), cole a lista de problemas no Claude e peça: *"corrija estes problemas e responda só com o JSON"*. Ou corrija direto no texto.
+5. Quando aparecer **✅ tudo certo**, veja a **▶ Prévia** nos 3 degraus e clique em **Salvar no banco**.
+- A missão criada fica no banco da série com o botão **Excluir**. Depois de usada numa aula, ela não pode mais ser excluída, para não perder o histórico.
+
+## D. Relatório das missões
+Na aba **Missões**, abaixo das aulas, aparece o quadro **📊 Relatório de missões** da turma, com a escolha do mês:
+- quantos alunos fizeram missão e a média da turma;
+- a média em cada desafio (**Listen & Click, Read & Choose, Spell it!, Build it!**), para ver se a dificuldade maior é ouvir, ler, soletrar ou montar frases;
+- as **palavras mais erradas** no mês (missão e reforço), boas para retomar em aula;
+- cada aluno com as missões que fez (pontos e degrau), a média da missão, do reforço e a nota do mês.
+
+## E. Guia para crianças e famílias
+- Na aba **Turmas**, o cartão **📄 Guia para crianças e famílias** tem o botão **Abrir o guia ↗**.
+- O guia explica como entrar, o que tem na tela, os jogos, o que vale nota, dicas para a família e o que fazer quando algo não funciona.
+- Clique em **🖨️ Imprimir ou salvar PDF** e envie no Google Sala de Aula ou no grupo da turma.
+- As crianças também abrem o guia pelo botão **❓ Help** no mapa.
+
+---
+
 # Etapa 4: rotina — tarefas do dia, miniprojetos e aluno teste (atualização)
 
 ## A. Atualizar o código

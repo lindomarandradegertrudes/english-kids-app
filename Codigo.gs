@@ -21,6 +21,7 @@ const CABECALHOS = {
   Equipes: ['mes', 'turma', 'equipe', 'email', 'nome', 'nivel', 'media', 'aplicado_em'],
   Sessoes: ['id', 'missao_id', 'turma', 'serie', 'mes', 'status', 'aberta_ms', 'fechada_ms', 'reabertos_json'],
   MissoesFeitas: ['id', 'sessao_id', 'missao_id', 'email', 'turma', 'mes', 'tipo', 'degrau', 'pontos', 'detalhe_json', 'feito_em'],
+  MissoesCriadas: ['id', 'serie', 'mes', 'tema', 'json', 'criado_em'],
   Projetos: ['id', 'serie', 'mes', 'titulo', 'instrucoes', 'tema_id', 'criterios_json', 'vale_nota', 'status', 'criado_em'],
   Entregas: ['id', 'projeto_id', 'email', 'turma', 'arquivo_id', 'autoavaliacao', 'enviado_em', 'faces_json', 'recado', 'nota', 'avaliado_em'],
 };
@@ -198,6 +199,11 @@ function validarAluno_(email, cfg) {
 
 function doGet(e) {
   try {
+    // ?guia=1: guia para crianças e famílias (página só de leitura, para imprimir ou salvar em PDF).
+    if (e && e.parameter && e.parameter.guia) {
+      return HtmlService.createHtmlOutputFromFile('GuiaFamilias').setTitle('English Kids App – Guia para crianças e famílias')
+        .addMetaTag('viewport', 'width=device-width, initial-scale=1');
+    }
     const email = usuarioAtual_();
     // ?aluno=1: o professor abre a tela da criança como "aluno teste".
     const comoAluno = e && e.parameter && e.parameter.aluno;

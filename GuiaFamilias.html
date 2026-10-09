@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>English Kids App – Guia para crianças e famílias</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;800;900&display=swap" rel="stylesheet">
+  <style>
+    :root { --tinta: #2b2f42; --suave: #5c6178; --laranja: #e8590c; --creme: #fff9f2; --borda: #ffe8cc; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--creme); color: var(--tinta); font: 600 16px/1.5 Nunito, "Segoe UI", Arial, sans-serif; }
+    main { max-width: 860px; margin: 0 auto; padding: 24px 16px 48px; }
+    h1 { font-size: 2rem; font-weight: 900; margin: 0; line-height: 1.15; }
+    h2 { font-size: 1.3rem; font-weight: 900; margin: 0 0 8px; }
+    p { margin: 0 0 8px; }
+    .topo { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 18px; }
+    .topo .max { font-size: 4rem; line-height: 1; }
+    .topo .sub { color: var(--suave); font-size: 1.05rem; }
+    .imprimir { margin-left: auto; border: 0; border-radius: 14px; padding: 12px 18px; font: 800 1rem Nunito, Arial, sans-serif; background: var(--laranja); color: #fff; cursor: pointer; }
+    .bloco { background: #fff; border: 3px solid var(--borda); border-radius: 20px; padding: 16px 18px; margin-bottom: 14px; break-inside: avoid; }
+    .grade { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+    .item { display: grid; grid-template-columns: 44px 1fr; gap: 2px 10px; align-items: start; }
+    .item .ic { font-size: 2rem; line-height: 1.1; grid-row: span 2; text-align: center; }
+    .item strong { font-weight: 900; }
+    .item span { color: var(--suave); font-size: .92rem; }
+    ol, ul { margin: 0; padding-left: 22px; }
+    li { margin-bottom: 4px; }
+    .nota { background: #fff3bf; border-color: #ffe066; }
+    .familia { background: #ebfbee; border-color: #b2f2bb; }
+    .problemas { background: #f3f0ff; border-color: #d0bfff; }
+    .rodape { text-align: center; color: var(--suave); font-size: .9rem; margin-top: 18px; }
+    @media print {
+      @page { size: A4; margin: 12mm; }
+      body { background: #fff; font-size: 12.5px; }
+      main { padding: 0; max-width: none; }
+      .imprimir { display: none; }
+      .bloco { border-width: 2px; padding: 10px 12px; margin-bottom: 8px; }
+      .topo .max { font-size: 3rem; }
+      h1 { font-size: 1.6rem; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <div class="topo">
+    <span class="max" aria-hidden="true">🐶</span>
+    <div>
+      <h1>English Kids App</h1>
+      <div class="sub">Guia para crianças e famílias · Inglês do 3º ao 5º ano</div>
+    </div>
+    <button class="imprimir" type="button" onclick="window.print()">🖨️ Imprimir ou salvar PDF</button>
+  </div>
+
+  <div class="bloco">
+    <h2>👋 O que é?</h2>
+    <p>É o aplicativo de inglês da nossa escola. A criança ouve as palavras em inglês, joga, faz missões com o cachorro <strong>Max</strong> e junta estrelas e medalhas.
+      Funciona no navegador do Chromebook da escola e também em casa, no computador, no tablet ou no celular. Não precisa instalar nada.</p>
+  </div>
+
+  <div class="bloco">
+    <h2>🔑 Como entrar</h2>
+    <ol>
+      <li>Abra o link que o professor enviou (por exemplo, no Google Sala de Aula).</li>
+      <li>Entre com a <strong>conta Google da escola</strong> da criança. Com outra conta o app não abre.</li>
+      <li>No primeiro acesso, a criança escreve o nome completo, escolhe a turma e um bichinho. Pronto! O Max mostra o app num passeio rápido.</li>
+    </ol>
+  </div>
+
+  <div class="bloco">
+    <h2>🗺️ O que tem na tela</h2>
+    <div class="grade">
+      <div class="item"><span class="ic">🏝️</span><strong>Mapa de aventura</strong><span>Cada ilha é um tema do ano. Toque numa ilha para ouvir as palavras e jogar. As ilhas com 🔒 abrem nos próximos meses.</span></div>
+      <div class="item"><span class="ic">📋</span><strong>Tarefas do dia</strong><span>3 tarefas curtas. Quem faz as 3 ganha um dia completo 🌞 e, com eles, medalhas.</span></div>
+      <div class="item"><span class="ic">💪</span><strong>Meu reforço</strong><span>Um treino com as palavras que a criança ainda erra. Não vale nota.</span></div>
+      <div class="item"><span class="ic">🐶</span><strong>Missões do Max</strong><span>Uma história com 4 desafios. Aparece na aula, quando o professor abre. Vale nota.</span></div>
+      <div class="item"><span class="ic">📝</span><strong>Quizzes</strong><span>Perguntas rápidas de ouvir e ler, quando o professor liberar.</span></div>
+      <div class="item"><span class="ic">🎨</span><strong>Miniprojetos</strong><span>Um trabalho no papel (cartaz, desenho…). A criança tira uma foto e envia pelo app.</span></div>
+      <div class="item"><span class="ic">👥</span><strong>Minha equipe</strong><span>A equipe do mês e o placar da turma, com a média de estrelas de cada equipe.</span></div>
+      <div class="item"><span class="ic">🏠</span><strong>Meu cantinho</strong><span>Toque no bichinho: medalhas, acessórios e a casinha que vai sendo enfeitada.</span></div>
+    </div>
+  </div>
+
+  <div class="bloco">
+    <h2>🎮 Os jogos</h2>
+    <div class="grade">
+      <div class="item"><span class="ic">👂</span><strong>Listen & Click</strong><span>Ouça e toque na figura.</span></div>
+      <div class="item"><span class="ic">🃏</span><strong>Memory</strong><span>Jogo da memória: palavra e figura.</span></div>
+      <div class="item"><span class="ic">🧩</span><strong>Match it!</strong><span>Ligue a palavra à figura.</span></div>
+      <div class="item"><span class="ic">🔤</span><strong>Spell it!</strong><span>Monte a palavra com as letras.</span></div>
+      <div class="item"><span class="ic">🔍</span><strong>Find it!</strong><span>Caça-palavras.</span></div>
+      <div class="item"><span class="ic">🎨</span><strong>Color it!</strong><span>Pinte do jeito que a voz pedir.</span></div>
+      <div class="item"><span class="ic">🧱</span><strong>Build it!</strong><span>Monte a frase com os blocos.</span></div>
+      <div class="item"><span class="ic">🐝</span><strong>Spelling Bee</strong><span>Ouça e soletre.</span></div>
+    </div>
+    <p style="margin-top:10px">Cada jogo vale até <strong>3 estrelas ⭐</strong> por tema. Jogar de novo pode melhorar as estrelas. A barrinha verde de cada palavra enche quando a criança acerta.</p>
+  </div>
+
+  <div class="bloco nota">
+    <h2>📊 O que vale nota</h2>
+    <ul>
+      <li><strong>Missões do Max</strong> (na aula com Chromebook), <strong>quizzes</strong> e <strong>miniprojetos</strong>, quando o professor marcar que valem nota.</li>
+      <li>Os jogos livres, as tarefas do dia e o Meu reforço <strong>não valem nota</strong>: são para treinar sem medo de errar.</li>
+      <li>Nas missões, cada criança recebe um nível de dificuldade (★, ★★ ou ★★★) de acordo com o que já aprendeu.</li>
+    </ul>
+  </div>
+
+  <div class="bloco familia">
+    <h2>🏡 Dicas para as famílias</h2>
+    <ul>
+      <li><strong>Pouco e sempre:</strong> 10 a 15 minutos por dia ajudam mais do que uma hora no fim de semana.</li>
+      <li>Ligue o som. Peça para a criança <strong>repetir as palavras em voz alta</strong>. O botão 🐢 fala mais devagar.</li>
+      <li>Não precisa saber inglês! Peça para a criança <strong>ensinar a você</strong> 3 palavras novas.</li>
+      <li>Pergunte sobre o <strong>cantinho</strong> e as medalhas: elogiar o esforço anima a continuar.</li>
+      <li>Errar faz parte. Nos jogos e no Meu reforço, o erro ajuda o app a escolher o que treinar.</li>
+      <li>O app guarda só o nome, a turma, o e-mail da escola e os resultados, para o professor acompanhar a aprendizagem.</li>
+    </ul>
+  </div>
+
+  <div class="bloco problemas">
+    <h2>🛟 Se algo não funcionar</h2>
+    <ul>
+      <li><strong>Não ouço a voz:</strong> aumente o volume. Se aparecer 🔇, use o navegador Google Chrome ou outro aparelho.</li>
+      <li><strong>"Use a sua conta Google da escola":</strong> saia da conta pessoal e entre com a conta da escola.</li>
+      <li><strong>Fica só em "Loading…":</strong> recarregue a página. Se continuar, avise o professor.</li>
+      <li><strong>A foto do miniprojeto não vai:</strong> confira a internet e tente de novo. A foto pode ser trocada até o professor encerrar o projeto.</li>
+      <li><strong>Sem internet no meio do jogo:</strong> tudo bem! O app guarda o resultado e envia sozinho quando a internet voltar.</li>
+    </ul>
+  </div>
+
+  <p class="rodape">Dúvidas? Fale com o professor de inglês. Have fun and keep learning! 🌟</p>
+</main>
+</body>
+</html>

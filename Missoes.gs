@@ -90,7 +90,7 @@ function gravarSessao_(s) {
 // ============================================================
 
 function buscarMissao_(id) {
-  const m = MISSOES_PADRAO.filter(function (x) { return x.id === id; })[0];
+  const m = todasMissoes_().filter(function (x) { return x.id === id; })[0];
   if (!m) throw new Error('Missão não encontrada.');
   return m;
 }
@@ -294,9 +294,10 @@ function profMissoesPainel(turma) {
   validarTurma_(turma);
   const serie = serieDaTurma_(turma);
   const temas = lerTemas_();
-  const banco = MISSOES_PADRAO.filter(function (m) { return m.serie === serie; }).map(function (m) {
-    return { id: m.id, titulo: m.titulo, icone: m.icone, mes: m.mes, tema: m.tema, temaExiste: !!temaDaMissao_(m, temas) };
-  });
+  const todas = todasMissoes_();
+  const banco = todas.filter(function (m) { return m.serie === serie; }).map(function (m) {
+    return { id: m.id, titulo: m.titulo, icone: m.icone, mes: m.mes, tema: m.tema, temaExiste: !!temaDaMissao_(m, temas), criada: !!m.criada };
+  }).sort(function (a, b) { return a.mes.slice(5).localeCompare(b.mes.slice(5)) || a.tema.localeCompare(b.tema) || (a.criada - b.criada); });
   const feitas = lerFeitas_().filter(function (f) { return f.turma === turma; });
   const daTurma = {};
   lerTabela_('Alunos').forEach(function (a) { if (String(a.turma) === turma) daTurma[String(a.email).toLowerCase()] = true; });
@@ -304,14 +305,16 @@ function profMissoesPainel(turma) {
   const sessoes = lerSessoes_().filter(function (s) { return s.turma === turma; })
     .sort(function (a, b) { return b.aberta_ms - a.aberta_ms; })
     .map(function (s) {
-      const m = MISSOES_PADRAO.filter(function (x) { return x.id === s.missao_id; })[0];
+      const m = todas.filter(function (x) { return x.id === s.missao_id; })[0];
       return {
         id: s.id, missao_id: s.missao_id, titulo: m ? m.titulo : s.missao_id, icone: m ? m.icone : '🐶', mes: s.mes,
         status: s.status, aberta_ms: s.aberta_ms, fechada_ms: s.fechada_ms, reabertos: s.reabertos.length,
         concluidas: feitas.filter(function (f) { return f.sessao_id === s.id && f.tipo === 'comum' && daTurma[f.email]; }).length, alunos: nAlunos,
       };
     });
-  return { turma: turma, serie: serie, mesAtual: mesAtual_(), banco: banco, sessoes: sessoes };
+  const temasSerie = ordenarTemas_(temas.filter(function (t) { return t.serie === serie; }))
+    .map(function (t) { return { id: t.id, titulo: t.titulo, titulo_pt: t.titulo_pt, mes: t.mes }; });
+  return { turma: turma, serie: serie, mesAtual: mesAtual_(), banco: banco, sessoes: sessoes, temas: temasSerie };
 }
 
 /** Abre uma missão para a turma (fecha antes qualquer outra aula de missão aberta da mesma turma). */
@@ -370,7 +373,7 @@ function profReabrirSessao(sessaoId, emails) {
 function profSessaoDetalhe(sessaoId) {
   exigirProfessor_();
   const s = sessaoPorId_(sessaoId);
-  const m = MISSOES_PADRAO.filter(function (x) { return x.id === s.missao_id; })[0];
+  const m = todasMissoes_().filter(function (x) { return x.id === s.missao_id; })[0];
   const niveis = calcularNiveis_(lerConfig_());
   const feitas = lerFeitas_().filter(function (f) { return f.turma === s.turma || f.sessao_id === s.id; });
   const alunos = lerTabela_('Alunos').filter(function (a) { return String(a.turma) === s.turma; }).map(function (a) {

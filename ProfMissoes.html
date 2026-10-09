@@ -13,6 +13,12 @@
     .ms-pts { font-weight: 700; }
     .ms-pts.baixo { color: var(--perigo); }
     #ms-previa-area { background: #fff9f2; border-radius: var(--raio); padding: 14px; }
+    .ms-gerador textarea { width: 100%; font-family: ui-monospace, Consolas, monospace; font-size: .8rem; }
+    .ms-passo { font-weight: 700; margin: 14px 0 6px; }
+    .ms-erros { color: var(--perigo); margin: 6px 0; padding-left: 20px; font-size: .9rem; }
+    .ms-desafios { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+    .ms-desafios .cartao { padding: 10px 12px; }
+    .ms-desafios .num { font-size: 1.5rem; font-weight: 700; }
   </style>
 
   <div class="linha">
@@ -27,12 +33,44 @@
   <!-- Detalhe de uma aula -->
   <div id="ms-detalhe" class="cartao" hidden></div>
 
+  <!-- Relatório do mês -->
+  <div class="cartao" id="ms-relatorio-box" hidden>
+    <div class="linha"><h3 style="margin:0">📊 Relatório de missões</h3><span class="espaco"></span>
+      <select id="ms-rel-mes" style="width:auto"></select></div>
+    <div id="ms-relatorio" style="margin-top:12px"></div>
+  </div>
+
   <!-- Banco e prévia -->
   <div class="cartao">
-    <h3>Banco de missões <span class="suave pequeno" id="ms-banco-serie"></span></h3>
+    <div class="linha"><h3 style="margin:0">Banco de missões <span class="suave pequeno" id="ms-banco-serie"></span></h3><span class="espaco"></span>
+      <button class="btn" id="ms-criar" disabled>✨ Criar missão nova (grátis, com o Claude)</button></div>
     <p class="suave pequeno" style="margin-top:0">Cada missão tem 3 degraus. A criança recebe o degrau do nível dela: Iniciante ou sem avaliação = ★, Básico/Intermediário = ★★, Avançado = ★★★. Use a prévia para jogar como a criança (nada é gravado).</p>
     <div class="ms-banco" id="ms-banco"></div>
   </div>
+  <dialog id="ms-gerador" class="ms-gerador" style="width:min(760px, calc(100vw - 32px))">
+    <div class="linha"><h2 style="margin:0">✨ Criar missão nova</h2><span class="espaco"></span><button class="btn" type="button" data-fechar>Fechar</button></div>
+    <p class="suave pequeno">Sem custo: o app prepara um pedido com as palavras do tema, você cola no <strong>Claude.ai gratuito</strong> e traz a resposta de volta. O app confere tudo e mostra a prévia antes de salvar.</p>
+    <div class="ms-passo">1. Escolha o tema</div>
+    <div class="linha"><select id="ms-ger-tema" style="flex:1;min-width:220px"></select><button class="btn primario" type="button" id="ms-ger-pedido">Preparar pedido</button></div>
+    <div id="ms-ger-passo2" hidden>
+      <div class="ms-passo">2. Copie o pedido e cole numa conversa nova do Claude.ai</div>
+      <textarea id="ms-ger-prompt" rows="6" readonly></textarea>
+      <div class="linha"><button class="btn" type="button" id="ms-ger-copiar">📋 Copiar pedido</button>
+        <a class="btn" href="https://claude.ai/new" target="_blank" rel="noopener">Abrir o Claude.ai ↗</a></div>
+      <div class="ms-passo">3. Cole aqui a resposta inteira do Claude</div>
+      <textarea id="ms-ger-resposta" rows="6" placeholder='{ "titulo": "...", "icone": "...", "historia": { ... } }'></textarea>
+      <div class="linha"><button class="btn primario" type="button" id="ms-ger-conferir">Conferir</button><span class="suave pequeno" id="ms-ger-status"></span></div>
+      <ul class="ms-erros" id="ms-ger-erros"></ul>
+      <div class="linha" id="ms-ger-ok" hidden>
+        <button class="btn mini" type="button" data-ger-previa="1">▶ Prévia ★</button>
+        <button class="btn mini" type="button" data-ger-previa="2">▶ Prévia ★★</button>
+        <button class="btn mini" type="button" data-ger-previa="3">▶ Prévia ★★★</button>
+        <span class="espaco"></span><button class="btn primario" type="button" id="ms-ger-salvar">Salvar no banco</button>
+      </div>
+      <p class="suave pequeno">Se aparecerem problemas, você pode pedir ao Claude: "corrija estes problemas e responda só com o JSON" e colar a lista. Ou corrigir direto no texto acima.</p>
+    </div>
+  </dialog>
+
   <div id="ms-previa" class="cartao" hidden>
     <div class="linha" style="margin-bottom:10px"><h3 style="margin:0" id="ms-previa-tit">Prévia</h3><span class="espaco"></span>
       <button class="btn" type="button" id="ms-previa-fechar">Fechar prévia</button></div>
@@ -57,7 +95,7 @@
   function msRender() {
     const p = msPainel;
     const aberta = p.sessoes.find((s) => s.status === 'aberta');
-    const doMes = p.banco.filter((m) => m.mes === p.mesAtual);
+    const doMes = p.banco.filter((m) => m.mes.slice(5) === p.mesAtual.slice(5));
     const opcoes = p.banco.map((m) => `<option value="${esc(m.id)}" ${doMes[0] && doMes[0].id === m.id ? 'selected' : ''}>${esc(m.icone)} ${esc(m.titulo)} · ${esc(m.tema)} (${msMes(m.mes)})</option>`).join('');
     $('ms-conteudo').innerHTML = `
       <div class="ms-aula ${aberta ? 'aberta' : ''}">
@@ -85,7 +123,62 @@
     $('ms-banco').innerHTML = p.banco.map((m) => `
       <div class="ms-cartao"><div class="linha"><span class="ic">${esc(m.icone)}</span><div style="flex:1;min-width:0"><strong>${esc(m.titulo)}</strong>
         <div class="suave pequeno">${esc(m.tema)} · ${msMes(m.mes)}${m.temaExiste ? '' : ' · <span style="color:var(--perigo)">tema não encontrado</span>'}</div></div></div>
-        <div class="linha">${[1, 2, 3].map((dg) => `<button class="btn mini" data-ms-previa="${esc(m.id)}" data-degrau="${dg}">▶ Prévia ${'★'.repeat(dg)}</button>`).join('')}</div></div>`).join('');
+        <div class="linha">${[1, 2, 3].map((dg) => `<button class="btn mini" data-ms-previa="${esc(m.id)}" data-degrau="${dg}">▶ Prévia ${'★'.repeat(dg)}</button>`).join('')}
+          ${m.criada ? `<span class="espaco"></span><button class="btn mini" data-ms-excluir="${esc(m.id)}" title="Missão criada por você">Excluir</button>` : ''}</div></div>`).join('');
+    $('ms-criar').disabled = false;
+    $('ms-ger-tema').innerHTML = p.temas.map((t) => `<option value="${esc(t.id)}">${esc(t.titulo)} · ${esc(t.titulo_pt)} (${MS_MESES[t.mes - 1] || ''})</option>`).join('');
+    msCarregarRelatorio('');
+  }
+
+  // ---------- Relatório do mês ----------
+  async function msCarregarRelatorio(mes) {
+    const r = await chamar('profRelatorioMissoes', msPainel.turma, mes);
+    $('ms-relatorio-box').hidden = false;
+    $('ms-rel-mes').innerHTML = r.meses.map((m) => `<option value="${esc(m)}" ${m === r.mes ? 'selected' : ''}>${msMes(m)}</option>`).join('');
+    $('ms-relatorio').innerHTML = `
+      <div class="ms-desafios">
+        <div class="cartao"><div class="suave pequeno">Fizeram missão</div><div class="num">${r.participaram}<span class="suave" style="font-size:1rem"> / ${r.total}</span></div></div>
+        <div class="cartao"><div class="suave pequeno">Média da turma</div><div class="num">${r.media == null ? '—' : r.media}</div></div>
+        ${r.desafios.map((d) => `<div class="cartao"><div class="suave pequeno">${esc(d.nome)}</div><div class="num">${d.media == null ? '—' : d.media + '%'}</div></div>`).join('')}
+      </div>
+      ${r.erros.length ? `<p style="margin:14px 0 4px"><strong>Palavras mais erradas no mês:</strong></p>
+        <p style="margin:0">${r.erros.map((e) => `<span class="selo" style="margin:2px">${esc(e.en)} · ${e.vezes}×</span>`).join(' ')}</p>
+        <p class="suave pequeno" style="margin-top:4px">Boas para retomar em aula (contam os erros da missão e do reforço).</p>` : ''}
+      <div class="tabela-rolagem" style="margin-top:12px"><table><thead><tr><th></th><th>Aluno</th><th>Missões</th><th>Missão (média)</th><th>Reforço (média)</th><th>Nota do mês</th></tr></thead><tbody>
+        ${r.alunos.map((a) => `<tr><td class="avatar">${esc(a.avatar)}</td><td>${esc(a.nome)}</td>
+          <td class="pequeno">${a.missoes.length ? a.missoes.map((m) => `${esc(m.icone)} ${m.pontos} ${'★'.repeat(m.degrau)}`).join(' · ') : '<span class="suave">nenhuma</span>'}</td>
+          <td>${msPts(a.comum)}</td><td>${msPts(a.reforco)}</td><td><strong>${a.nota == null ? '<span class="suave">—</span>' : a.nota}</strong></td></tr>`).join('')}
+      </tbody></table></div>
+      <p class="suave pequeno">Quem não fez missão no mês fica sem nota (não zero). Os desafios mostram a média da turma na missão comum: dá para ver se a dificuldade maior é ouvir, ler, soletrar ou montar frases.</p>`;
+  }
+
+  // ---------- Gerador sem custo ----------
+  function msGerTexto() { return $('ms-ger-resposta').value; }
+  function msGerLimpar() {
+    $('ms-ger-erros').innerHTML = '';
+    $('ms-ger-ok').hidden = true;
+    $('ms-ger-status').textContent = '';
+  }
+  async function msGerConferir() {
+    msGerLimpar();
+    const r = await chamar('profConferirMissao', msGerTexto(), $('ms-ger-tema').value);
+    if (r.erros.length) {
+      $('ms-ger-status').textContent = r.erros.length + ' problema(s) encontrado(s):';
+      $('ms-ger-erros').innerHTML = r.erros.map((e) => `<li>${esc(e)}</li>`).join('');
+    } else {
+      $('ms-ger-status').textContent = `✅ ${r.icone} ${r.titulo}: tudo certo! Veja a prévia e salve.`;
+      $('ms-ger-ok').hidden = false;
+    }
+  }
+  async function msGerPrevia(degrau) {
+    const missao = await chamar('profPreviaMissaoNova', msGerTexto(), $('ms-ger-tema').value, degrau);
+    $('ms-gerador').close();
+    $('ms-previa').hidden = false;
+    $('ms-previa-tit').textContent = 'Prévia (ainda não salva) · ' + missao.titulo + ' · ' + '★'.repeat(degrau);
+    $('ms-previa').scrollIntoView({ behavior: 'smooth' });
+    await MissaoPlayer.jogar($('ms-previa-area'), missao, { botaoFim: 'Voltar ao gerador ▶', aoTerminar: (r, status) => status('Prévia: nada foi gravado.') });
+    $('ms-previa').hidden = true;
+    $('ms-gerador').showModal();
   }
 
   async function msVer(id) {
@@ -157,6 +250,31 @@
       if (b.dataset.msFechar) comBotao(b, async () => { msPainel = await chamar('profFecharSessao', b.dataset.msFechar); msRender(); avisar('Aula fechada.'); if (msDetalhe) msVer(b.dataset.msFechar); });
       if (b.dataset.msVer) comBotao(b, () => msVer(b.dataset.msVer));
       if (b.dataset.msPrevia) comBotao(b, () => msPrevia(b.dataset.msPrevia, Number(b.dataset.degrau)));
+      if (b.dataset.msExcluir) {
+        if (!confirm('Excluir esta missão do banco?')) return;
+        comBotao(b, async () => { await chamar('profExcluirMissaoCriada', b.dataset.msExcluir); await msCarregar(); avisar('Missão excluída.'); });
+      }
+      if (b.id === 'ms-criar') { msGerLimpar(); $('ms-ger-passo2').hidden = true; $('ms-ger-resposta').value = ''; $('ms-gerador').showModal(); }
+      if (b.id === 'ms-ger-pedido') comBotao(b, async () => {
+        $('ms-ger-prompt').value = await chamar('profPromptMissao', $('ms-ger-tema').value);
+        $('ms-ger-passo2').hidden = false;
+        msGerLimpar();
+      });
+      if (b.id === 'ms-ger-copiar') {
+        $('ms-ger-prompt').select();
+        navigator.clipboard.writeText($('ms-ger-prompt').value).then(() => avisar('Pedido copiado. Cole numa conversa nova do Claude.ai.')).catch(() => avisar('Selecione o texto e copie com Ctrl+C.', true));
+      }
+      if (b.id === 'ms-ger-conferir') comBotao(b, msGerConferir);
+      if (b.dataset.gerPrevia) comBotao(b, () => msGerPrevia(Number(b.dataset.gerPrevia)));
+      if (b.id === 'ms-ger-salvar') comBotao(b, async () => {
+        const r = await chamar('profSalvarMissaoCriada', msGerTexto(), $('ms-ger-tema').value);
+        $('ms-gerador').close();
+        await msCarregar();
+        avisar('Missão "' + r.titulo + '" salva no banco.');
+      });
     });
+    $('ms-ger-tema').addEventListener('change', () => { $('ms-ger-passo2').hidden = true; msGerLimpar(); });
+    $('ms-ger-resposta').addEventListener('input', msGerLimpar);
+    $('ms-rel-mes').addEventListener('change', () => comBotao($('ms-atualizar'), () => msCarregarRelatorio($('ms-rel-mes').value)));
   }
 </script>

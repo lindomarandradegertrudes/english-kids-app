@@ -60,6 +60,12 @@
         </div>
         <p class="suave pequeno" id="at-info" style="margin-bottom:0"></p>
       </div>
+      <div class="cartao">
+        <h3>📄 Guia para crianças e famílias</h3>
+        <p class="suave pequeno">Uma página com o passo a passo para entrar, o que tem na tela, o que vale nota e dicas para a família. Abra, clique em <strong>Imprimir ou salvar PDF</strong> e envie no Google Sala de Aula ou no grupo da turma.
+          As crianças também abrem pelo botão <strong>❓ Help</strong> do mapa.</p>
+        <div class="linha"><a class="btn" id="link-guia" target="_blank" rel="noopener">Abrir o guia ↗</a></div>
+      </div>
       <div class="linha"><h2 style="margin:0">Turmas</h2><span class="espaco"></span><span class="suave" id="total-alunos"></span>
         <button class="btn" id="editar-turmas">Editar turmas</button></div>
       <div id="series" class="pilha"></div>
@@ -242,6 +248,7 @@
     function renderTurmas() {
       const r = estado.resumo;
       $('link').textContent = r.link || 'Publique o sistema para gerar o link.';
+      if (r.link) $('link-guia').href = r.link + '?guia=1';
       $('aviso-cadastro').hidden = r.config.cadastro_aberto !== 'NÃO';
       $('total-alunos').textContent = r.totalAlunos + ' alunos cadastrados';
       $('series').innerHTML = r.series.map((serie) => {

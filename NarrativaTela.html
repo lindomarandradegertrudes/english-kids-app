@@ -237,7 +237,8 @@
       const serie = estado.aluno.serie || '';
       return `<div class="nv-cab"><h1>Adventure map 🗺️<span class="sub-kids">${esc(serie)} ano · toque numa ilha para aprender e jogar</span></h1>
         <button class="nv-btn" data-tour>🐶 Max's tour</button>
-        <button class="nv-btn" data-cantinho>🏠 My corner</button></div>`;
+        <button class="nv-btn" data-cantinho>🏠 My corner</button>
+        ${estado.urlApp ? `<a class="nv-btn" href="${esc(estado.urlApp)}?guia=1" target="_blank" rel="noopener" style="text-decoration:none">❓ Help</a>` : ''}</div>`;
     }
 
     // ---------- Cantinho ----------
