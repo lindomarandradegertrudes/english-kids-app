@@ -10,9 +10,9 @@ const TEMAS_PADRAO = [
     serie: '3º', trimestre: 1, mes: 3, titulo: 'Meeting people', titulo_pt: 'Conhecendo pessoas',
     conteudo: 'Cumprimentos, despedidas e apresentação pessoal (nome).',
     palavras: [
-      ['hello', 'olá', '👋'], ['goodbye', 'tchau', '🚶'], ['teacher', 'professor(a)', '🧑‍🏫'], ['student', 'aluno(a)', '🧒'],
-      ['friend', 'amigo(a)', '🤝'], ['name', 'nome', '📛'], ['boy', 'menino', '👦'], ['girl', 'menina', '👧'],
-      ['school', 'escola', '🏫'], ['yes', 'sim', '👍'], ['no', 'não', '👎'],
+      ['hello', 'olá', '👋'], ['goodbye', 'tchau', '🚪🚶'], ['teacher', 'professor(a)', '🧑‍🏫'], ['student', 'aluno(a)', '🧑‍🎓'],
+      ['friend', 'amigo(a)', '🧑‍🤝‍🧑'], ['name', 'nome', '🪪'], ['boy', 'menino', '👦'], ['girl', 'menina', '👧'],
+      ['school', 'escola', '🏫'], ['yes', 'sim', '✅'], ['no', 'não', '❌'],
     ],
     frases: [
       ['Hello!', 'Olá!'], ['Hi! My name is Ana.', 'Oi! Meu nome é Ana.'], ["What's your name?", 'Qual é o seu nome?'],
@@ -26,7 +26,7 @@ const TEMAS_PADRAO = [
     palavras: [
       ['please', 'por favor', '🥺'], ['thank you', 'obrigado(a)', '🙏'], ["you're welcome", 'de nada', '😊'],
       ['sorry', 'desculpe', '😔'], ['excuse me', 'com licença', '🙋'], ['good morning', 'bom dia', '🌅'],
-      ['good afternoon', 'boa tarde', '☀️'], ['good evening', 'boa noite (ao chegar)', '🌆'], ['good night', 'boa noite (ao dormir)', '🌙'],
+      ['good afternoon', 'boa tarde', '☀️'], ['good evening', 'boa noite (ao chegar)', '🌆'], ['good night', 'boa noite (ao dormir)', '😴'],
     ],
     frases: [
       ['Good morning, teacher!', 'Bom dia, professor(a)!'], ['Thank you, Ana!', 'Obrigado, Ana!'], ["You're welcome!", 'De nada!'],
@@ -204,8 +204,8 @@ const TEMAS_PADRAO = [
     serie: '4º', trimestre: 3, mes: 10, titulo: 'My body', titulo_pt: 'Partes do corpo',
     conteudo: 'Partes do corpo, adjetivos descritivos (big, small), cores e números até 20.',
     palavras: [
-      ['head', 'cabeça', ''], ['eye', 'olho', '👁️'], ['ear', 'orelha', '👂'], ['nose', 'nariz', '👃'], ['mouth', 'boca', '👄'],
-      ['teeth', 'dentes', '🦷'], ['hair', 'cabelo', '💇'], ['hand', 'mão', '✋'], ['arm', 'braço', '💪'], ['leg', 'perna', '🦵'],
+      ['head', 'cabeça', '🧑'], ['eye', 'olho', '👁️'], ['ear', 'orelha', '👂'], ['nose', 'nariz', '👃'], ['mouth', 'boca', '👄'],
+      ['teeth', 'dentes', '🦷'], ['hair', 'cabelo', '👩‍🦰'], ['hand', 'mão', '✋'], ['arm', 'braço', '💪'], ['leg', 'perna', '🦵'],
       ['foot', 'pé', '🦶'], ['finger', 'dedo', '☝️'], ['tongue', 'língua', '👅'], ['big', 'grande', '🐘'], ['small', 'pequeno', '🐭'],
     ],
     frases: [
@@ -234,9 +234,9 @@ const TEMAS_PADRAO = [
     serie: '5º', trimestre: 1, mes: 3, titulo: 'Personal information', titulo_pt: 'Informações pessoais',
     conteudo: 'Informações pessoais (nome, idade, onde mora, favoritos) para se apresentar.',
     palavras: [
-      ['name', 'nome', '📛'], ['age', 'idade', '🎂'], ['address', 'endereço', '🏠'], ['phone number', 'número de telefone', '📱'],
-      ['email', 'e-mail', '📧'], ['city', 'cidade', '🏙️'], ['country', 'país', '🌎'], ['favorite', 'favorito', '⭐'],
-      ['birthday', 'aniversário', '🎉'], ['school', 'escola', '🏫'],
+      ['name', 'nome', '🪪'], ['age', 'idade', '🔢'], ['address', 'endereço', '🏠'], ['phone number', 'número de telefone', '📱'],
+      ['email', 'e-mail', '📧'], ['city', 'cidade', '🏙️'], ['country', 'país', '🌎'], ['favorite', 'favorito', '❤️'],
+      ['birthday', 'aniversário', '🎂'], ['school', 'escola', '🏫'],
     ],
     frases: [
       ['My name is Julia.', 'Meu nome é Julia.'], ["I'm ten years old.", 'Eu tenho dez anos.'], ['I live in Joinville.', 'Eu moro em Joinville.'],
@@ -342,4 +342,24 @@ const TEMAS_PADRAO = [
       ["It's cold in winter.", 'Faz frio no inverno.'], ['My birthday is in spring.', 'Meu aniversário é na primavera.'],
     ],
   },
+];
+
+/**
+ * Figuras revisadas (out/2026): trocam figuras que confundiam as crianças nos jogos.
+ * [série, tema, palavra, figura antiga, figura nova]. Usado para atualizar os temas que já estão na planilha.
+ */
+const FIGURAS_REVISADAS = [
+  ['3º', 'Meeting people', 'goodbye', '🚶', '🚪🚶'],
+  ['3º', 'Meeting people', 'student', '🧒', '🧑‍🎓'],
+  ['3º', 'Meeting people', 'friend', '🤝', '🧑‍🤝‍🧑'],
+  ['3º', 'Meeting people', 'name', '📛', '🪪'],
+  ['3º', 'Meeting people', 'yes', '👍', '✅'],
+  ['3º', 'Meeting people', 'no', '👎', '❌'],
+  ['3º', 'Magic words', 'good night', '🌙', '😴'],
+  ['4º', 'My body', 'head', '', '🧑'],
+  ['4º', 'My body', 'hair', '💇', '👩‍🦰'],
+  ['5º', 'Personal information', 'name', '📛', '🪪'],
+  ['5º', 'Personal information', 'age', '🎂', '🔢'],
+  ['5º', 'Personal information', 'birthday', '🎉', '🎂'],
+  ['5º', 'Personal information', 'favorite', '⭐', '❤️'],
 ];

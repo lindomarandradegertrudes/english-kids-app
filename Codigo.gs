@@ -86,6 +86,7 @@ function instalar() {
   cfg.autoResizeColumns(1, 3);
 
   if (ss.getSheetByName('Temas').getLastRow() < 2) semearTemas_(true);
+  else atualizarFigurasPadrao_();
   // Pasta das fotos dos miniprojetos (também faz o Google pedir a permissão do Drive).
   pastaProjetos_();
 

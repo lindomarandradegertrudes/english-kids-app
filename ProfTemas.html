@@ -15,6 +15,7 @@
       <select id="t-filtro-serie"></select>
       <span class="espaco"></span>
       <button class="btn" id="t-restaurar" title="Cria de novo os temas padrão que você apagou">Restaurar temas padrão</button>
+      <button class="btn" id="t-figuras" title="Troca as figuras padrão que confundiam as crianças (não mexe nas que você mudou)">🖼️ Atualizar figuras</button>
       <button class="btn" id="t-importar">Colar JSON</button>
       <button class="btn primario" id="t-novo">+ Novo tema</button>
     </div>
@@ -246,6 +247,13 @@
         avisar(r.criados ? r.criados + ' tema(s) restaurado(s), ocultos.' : 'Todos os temas padrão já existem.');
       });
     });
+
+    $('t-figuras').addEventListener('click', (ev) => comBotao(ev.target, async () => {
+      const r = await chamar('profAtualizarFiguras');
+      estado.temas = r.temas;
+      renderTemas();
+      avisar(r.trocas ? r.trocas + ' figura(s) atualizada(s).' : 'As figuras já estão atualizadas.');
+    }));
 
     $('t-importar').addEventListener('click', () => abrirJson('Colar temas (JSON)',
       'Cole o JSON de um tema, de uma lista de temas ou { "temas": [...] }. Cada tema entra oculto, para você revisar e liberar.',

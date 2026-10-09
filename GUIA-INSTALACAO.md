@@ -4,6 +4,19 @@ Faça tudo com a sua **conta institucional** (@edu.joinville.sc.gov.br).
 
 ---
 
+# Correções: botões das missões e figuras mais claras (atualização)
+
+## A. Atualizar o código
+No editor do Apps Script, apague tudo e cole as novas versões de `TemasPadrao`, `Temas` e `Codigo` (.gs) e de `MissaoTela` e `ProfTemas` (.html). Depois publique a nova versão.
+
+## B. O que muda
+- **Missões:** os botões "Let's go! ▶" e "Next" das missões estavam invisíveis (texto branco sem fundo). Agora aparecem em laranja, e as bolinhas de progresso também.
+- **Figuras mais claras nos jogos:** name 🪪, student 🧑‍🎓, friend 🧑‍🤝‍🧑, goodbye 🚪🚶, yes ✅, no ❌, good night 😴, head 🧑, hair 👩‍🦰, age 🔢, birthday 🎂 e favorite ❤️.
+- **Para os temas que já estão na planilha:** na aba **Temas**, clique em **🖼️ Atualizar figuras** (ou execute **instalar**). Só mudam as palavras que ainda estavam com a figura antiga: as figuras que você trocou à mão continuam como estão.
+- Para trocar qualquer outra figura, use **Editar** no tema e cole outro emoji. Se deixar a figura vazia, o jogo mostra a palavra em português no lugar.
+
+---
+
 # Etapa 9: acompanhamento e banco de quizzes prontos (atualização)
 
 ## A. Atualizar o código

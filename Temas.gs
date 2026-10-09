@@ -211,6 +211,36 @@ function profRestaurarTemasPadrao() {
   return { criados: criados, temas: profListarTemas() };
 }
 
+/**
+ * Troca nos temas da planilha as figuras que foram revisadas (FIGURAS_REVISADAS).
+ * Só muda a palavra que ainda está com a figura antiga: o que o professor trocou à mão fica como está.
+ */
+function atualizarFigurasPadrao_() {
+  let trocas = 0;
+  const col = CABECALHOS.Temas.indexOf('palavras_json') + 1;
+  lerTemas_().forEach(function (t) {
+    let mudou = false;
+    const palavras = t.palavras.map(function (p) {
+      const r = FIGURAS_REVISADAS.filter(function (x) {
+        return x[0] === t.serie && x[1] === t.titulo && x[2].toLowerCase() === String(p.en).toLowerCase() && String(p.figura || '') === x[3];
+      })[0];
+      if (!r) return p;
+      mudou = true;
+      trocas++;
+      return { en: p.en, pt: p.pt, figura: r[4] };
+    });
+    if (mudou) aba_('Temas').getRange(t._linha, col).setValue(JSON.stringify(palavras));
+  });
+  return trocas;
+}
+
+function profAtualizarFiguras() {
+  exigirProfessor_();
+  let trocas = 0;
+  comTrava_(function () { trocas = atualizarFigurasPadrao_(); });
+  return { trocas: trocas, temas: profListarTemas() };
+}
+
 // ============================================================
 // Geração de temas com a API do Claude
 // ============================================================
