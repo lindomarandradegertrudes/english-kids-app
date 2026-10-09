@@ -21,6 +21,7 @@ const CABECALHOS = {
   Equipes: ['mes', 'turma', 'equipe', 'email', 'nome', 'nivel', 'media', 'aplicado_em'],
   Sessoes: ['id', 'missao_id', 'turma', 'serie', 'mes', 'status', 'aberta_ms', 'fechada_ms', 'reabertos_json'],
   MissoesFeitas: ['id', 'sessao_id', 'missao_id', 'email', 'turma', 'mes', 'tipo', 'degrau', 'pontos', 'detalhe_json', 'feito_em'],
+  Boletins: ['id', 'ano', 'trimestre', 'email', 'turma', 'nota_manual', 'parecer', 'atualizado_em'],
   MissoesCriadas: ['id', 'serie', 'mes', 'tema', 'json', 'criado_em'],
   Projetos: ['id', 'serie', 'mes', 'titulo', 'instrucoes', 'tema_id', 'criterios_json', 'vale_nota', 'status', 'criado_em'],
   Entregas: ['id', 'projeto_id', 'email', 'turma', 'arquivo_id', 'autoavaliacao', 'enviado_em', 'faces_json', 'recado', 'nota', 'avaliado_em'],

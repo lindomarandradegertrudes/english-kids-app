@@ -16,6 +16,7 @@ Roda **gratuitamente** no Google Workspace da escola, com Google Apps Script e G
 | 4 | Equipes de até 5 alunos (níveis misturados) e placar mensal por equipes | ✅ entregue |
 | 5 | Mais jogos: Find it! (caça-palavras), Color it!, Build it! (frases), Spelling Bee e Repeat after me | ✅ entregue |
 | + | Speak! (pronúncia com microfone): retirado, porque o reconhecimento de voz falhava muito com as crianças | ❌ removido |
+| M6 | Nota (0 a 10) e parecer do trimestre por turma: média do trimestre sem o diagnóstico, nota manual, rascunho automático do parecer, copiar, planilha no Drive e impressão | ✅ entregue |
 | M5 | Banco de missões do ano (24 temas × 3 degraus), gerador de missões sem custo (pedido para o Claude.ai gratuito + conferência + prévia), relatório mensal das missões e guia para crianças e famílias (`?guia=1`) | ✅ entregue |
 | M4 | Rotina: tarefas do dia com dias completos e medalhas, miniprojetos com foto no Drive e rubrica de 3 carinhas (com nota opcional), "Ver o app como aluno" (aluno teste) | ✅ entregue |
 | M3 | Habilidades do Mapa (ouvir, ler, escrever com códigos EF0xLI04/07/09-JO) por tema e turma, quadro na ficha do aluno e "Meu reforço" sem nota para a criança | ✅ entregue |
@@ -36,6 +37,7 @@ Roda **gratuitamente** no Google Workspace da escola, com Google Apps Script e G
 | `Equipes.gs` | Equipes mensais e placar |
 | `MissoesPadrao.gs` / `Missoes.gs` | Banco de missões e regras (aulas, reforço, nota do mês) |
 | `MissaoTela.html` / `ProfMissoes.html` | Tela da missão (criança e prévia) e aba Missões do professor |
+| `Boletim.gs` / `ProfBoletim.html` | Nota e parecer do trimestre (aba Boletim) |
 | `MissoesAno.gs` / `MissoesBanco.gs` | Missões de março a setembro; banco completo, gerador sem custo e relatório das missões |
 | `GuiaFamilias.html` | Guia para crianças e famílias (abre com `?guia=1`, para imprimir ou salvar em PDF) |
 | `Rotina.gs` / `RotinaTela.html` | Tarefas do dia e aluno teste (servidor) e cartões de tarefas, miniprojetos e aviso do aluno teste (tela da criança) |

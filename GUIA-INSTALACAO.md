@@ -4,6 +4,39 @@ Faça tudo com a sua **conta institucional** (@edu.joinville.sc.gov.br).
 
 ---
 
+# Etapa 6: nota e parecer do trimestre (atualização)
+
+## A. Atualizar o código
+No editor do Apps Script (**Extensões > Apps Script**, na planilha):
+
+| Arquivo no editor | O que fazer |
+|---|---|
+| `Boletim` | **novo:** **+ > Script**, nome `Boletim`, cole **Boletim.gs** |
+| `ProfBoletim` | **novo:** **+ > HTML**, nome `ProfBoletim`, cole **ProfBoletim.html** |
+| `Codigo` | apague tudo e cole a nova versão (.gs) |
+| `Professor` | apague tudo e cole a nova versão (.html) |
+
+Depois publique a nova versão (**Implantar > Gerenciar implantações > ✏️ > Versão: Nova versão > Implantar**). A aba **Boletins** da planilha é criada sozinha no primeiro salvamento (ou ao executar **instalar**).
+
+## B. Como usar (aba Boletim)
+1. Escolha a **turma**, o **trimestre** e o ano. Trimestres: 1º = fevereiro a maio, 2º = junho a setembro, 3º = outubro a dezembro.
+2. **Nota calculada (0 a 10, uma casa decimal):** é a média das notas do trimestre que já entram no nível.
+   - Entram os quizzes mensais (online ou impressos), as notas mensais das missões e os miniprojetos que valem nota.
+   - O **diagnóstico não entra**, porque mede o ponto de partida.
+   - Passe o mouse sobre a nota para ver de onde ela veio.
+3. **Nota final:** deixe em branco para usar a calculada, ou digite outra nota (aceita vírgula, ex.: 6,5). Linhas em **vermelho** são alunos sem nenhuma nota no trimestre: decida se lança uma nota impressa (aba Avaliações) ou digita a nota final.
+4. **Parecer:** vem como rascunho automático de 3 a 5 frases.
+   - O rascunho fala da **participação** (quantas atividades do trimestre a criança fez), do **desempenho** nos temas do trimestre, do **ponto forte** e do **que precisa melhorar** (ouvir, ler ou escrever, com as palavras que mais erra) e traz uma **orientação**.
+   - Edite à vontade. **🤖 Refazer rascunho** volta ao texto automático.
+5. Clique em **Salvar alterações**. As linhas alteradas ficam com borda amarela até salvar.
+6. **Para levar ao sistema da escola:**
+   - **📋 Copiar notas:** copia as notas finais, uma por linha, na ordem alfabética da lista. Cole na coluna do sistema.
+   - **📋 Copiar pareceres:** copia todos os pareceres numerados.
+   - **📊 Planilha no Drive:** cria uma planilha com nº, aluno, nota final, nota calculada e parecer.
+   - **🖨️ Imprimir turma:** uma folha com todos os alunos, nota e parecer.
+
+---
+
 # Etapa 5: banco do ano, gerador de missões, relatório das missões e guia para famílias (atualização)
 
 ## A. Atualizar o código

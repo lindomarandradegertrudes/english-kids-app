@@ -1,0 +1,192 @@
+<!-- Boletim: nota (0 a 10) e parecer do trimestre por turma -->
+<section id="aba-boletim" class="pilha" hidden>
+  <style>
+    .bl-tabela td { vertical-align: top; }
+    .bl-tabela textarea { width: 100%; min-width: 280px; font-size: .88rem; line-height: 1.4; }
+    .bl-tabela input.bl-nota { width: 76px; text-align: center; font-weight: 700; }
+    .bl-calc { font-weight: 700; font-size: 1.05rem; }
+    .bl-sem { background: #fff5f5; }
+    .bl-sem .bl-calc { color: var(--perigo); }
+    .bl-det { font-size: .75rem; color: var(--suave, #6c7086); max-width: 170px; }
+    .bl-alterado { outline: 2px solid #fab005; outline-offset: -2px; }
+    .bl-estado { font-size: .75rem; }
+  </style>
+
+  <div class="linha">
+    <select id="bl-turma"></select>
+    <select id="bl-tri" style="width:auto">
+      <option value="1">1º trimestre (fev–mai)</option>
+      <option value="2">2º trimestre (jun–set)</option>
+      <option value="3">3º trimestre (out–dez)</option>
+    </select>
+    <input id="bl-ano" type="number" min="2020" max="2100" style="width:96px">
+    <button class="btn" id="bl-atualizar">↻ Atualizar</button>
+    <span class="espaco"></span>
+    <span class="suave pequeno" id="bl-estado"></span>
+    <button class="btn primario" id="bl-salvar" disabled>Salvar alterações</button>
+  </div>
+
+  <div class="cartao">
+    <p class="suave pequeno" style="margin:0">
+      <strong>Nota calculada</strong> = média das notas do trimestre que entram no nível (quizzes mensais online ou impressos, missões do mês e miniprojetos que valem nota), de 0 a 10. O diagnóstico não entra.
+      Para lançar outra nota, digite em <strong>Nota final</strong>. O <strong>parecer</strong> vem como rascunho automático (participação, desempenho, ponto forte, o que melhorar e uma orientação): edite à vontade e salve.
+      Linhas em vermelho = aluno sem nenhuma nota no trimestre.</p>
+  </div>
+
+  <div class="linha">
+    <button class="btn" id="bl-copiar-notas">📋 Copiar notas</button>
+    <button class="btn" id="bl-copiar-pareceres">📋 Copiar pareceres</button>
+    <button class="btn" id="bl-planilha">📊 Planilha no Drive</button>
+    <button class="btn" id="bl-imprimir">🖨️ Imprimir turma</button>
+    <button class="btn" id="bl-refazer-todos">🤖 Refazer rascunhos não editados</button>
+    <span class="suave pequeno" id="bl-link"></span>
+  </div>
+
+  <div class="cartao tabela-rolagem">
+    <table class="bl-tabela">
+      <thead><tr><th>Nº</th><th></th><th>Aluno</th><th>Nota calculada</th><th>Nota final</th><th>Parecer</th></tr></thead>
+      <tbody id="bl-corpo"><tr><td colspan="6" class="vazio">Escolha a turma.</td></tr></tbody>
+    </table>
+  </div>
+</section>
+
+<script>
+  const bl = { dados: null, alterados: new Set() };
+
+  function blNota(v) { return v == null || v === '' ? '' : String(v).replace('.', ','); }
+  function blFinal(a) { return a.notaManual != null ? a.notaManual : a.notaCalculada; }
+
+  async function blCarregar() {
+    const turma = $('bl-turma').value;
+    if (!turma) return;
+    if (bl.alterados.size && !confirm('Há alterações não salvas. Descartar?')) return;
+    $('bl-corpo').innerHTML = '<tr><td colspan="6" class="carregando">Carregando…</td></tr>';
+    bl.dados = await chamar('profBoletimTurma', turma, $('bl-ano').value, $('bl-tri').value);
+    bl.alterados.clear();
+    blRender();
+  }
+
+  function blRender() {
+    const d = bl.dados;
+    $('bl-link').textContent = '';
+    $('bl-corpo').innerHTML = d.alunos.length ? d.alunos.map((a, i) => {
+      const sem = a.notaCalculada == null && a.notaManual == null;
+      const det = a.notas.map((n) => `${n.titulo}: ${blNota(Math.round(n.percentual) / 10)}`).join('\n');
+      return `<tr data-email="${esc(a.email)}" class="${sem ? 'bl-sem' : ''}">
+        <td>${i + 1}</td><td class="avatar">${esc(a.avatar)}</td>
+        <td><strong>${esc(a.nome)}</strong><div class="bl-det">Participação: ${a.participacao.feitas} de ${a.participacao.total} atividades</div></td>
+        <td title="${esc(det)}"><span class="bl-calc">${a.notaCalculada == null ? 'sem nota' : blNota(a.notaCalculada)}</span>
+          <div class="bl-det">${a.notas.length} avaliação(ões)</div></td>
+        <td><input class="bl-nota" data-campo="nota" inputmode="decimal" placeholder="${esc(blNota(a.notaCalculada))}" value="${esc(blNota(a.notaManual))}"></td>
+        <td><textarea data-campo="parecer" rows="5">${esc(a.parecer || a.rascunho)}</textarea>
+          <div class="linha bl-estado"><span class="suave">${a.parecer ? '✏️ parecer salvo' + (a.atualizado_em ? ' em ' + esc(a.atualizado_em) : '') : '🤖 rascunho automático (ainda não salvo)'}</span>
+            <span class="espaco"></span><button class="btn mini" type="button" data-refazer>🤖 Refazer rascunho</button></div></td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="6" class="vazio">Nenhum aluno nesta turma.</td></tr>';
+    blEstado();
+  }
+
+  function blEstado() {
+    $('bl-salvar').disabled = !bl.alterados.size;
+    $('bl-estado').textContent = bl.alterados.size ? bl.alterados.size + ' aluno(s) com alterações não salvas' : '';
+  }
+
+  function blMarcar(tr) {
+    bl.alterados.add(tr.dataset.email);
+    tr.classList.add('bl-alterado');
+    blEstado();
+  }
+
+  function blLinhaAtual(email) {
+    const tr = document.querySelector(`#bl-corpo tr[data-email="${CSS.escape(email)}"]`);
+    return { email, notaManual: tr.querySelector('[data-campo="nota"]').value, parecer: tr.querySelector('[data-campo="parecer"]').value };
+  }
+
+  async function blSalvar(ev) {
+    const linhas = [...bl.alterados].map(blLinhaAtual);
+    await comBotao(ev.target, async () => {
+      bl.dados = await chamar('profSalvarBoletim', bl.dados.turma, bl.dados.ano, bl.dados.tri, linhas);
+      bl.alterados.clear();
+      blRender();
+      avisar('Boletim salvo (' + linhas.length + ' aluno(s)).');
+    });
+  }
+
+  function blValoresFinais() {
+    return bl.dados.alunos.map((a) => {
+      const tr = document.querySelector(`#bl-corpo tr[data-email="${CSS.escape(a.email)}"]`);
+      const manual = tr ? tr.querySelector('[data-campo="nota"]').value.trim() : '';
+      const parecer = tr ? tr.querySelector('[data-campo="parecer"]').value.trim() : (a.parecer || a.rascunho);
+      return { a, nota: manual !== '' ? manual : blNota(a.notaCalculada), parecer };
+    });
+  }
+
+  function blCopiar(texto, msg) {
+    navigator.clipboard.writeText(texto).then(() => avisar(msg)).catch(() => avisar('Não consegui copiar. Use a planilha no Drive.', true));
+  }
+
+  function blImprimir() {
+    const d = bl.dados, v = blValoresFinais();
+    $('impressao').innerHTML = `<h2 style="margin:0 0 4px">Boletim de Língua Inglesa – Turma ${esc(d.turma)}</h2>
+      <p style="margin:0 0 12px">${esc(d.nomeTri)} de ${d.ano}${d.temas.length ? ' · Temas: ' + esc(d.temas.join(', ')) : ''}</p>
+      <table style="width:100%;border-collapse:collapse;font-size:10.5pt">
+        <thead><tr><th style="border:1px solid #000;padding:4px">Nº</th><th style="border:1px solid #000;padding:4px;text-align:left">Aluno</th>
+          <th style="border:1px solid #000;padding:4px">Nota</th><th style="border:1px solid #000;padding:4px;text-align:left">Parecer</th></tr></thead>
+        <tbody>${v.map((x, i) => `<tr style="break-inside:avoid"><td style="border:1px solid #000;padding:4px;text-align:center">${i + 1}</td>
+          <td style="border:1px solid #000;padding:4px">${esc(x.a.nome)}</td>
+          <td style="border:1px solid #000;padding:4px;text-align:center;font-weight:700">${esc(x.nota || '—')}</td>
+          <td style="border:1px solid #000;padding:4px">${esc(x.parecer)}</td></tr>`).join('')}</tbody></table>`;
+    document.body.classList.add('imprimindo');
+    setTimeout(() => { window.print(); document.body.classList.remove('imprimindo'); }, 80);
+  }
+
+  function configurarBoletim() {
+    const hoje = new Date(), m = hoje.getMonth() + 1;
+    $('bl-ano').value = hoje.getFullYear();
+    $('bl-tri').value = m >= 10 ? '3' : m >= 6 ? '2' : '1';
+    $('bl-turma').innerHTML = '<option value="">Escolha a turma…</option>' + opcoesTurma(false);
+    ['bl-turma', 'bl-tri', 'bl-ano'].forEach((id) => $(id).addEventListener('change', () => comBotao($('bl-atualizar'), blCarregar)));
+    $('bl-atualizar').addEventListener('click', (ev) => comBotao(ev.target, blCarregar));
+    $('bl-salvar').addEventListener('click', blSalvar);
+    $('bl-corpo').addEventListener('input', (ev) => {
+      const tr = ev.target.closest('tr[data-email]');
+      if (tr && ev.target.dataset.campo) blMarcar(tr);
+    });
+    $('bl-corpo').addEventListener('click', (ev) => {
+      const b = ev.target.closest('[data-refazer]');
+      if (!b) return;
+      const tr = b.closest('tr[data-email]');
+      const a = bl.dados.alunos.find((x) => x.email === tr.dataset.email);
+      tr.querySelector('[data-campo="parecer"]').value = a.rascunho;
+      blMarcar(tr);
+    });
+    $('bl-refazer-todos').addEventListener('click', () => {
+      if (!bl.dados) return;
+      bl.dados.alunos.filter((a) => !a.parecer).forEach((a) => {
+        const tr = document.querySelector(`#bl-corpo tr[data-email="${CSS.escape(a.email)}"]`);
+        if (tr && !bl.alterados.has(a.email)) tr.querySelector('[data-campo="parecer"]').value = a.rascunho;
+      });
+      avisar('Rascunhos atualizados nos pareceres que você ainda não salvou.');
+    });
+    $('bl-copiar-notas').addEventListener('click', () => {
+      if (!bl.dados) return;
+      const v = blValoresFinais();
+      const faltam = v.filter((x) => !x.nota).length;
+      blCopiar(v.map((x) => x.nota).join('\n'), 'Notas copiadas na ordem da lista (' + v.length + ' alunos)' + (faltam ? ', ' + faltam + ' em branco.' : '.'));
+    });
+    $('bl-copiar-pareceres').addEventListener('click', () => {
+      if (!bl.dados) return;
+      blCopiar(blValoresFinais().map((x, i) => (i + 1) + '. ' + x.a.nome + '\n' + x.parecer).join('\n\n'), 'Pareceres copiados.');
+    });
+    $('bl-planilha').addEventListener('click', (ev) => {
+      if (!bl.dados) return;
+      if (bl.alterados.size) { avisar('Salve as alterações antes de gerar a planilha.', true); return; }
+      comBotao(ev.target, async () => {
+        const url = await chamar('profExportarBoletim', bl.dados.turma, bl.dados.ano, bl.dados.tri);
+        $('bl-link').innerHTML = `<a href="${esc(url)}" target="_blank" rel="noopener">Abrir a planilha ↗</a>`;
+        avisar('Planilha criada no seu Drive.');
+      });
+    });
+    $('bl-imprimir').addEventListener('click', () => { if (bl.dados) blImprimir(); });
+  }
+</script>

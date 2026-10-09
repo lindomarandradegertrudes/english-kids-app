@@ -34,6 +34,7 @@
     <button data-aba="avaliacoes">Avaliações</button>
     <button data-aba="equipes">Equipes</button>
     <button data-aba="relatorios">Relatórios</button>
+    <button data-aba="boletim">Boletim</button>
     <button data-aba="config">Configurações</button>
   </nav>
 
@@ -95,6 +96,7 @@
     <?!= incluir('ProfAvaliacoes'); ?>
     <?!= incluir('ProfEquipes'); ?>
     <?!= incluir('ProfRelatorios'); ?>
+    <?!= incluir('ProfBoletim'); ?>
     <?!= incluir('MissaoTela'); ?>
     <?!= incluir('ProfMissoes'); ?>
     <?!= incluir('ProfProjetos'); ?>
@@ -496,6 +498,7 @@
         configurarAvaliacoes();
         configurarEquipes();
         configurarRelatorios();
+        configurarBoletim();
         configurarMissoes();
         configurarProjetos();
         configurarAlunoTeste();
