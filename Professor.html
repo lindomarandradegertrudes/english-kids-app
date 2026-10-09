@@ -27,6 +27,7 @@
     <button data-aba="turmas" class="ativa">Turmas</button>
     <button data-aba="alunos">Alunos</button>
     <button data-aba="temas">Temas</button>
+    <button data-aba="planejamento">Planejamento</button>
     <button data-aba="progresso">Progresso</button>
     <button data-aba="habilidades">Habilidades</button>
     <button data-aba="missoes">Missões</button>
@@ -91,6 +92,7 @@
     </section>
 
     <?!= incluir('ProfTemas'); ?>
+    <?!= incluir('ProfPlanejamento'); ?>
     <?!= incluir('ProfProgresso'); ?>
     <?!= incluir('ProfHabilidades'); ?>
     <?!= incluir('ProfAvaliacoes'); ?>
@@ -493,6 +495,7 @@
         $('filtro-turma').innerHTML = opcoesTurma(true);
         $('al-turma').innerHTML = opcoesTurma(false);
         configurarTemas();
+        configurarPlanejamento();
         configurarProgresso();
         configurarHabilidades();
         configurarAvaliacoes();

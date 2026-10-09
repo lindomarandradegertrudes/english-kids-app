@@ -1,0 +1,207 @@
+<!-- Planejamento: roteiro mensal das aulas (série × mês) e registro por turma -->
+<section id="aba-planejamento" class="pilha" hidden>
+  <style>
+    .pl-aulas { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+    .pl-aula { display: grid; gap: 8px; align-content: start; border-top: 5px solid var(--borda); }
+    .pl-aula[data-tipo="plano"] { border-top-color: #4dabf7; }
+    .pl-aula[data-tipo="telao"] { border-top-color: #b197fc; }
+    .pl-aula[data-tipo="ficha"] { border-top-color: #ffa94d; }
+    .pl-aula[data-tipo="chromebook"] { border-top-color: #51cf66; }
+    .pl-aula[data-tipo="projeto"] { border-top-color: #f783ac; }
+    .pl-aula[data-tipo="quiz"] { border-top-color: #ffd43b; }
+    .pl-aula[data-tipo="revisao"] { border-top-color: #868e96; }
+    .pl-aula .num { font-weight: 800; }
+    .pl-aula textarea { width: 100%; font-size: .88rem; }
+    .pl-info { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; }
+    .pl-reg td { vertical-align: top; }
+    .pl-reg textarea { width: 100%; min-width: 200px; font-size: .88rem; }
+    .pl-reg input[type="date"] { width: auto; }
+    .pl-reg tr.feita { background: #f4fbf5; }
+  </style>
+
+  <div class="linha">
+    <select id="pl-serie" style="width:auto"></select>
+    <select id="pl-mes" style="width:auto"></select>
+    <span class="espaco"></span>
+    <span class="suave pequeno">1 aula por semana: o roteiro divide as 4 aulas do mês entre o seu planejamento e o app.</span>
+  </div>
+
+  <div class="cartao">
+    <h3 style="margin-top:0">📘 Meu planejamento do mês</h3>
+    <div class="linha">
+      <input id="pl-link" placeholder="Cole aqui o link do seu planejamento no Google Docs" style="flex:1;min-width:240px">
+      <a class="btn" id="pl-abrir" target="_blank" rel="noopener" hidden>Abrir meu planejamento ↗</a>
+    </div>
+    <div class="pl-info pequeno" id="pl-info" style="margin-top:10px"></div>
+  </div>
+
+  <div class="cartao">
+    <div class="linha" style="margin-bottom:10px">
+      <h3 style="margin:0">🗓️ Roteiro das aulas</h3><span class="suave pequeno" id="pl-sugerido"></span><span class="espaco"></span>
+      <button class="btn" id="pl-restaurar">↺ Voltar à sugestão</button>
+      <button class="btn" id="pl-mais">+ Aula</button>
+      <button class="btn primario" id="pl-salvar">Salvar roteiro e link</button>
+    </div>
+    <div class="pl-aulas" id="pl-aulas"></div>
+  </div>
+
+  <div class="cartao">
+    <div class="linha" style="margin-bottom:10px">
+      <h3 style="margin:0">✍️ Registro das aulas</h3>
+      <select id="pl-turma" style="width:auto"></select>
+      <input id="pl-ano" type="number" min="2020" max="2100" style="width:90px">
+      <span class="espaco"></span>
+      <button class="btn" id="pl-copiar">📋 Copiar registro do mês</button>
+      <button class="btn primario" id="pl-salvar-reg">Salvar registro</button>
+    </div>
+    <p class="suave pequeno" style="margin-top:0">Marque ✔ quando a aula acontecer. O botão ⤵ copia a aula prevista do roteiro para o conteúdo dado. "Copiar registro do mês" gera o texto para o diário de classe.</p>
+    <div class="tabela-rolagem"><table class="pl-reg">
+      <thead><tr><th>Aula</th><th>✔</th><th>Data</th><th>Conteúdo dado</th><th>Observações</th></tr></thead>
+      <tbody id="pl-reg-corpo"><tr><td colspan="5" class="vazio">Escolha a turma.</td></tr></tbody>
+    </table></div>
+  </div>
+</section>
+
+<script>
+  const pl = { dados: null, roteiro: [], reg: null };
+  const PL_MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+
+  async function plCarregar() {
+    pl.dados = await chamar('profPlanejamento', $('pl-serie').value, Number($('pl-mes').value));
+    pl.roteiro = pl.dados.roteiro.map((a) => ({ ...a }));
+    plRender();
+    const atual = $('pl-turma').value;
+    $('pl-turma').innerHTML = pl.dados.turmas.map((t) => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+    if (pl.dados.turmas.includes(atual)) $('pl-turma').value = atual;
+    await plCarregarRegistro();
+  }
+
+  function plRender() {
+    const d = pl.dados;
+    $('pl-link').value = d.link;
+    plAtualizarLink();
+    $('pl-info').innerHTML = `<strong>${esc(d.serie)} ano · ${PL_MESES[d.mes - 1]}</strong>` +
+      (d.temas.length ? d.temas.map((t) => `<span class="selo ${t.status === 'liberado' ? 'liberado' : 'oculto'}">${esc(t.titulo)} · ${t.palavras} palavras</span>`).join('') : '<span class="suave">Nenhum tema neste mês.</span>') +
+      (d.missoes.length ? `<span>Missão: ${d.missoes.map((m) => esc(m.icone + ' ' + m.titulo)).join(', ')}</span>` : '');
+    $('pl-sugerido').textContent = d.sugerido ? '· sugestão do app (ainda não salva)' : '· roteiro salvo';
+    plRenderAulas();
+  }
+
+  function plRenderAulas() {
+    const tipos = pl.dados.tipos;
+    $('pl-aulas').innerHTML = pl.roteiro.map((a, i) => `
+      <div class="cartao pl-aula" data-i="${i}" data-tipo="${esc(a.tipo)}">
+        <div class="linha"><span class="num">Aula ${i + 1}</span><span class="espaco"></span>
+          <select data-campo="tipo" style="width:auto">${Object.keys(tipos).map((k) => `<option value="${k}" ${k === a.tipo ? 'selected' : ''}>${tipos[k].icone} ${esc(tipos[k].nome)}</option>`).join('')}</select>
+          ${pl.roteiro.length > 1 ? '<button class="btn mini" type="button" data-remover title="Remover aula">✕</button>' : ''}</div>
+        <input data-campo="titulo" value="${esc(a.titulo)}" placeholder="Título da aula">
+        <textarea data-campo="descricao" rows="5" placeholder="O que fazer nesta aula">${esc(a.descricao)}</textarea>
+      </div>`).join('');
+  }
+
+  function plAtualizarLink() {
+    const v = $('pl-link').value.trim();
+    $('pl-abrir').hidden = !/^https:/.test(v);
+    if (!$('pl-abrir').hidden) $('pl-abrir').href = v;
+  }
+
+  // ---------- Registro ----------
+  async function plCarregarRegistro() {
+    const turma = $('pl-turma').value;
+    if (!turma) { $('pl-reg-corpo').innerHTML = '<tr><td colspan="5" class="vazio">Nenhuma turma nesta série.</td></tr>'; return; }
+    pl.reg = await chamar('profRegistroTurma', turma, Number($('pl-ano').value), Number($('pl-mes').value));
+    $('pl-reg-corpo').innerHTML = pl.reg.aulas.map((a) => `
+      <tr data-aula="${a.aula}" class="${a.feito ? 'feita' : ''}">
+        <td><strong>${a.aula}${a.aula === 5 ? ' (extra)' : ''}</strong><div class="suave pequeno">${esc(a.prevista)}</div></td>
+        <td><input type="checkbox" data-campo="feito" ${a.feito ? 'checked' : ''} style="width:auto"></td>
+        <td><input type="date" data-campo="data" value="${esc(a.data)}"></td>
+        <td><textarea data-campo="conteudo" rows="2">${esc(a.conteudo)}</textarea>
+          ${a.prevista ? '<button class="btn mini" type="button" data-copiar-prevista title="Usar a aula prevista do roteiro">⤵ prevista</button>' : ''}</td>
+        <td><textarea data-campo="observacoes" rows="2">${esc(a.observacoes)}</textarea></td>
+      </tr>`).join('');
+  }
+
+  function plLinhasRegistro() {
+    return [...document.querySelectorAll('#pl-reg-corpo tr[data-aula]')].map((tr) => ({
+      aula: Number(tr.dataset.aula), feito: tr.querySelector('[data-campo="feito"]').checked,
+      data: tr.querySelector('[data-campo="data"]').value, conteudo: tr.querySelector('[data-campo="conteudo"]').value,
+      observacoes: tr.querySelector('[data-campo="observacoes"]').value,
+    }));
+  }
+
+  function plTextoRegistro() {
+    const r = pl.reg;
+    const linhas = plLinhasRegistro().filter((l) => l.feito || l.conteudo.trim());
+    return `Inglês – Turma ${r.turma} – ${PL_MESES[r.mes - 1]} de ${r.ano}\n` + linhas.map((l) => {
+      const data = l.data ? l.data.slice(8, 10) + '/' + l.data.slice(5, 7) : 'Aula ' + l.aula;
+      return data + ' – ' + (l.conteudo.trim() || '(sem conteúdo)') + (l.observacoes.trim() ? ' Obs.: ' + l.observacoes.trim() : '');
+    }).join('\n');
+  }
+
+  function configurarPlanejamento() {
+    const hoje = new Date();
+    $('pl-serie').innerHTML = estado.resumo.series.map((s) => `<option value="${esc(s)}">${esc(s)} ano</option>`).join('');
+    $('pl-mes').innerHTML = PL_MESES.map((m, i) => `<option value="${i + 1}">${m}</option>`).join('');
+    $('pl-mes').value = String(hoje.getMonth() + 1);
+    $('pl-ano').value = hoje.getFullYear();
+    let carregado = false;
+    document.querySelector('.abas button[data-aba="planejamento"]').addEventListener('click', () => {
+      if (!carregado) { carregado = true; comBotao($('pl-salvar'), plCarregar); }
+    });
+    ['pl-serie', 'pl-mes'].forEach((id) => $(id).addEventListener('change', () => comBotao($('pl-salvar'), plCarregar)));
+    ['pl-turma', 'pl-ano'].forEach((id) => $(id).addEventListener('change', () => comBotao($('pl-salvar-reg'), plCarregarRegistro)));
+    $('pl-link').addEventListener('input', plAtualizarLink);
+    $('pl-aulas').addEventListener('input', (ev) => {
+      const card = ev.target.closest('[data-i]');
+      if (!card || !ev.target.dataset.campo) return;
+      pl.roteiro[Number(card.dataset.i)][ev.target.dataset.campo] = ev.target.value;
+      if (ev.target.dataset.campo === 'tipo') card.dataset.tipo = ev.target.value;
+    });
+    $('pl-aulas').addEventListener('change', (ev) => {
+      const card = ev.target.closest('[data-i]');
+      if (card && ev.target.dataset.campo === 'tipo') { pl.roteiro[Number(card.dataset.i)].tipo = ev.target.value; card.dataset.tipo = ev.target.value; }
+    });
+    $('pl-aulas').addEventListener('click', (ev) => {
+      if (!ev.target.closest('[data-remover]')) return;
+      pl.roteiro.splice(Number(ev.target.closest('[data-i]').dataset.i), 1);
+      plRenderAulas();
+    });
+    $('pl-mais').addEventListener('click', () => {
+      if (pl.roteiro.length >= 5) { avisar('No máximo 5 aulas no mês.', true); return; }
+      pl.roteiro.push({ tipo: 'plano', titulo: '', descricao: '' });
+      plRenderAulas();
+    });
+    $('pl-restaurar').addEventListener('click', () => {
+      if (!pl.dados) return;
+      pl.roteiro = pl.dados.sugestao.map((a) => ({ ...a }));
+      plRenderAulas();
+      avisar('Sugestão do app restaurada. Clique em Salvar para guardar.');
+    });
+    $('pl-salvar').addEventListener('click', (ev) => comBotao(ev.target, async () => {
+      pl.dados = await chamar('profSalvarPlanejamento', pl.dados.serie, pl.dados.mes, { link: $('pl-link').value, roteiro: pl.roteiro });
+      pl.roteiro = pl.dados.roteiro.map((a) => ({ ...a }));
+      plRender();
+      await plCarregarRegistro();
+      avisar('Roteiro de ' + PL_MESES[pl.dados.mes - 1] + ' salvo para o ' + pl.dados.serie + ' ano.');
+    }));
+    $('pl-reg-corpo').addEventListener('click', (ev) => {
+      const b = ev.target.closest('[data-copiar-prevista]');
+      if (!b) return;
+      const tr = b.closest('tr[data-aula]');
+      const a = pl.reg.aulas.find((x) => x.aula === Number(tr.dataset.aula));
+      const ta = tr.querySelector('[data-campo="conteudo"]');
+      ta.value = a.prevista.replace(/^\S+\s/, '');
+      if (!tr.querySelector('[data-campo="data"]').value) { const h = new Date(); tr.querySelector('[data-campo="data"]').value = h.getFullYear() + '-' + String(h.getMonth() + 1).padStart(2, '0') + '-' + String(h.getDate()).padStart(2, '0'); }
+      tr.querySelector('[data-campo="feito"]').checked = true;
+    });
+    $('pl-salvar-reg').addEventListener('click', (ev) => comBotao(ev.target, async () => {
+      pl.reg = await chamar('profSalvarRegistro', pl.reg.turma, pl.reg.ano, pl.reg.mes, plLinhasRegistro());
+      await plCarregarRegistro();
+      avisar('Registro da ' + pl.reg.turma + ' salvo.');
+    }));
+    $('pl-copiar').addEventListener('click', () => {
+      if (!pl.reg) return;
+      navigator.clipboard.writeText(plTextoRegistro()).then(() => avisar('Registro do mês copiado.')).catch(() => avisar('Não consegui copiar.', true));
+    });
+  }
+</script>

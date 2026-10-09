@@ -4,6 +4,36 @@ Faça tudo com a sua **conta institucional** (@edu.joinville.sc.gov.br).
 
 ---
 
+# Etapa 7: roteiro mensal das aulas e registro (atualização)
+
+## A. Atualizar o código
+No editor do Apps Script (**Extensões > Apps Script**, na planilha):
+
+| Arquivo no editor | O que fazer |
+|---|---|
+| `Planejamento` | **novo:** **+ > Script**, nome `Planejamento`, cole **Planejamento.gs** |
+| `ProfPlanejamento` | **novo:** **+ > HTML**, nome `ProfPlanejamento`, cole **ProfPlanejamento.html** |
+| `Codigo` | apague tudo e cole a nova versão (.gs) |
+| `Professor` | apague tudo e cole a nova versão (.html) |
+
+Depois publique a nova versão. As abas **Planejamentos** e **RegistroAulas** da planilha são criadas sozinhas.
+
+## B. Como usar (aba Planejamento)
+1. Escolha a **série** e o **mês**. O app mostra os temas do mês e a missão sugerida.
+2. **Meu planejamento do mês:** cole o link do seu planejamento no Google Docs. O botão **Abrir meu planejamento ↗** passa a abrir o documento direto. O link vale para todos os anos: guarde uma vez por série e mês.
+3. **Roteiro das aulas:** o app sugere as 4 aulas do mês (1 aula por semana):
+   - **Aula 1 – 📘 Meu planejamento:** apresentação do vocabulário. No fim, projete a ilha do tema no app e ouçam as palavras juntos.
+   - **Aula 2 – 📄 Ficha impressa:** prática com o seu planejamento + ficha do tema.
+   - **Aula 3 – 💻 Chromebook:** missão do mês (abrir e fechar na aba Missões), reforço, jogos livres e tarefas do dia.
+   - **Aula 4 – 🎨 Produção e avaliação:** miniprojeto com foto ou quiz impresso, e retomada das palavras mais erradas.
+   - Troque o tipo de cada aula, o título e o texto à vontade. **+ Aula** acrescenta uma 5ª aula (meses com 5 semanas). **↺ Voltar à sugestão** desfaz as mudanças. Clique em **Salvar roteiro e link**.
+4. **Registro das aulas:** escolha a turma.
+   - Para cada aula, marque ✔ quando acontecer, coloque a data, o **conteúdo dado** e as **observações**.
+   - O botão **⤵ prevista** copia a aula do roteiro para o conteúdo, marca ✔ e põe a data de hoje.
+   - Clique em **Salvar registro**. **📋 Copiar registro do mês** gera o texto para o diário de classe (data – conteúdo – observações).
+
+---
+
 # Etapa 6: nota e parecer do trimestre (atualização)
 
 ## A. Atualizar o código
