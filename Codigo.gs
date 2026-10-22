@@ -34,6 +34,7 @@ const CONFIG_PADRAO = [
   ['professores', '', 'E-mails com acesso ao painel do professor, separados por vírgula.'],
   ['cadastro_aberto', 'SIM', 'SIM = alunos podem se cadastrar; NÃO = novos cadastros bloqueados.'],
   ['velocidade_voz', 0.85, 'Velocidade da voz em inglês nos jogos (0,5 = bem devagar; 1 = normal).'],
+  ['aula_sem_som', 'NÃO', 'SIM = os jogos mostram as palavras escritas em vez de falar (aula sem barulho). NÃO = com voz.'],
   ['tamanho_max_grupo', 5, 'Alunos por equipe sugerido ao abrir uma turma (você pode mudar na hora de formar as equipes).'],
   ['faixa_basico', 40, 'Média mínima (%) para o nível Básico. Abaixo disso: Iniciante.'],
   ['faixa_intermediario', 60, 'Média mínima (%) para o nível Intermediário.'],
@@ -227,6 +228,11 @@ function incluir(arquivo) {
 }
 
 /** Usado pelas telas para ajustar a voz. Não exige login de professor. */
+/** "Aula sem som": os jogos mostram as palavras escritas em vez de falar. */
+function semSom_(cfg) {
+  return String(cfg.aula_sem_som || '').toUpperCase() === 'SIM';
+}
+
 function velocidadeVoz_(cfg) {
   const v = Number(String(cfg.velocidade_voz).replace(',', '.'));
   return v >= 0.5 && v <= 1.2 ? v : 0.85;
@@ -276,6 +282,7 @@ function alunoObterEstado() {
     turmas: listarTurmas_(),
     avatares: AVATARES,
     velocidadeVoz: velocidadeVoz_(cfg),
+    semSom: semSom_(cfg),
     aluno: aluno ? { nome: String(aluno.nome), turma: String(aluno.turma), serie: serie, avatar: avatarValido_(String(aluno.avatar)) } : null,
     temas: temas,
     jogos: Object.keys(JOGOS).map(function (k) { return { id: k, nome: JOGOS[k].nome }; }),
@@ -368,6 +375,7 @@ function profResumo() {
       professores: String(cfg.professores || ''),
       cadastro_aberto: String(cfg.cadastro_aberto || 'SIM'),
       velocidade_voz: velocidadeVoz_(cfg),
+      aula_sem_som: semSom_(cfg) ? 'SIM' : 'NÃO',
       faixa_basico: Number(cfg.faixa_basico) || 40,
       faixa_intermediario: Number(cfg.faixa_intermediario) || 60,
       faixa_avancado: Number(cfg.faixa_avancado) || 80,
@@ -498,11 +506,18 @@ function profSalvarConfig(novos) {
     professores: professores,
     cadastro_aberto: novos.cadastro_aberto === 'NÃO' ? 'NÃO' : 'SIM',
     velocidade_voz: voz,
+    aula_sem_som: novos.aula_sem_som === 'SIM' ? 'SIM' : 'NÃO',
   };
   comTrava_(function () {
     const aba = aba_('Config');
+    const existentes = {};
     lerTabela_('Config').forEach(function (l) {
+      existentes[l.chave] = true;
       if (valores.hasOwnProperty(l.chave)) aba.getRange(l._linha, 2).setValue(valores[l.chave]);
+    });
+    // Chaves novas (de atualizações do sistema) entram na planilha na primeira vez que forem salvas.
+    CONFIG_PADRAO.forEach(function (item) {
+      if (!existentes[item[0]] && valores.hasOwnProperty(item[0])) aba.appendRow([item[0], valores[item[0]], item[2]]);
     });
   });
   return profResumo();

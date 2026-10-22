@@ -133,6 +133,11 @@
           <p class="suave pequeno">Mais devagar ajuda os alunos do 3º ano. Nos jogos, o botão 🐢 sempre repete ainda mais devagar.</p>
         </div>
         <div class="campo">
+          <label for="cfg-sem-som">Aula sem som</label>
+          <select id="cfg-sem-som"><option value="NÃO">Desligada: os jogos falam as palavras</option><option value="SIM">Ligada: os jogos mostram as palavras escritas (sem barulho)</option></select>
+          <p class="suave pequeno">Ligue nas aulas de Chromebook sem fones de ouvido. Os jogos e as missões continuam iguais, mas no lugar da voz aparece a palavra escrita no alto da tela. Treine a escuta com a turma toda no telão (aba Material). Vale para todas as turmas até você desligar.</p>
+        </div>
+        <div class="campo">
           <label>Faixas de nível (média % mínima nas avaliações)</label>
           <div class="linha">
             <span class="suave pequeno">Iniciante: abaixo de Básico</span>
@@ -427,6 +432,7 @@
       $('cfg-professores').value = c.professores;
       $('cfg-cadastro').value = c.cadastro_aberto === 'NÃO' ? 'NÃO' : 'SIM';
       $('cfg-voz').value = c.velocidade_voz;
+      $('cfg-sem-som').value = c.aula_sem_som === 'SIM' ? 'SIM' : 'NÃO';
       $('cfg-b').value = c.faixa_basico;
       $('cfg-i').value = c.faixa_intermediario;
       $('cfg-a').value = c.faixa_avancado;
@@ -448,6 +454,7 @@
           professores: $('cfg-professores').value,
           cadastro_aberto: $('cfg-cadastro').value,
           velocidade_voz: $('cfg-voz').value,
+          aula_sem_som: $('cfg-sem-som').value,
           faixa_basico: $('cfg-b').value,
           faixa_intermediario: $('cfg-i').value,
           faixa_avancado: $('cfg-a').value,

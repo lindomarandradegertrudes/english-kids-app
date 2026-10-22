@@ -4,6 +4,18 @@ Faça tudo com a sua **conta institucional** (@edu.joinville.sc.gov.br).
 
 ---
 
+# Voz mais confiável e "Aula sem som" (atualização)
+
+## A. Atualizar o código
+No editor do Apps Script, apague tudo e cole as novas versões de `Codigo` (.gs) e de `Fala`, `AlunoCorpo` e `Professor` (.html). Depois publique a nova versão.
+
+## B. O que muda
+- **Voz mais confiável:** o app passa a usar primeiro a voz instalada no Chromebook (não depende da internet da escola). Se uma voz não começar a falar em 2 segundos, ele tenta outra sozinho.
+- **Modo leitura automático:** se nenhuma voz funcionar naquele Chromebook, o app mostra a palavra **escrita numa legenda grande no alto da tela** no lugar da voz, e a criança continua jogando. Na tela inicial aparece o aviso 🔇. Se a criança tiver fone, basta recarregar a página para tentar a voz de novo.
+- **Aula sem som** (aba **Configurações**): ligue nas aulas de Chromebook sem fones de ouvido. Todos os jogos e missões mostram as palavras escritas em vez de falar, sem barulho na sala. Vale para todas as turmas até você desligar. Treine a escuta com a turma toda no **telão** (aba Material).
+
+---
+
 # Correções: botões das missões e figuras mais claras (atualização)
 
 ## A. Atualizar o código

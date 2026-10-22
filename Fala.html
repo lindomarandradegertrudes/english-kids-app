@@ -1,15 +1,46 @@
+<style>
+  #fala-legenda { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); z-index: 5000; pointer-events: none;
+    background: #1b1f3b; color: #fff; border-radius: 18px; padding: 10px 22px; box-shadow: 0 6px 0 rgba(0,0,0,.25);
+    font: 900 2rem/1.2 Nunito, "Segoe UI", Arial, sans-serif; max-width: calc(100vw - 32px); text-align: center;
+    opacity: 0; transition: opacity .2s; }
+  #fala-legenda.ver { opacity: 1; }
+  #fala-legenda small { display: block; font-size: .8rem; font-weight: 700; opacity: .75; }
+</style>
 <script>
   /**
-   * Voz (fala em inglês) do próprio Chrome.
+   * Voz (fala em inglês) do próprio Chrome, com plano B.
+   *
+   * - Prefere as vozes instaladas no aparelho (não dependem da internet da escola).
+   * - Se a voz não começar a falar em poucos segundos, tenta outra voz; se nenhuma funcionar, liga o "modo leitura".
+   * - Modo leitura: em vez de falar, mostra o texto numa legenda grande no alto da tela. Liga sozinho quando a voz
+   *   não funciona no aparelho, ou pelo professor ("Aula sem som", nas Configurações).
    */
   const Fala = {
     voz: null,
     velocidade: 0.85,
     pronta: null,
+    candidatas: [],
+    ruins: [],
+    semVoz: false,
+    silencioso: false,
+    ouvintes: [],
 
     disponivel() { return 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window; },
 
-    /** Escolhe a melhor voz em inglês. As vozes do Chrome carregam depois da página, por isso a espera. */
+    /** true quando o app deve mostrar as palavras escritas em vez de falar. */
+    modoLeitura() { return this.silencioso || this.semVoz || !this.disponivel(); },
+
+    aoMudar(fn) { this.ouvintes.push(fn); },
+    avisarMudanca() { this.ouvintes.forEach((fn) => { try { fn(); } catch (e) { /* ignora */ } }); },
+
+    /** Liga ou desliga a "Aula sem som" (vem das Configurações do professor). */
+    definirSilencioso(v) {
+      const antes = this.modoLeitura();
+      this.silencioso = !!v;
+      if (this.modoLeitura() !== antes) this.avisarMudanca();
+    },
+
+    /** Ordena as vozes em inglês: primeiro as instaladas no aparelho, depois as da internet. */
     iniciar() {
       if (this.pronta) return this.pronta;
       this.pronta = new Promise((ok) => {
@@ -17,11 +48,9 @@
         const escolher = () => {
           const vozes = speechSynthesis.getVoices();
           const ingles = vozes.filter((v) => /^en[-_]/i.test(v.lang));
-          this.voz = ingles.find((v) => /Google US English/i.test(v.name))
-            || ingles.find((v) => /^en[-_]US/i.test(v.lang) && v.localService)
-            || ingles.find((v) => /^en[-_]US/i.test(v.lang))
-            || ingles.find((v) => /^en[-_]GB/i.test(v.lang))
-            || ingles[0] || null;
+          const peso = (v) => (v.localService ? 0 : 10) + (/^en[-_]US/i.test(v.lang) ? 0 : /^en[-_]GB/i.test(v.lang) ? 1 : 2);
+          this.candidatas = ingles.slice().sort((a, b) => peso(a) - peso(b));
+          this.voz = this.candidatas.find((v) => !this.ruins.includes(v.name)) || null;
           return vozes.length > 0;
         };
         if (escolher()) { ok(this.voz); return; }
@@ -35,22 +64,71 @@
       return this.disponivel() ? speechSynthesis.getVoices().filter((v) => /^en[-_]/i.test(v.lang)) : [];
     },
 
-    /** Fala o texto em inglês. lento = para repetir devagar. Resolve quando termina (ou falha). */
+    /** Mostra o texto numa legenda grande no alto da tela. */
+    legenda(texto) {
+      let el = document.getElementById('fala-legenda');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'fala-legenda';
+        el.setAttribute('aria-live', 'polite');
+        document.body.appendChild(el);
+      }
+      el.innerHTML = '💬 ' + String(texto).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])) +
+        '<small>' + (this.silencioso ? 'Aula sem som · leia a palavra' : 'Sem voz neste computador · leia a palavra') + '</small>';
+      el.classList.add('ver');
+      clearTimeout(this._legendaTimer);
+      this._legendaTimer = setTimeout(() => el.classList.remove('ver'), 3500 + String(texto).length * 60);
+    },
+
+    /** Fala o texto em inglês (ou mostra a legenda no modo leitura). lento = para repetir devagar. */
     falar(texto, lento) {
       return new Promise((ok) => {
-        if (!this.disponivel() || !texto) { ok(false); return; }
+        if (!texto) { ok(false); return; }
+        if (this.modoLeitura()) {
+          this.legenda(texto);
+          setTimeout(() => ok(true), 900 + String(texto).length * 40);
+          return;
+        }
+        this.falarComVoz(String(texto), lento, 0).then(ok);
+      });
+    },
+
+    /** Tenta falar; se a voz não começar em 2,5 s (ou der erro), troca de voz. Sem nenhuma voz, liga o modo leitura. */
+    falarComVoz(texto, lento, tentativa) {
+      return new Promise((ok) => {
         speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(String(texto));
+        if (speechSynthesis.paused) speechSynthesis.resume();
+        const u = new SpeechSynthesisUtterance(texto);
         u.lang = this.voz ? this.voz.lang : 'en-US';
         if (this.voz) u.voice = this.voz;
         u.rate = lento ? Math.max(0.5, this.velocidade - 0.25) : this.velocidade;
-        // Alguns navegadores nunca disparam onend; o limite evita que o jogo fique esperando para sempre.
         let comecou = false, fim = false;
-        const terminar = (v) => { if (!fim) { fim = true; clearTimeout(limite); ok(v); } };
-        const limite = setTimeout(() => terminar(comecou), 2500 + String(texto).length * 150 / u.rate);
-        u.onstart = () => (comecou = true);
+        const terminar = (v) => { if (!fim) { fim = true; clearTimeout(vigia); clearTimeout(limite); ok(v); } };
+        const falhou = () => {
+          if (fim) return;
+          fim = true;
+          clearTimeout(vigia); clearTimeout(limite);
+          speechSynthesis.cancel();
+          // Sem um toque da criança na página, o Chrome não deixa falar: isso não é defeito da voz.
+          const tocou = !navigator.userActivation || navigator.userActivation.hasBeenActive;
+          if (!tocou) { ok(false); return; }
+          if (this.voz && !this.ruins.includes(this.voz.name)) this.ruins.push(this.voz.name);
+          const outra = this.candidatas.find((v) => !this.ruins.includes(v.name));
+          if (outra && tentativa < 2) { this.voz = outra; this.falarComVoz(texto, lento, tentativa + 1).then(ok); return; }
+          this.semVoz = true;
+          this.avisarMudanca();
+          this.legenda(texto);
+          setTimeout(() => ok(true), 900);
+        };
+        const vigia = setTimeout(() => { if (!comecou) falhou(); }, 2500);
+        // Alguns navegadores nunca disparam onend; o limite evita que o jogo fique esperando para sempre.
+        const limite = setTimeout(() => terminar(comecou), 4000 + texto.length * 150 / u.rate);
+        u.onstart = () => { comecou = true; clearTimeout(vigia); };
         u.onend = () => terminar(true);
-        u.onerror = () => terminar(false);
+        u.onerror = (e) => {
+          if (e && (e.error === 'interrupted' || e.error === 'canceled')) { terminar(false); return; }
+          if (!comecou) falhou(); else terminar(false);
+        };
         speechSynthesis.speak(u);
       });
     },

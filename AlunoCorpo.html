@@ -33,7 +33,7 @@
 
     <!-- Início: mapa de aventura (ou a grade de temas, se o mapa não vier) -->
     <div id="inicio" hidden>
-      <div id="aviso-voz" class="aviso-voz" hidden>🔇 A voz em inglês não está funcionando neste computador. Confira o volume e avise o professor.</div>
+      <div id="aviso-voz" class="aviso-voz" hidden></div>
       <div id="teste-aviso"></div>
       <div id="missoes"></div>
       <div id="quizzes"></div>
@@ -117,6 +117,7 @@
     function render(e) {
       estado = e;
       Fala.velocidade = e.velocidadeVoz;
+      Fala.definirSilencioso(e.semSom === true);
       if (!e.aluno) { renderCadastro(); return; }
       $('meu-avatar').textContent = e.aluno.avatar;
       Narrativa.preparar();
@@ -130,8 +131,17 @@
       Rotina.render();
       mostrar('inicio');
       enviarFila();
-      Fala.iniciar().then(() => { $('aviso-voz').hidden = Fala.disponivel() && speechSynthesis.getVoices().length > 0; });
+      Fala.iniciar().then(avisoVoz);
     }
+
+    /** Aviso do modo leitura: aula sem som (professor) ou voz que não funciona neste Chromebook. */
+    function avisoVoz() {
+      const el = $('aviso-voz');
+      if (Fala.silencioso) el.innerHTML = '🔇 <b>Aula sem som.</b> No lugar da voz, a palavra aparece escrita no alto da tela. Leia com atenção!';
+      else el.innerHTML = '🔇 <b>A voz não funcionou neste computador.</b> No lugar da voz, a palavra aparece escrita no alto da tela. Se tiver fone, recarregue a página para tentar de novo.';
+      el.hidden = !Fala.modoLeitura();
+    }
+    Fala.aoMudar(avisoVoz);
 
     function progressoDe(temaId) {
       return (estado.progresso && estado.progresso.porTema[temaId]) || { dominio: 0, palavras: {}, estrelas: {}, jogadas: 0 };
